@@ -103,6 +103,8 @@ func NewApp(db *gorm.DB) (*App, error) {
 	funcMap := template.FuncMap{
 		"add": func(a, b int) int { return a + b },
 		"sub": func(a, b int) int { return a - b },
+		"div": func(a, b float64) float64 { return a / b },
+		"mul": func(a, b float64) float64 { return a * b },
 		// ars: formatea un número como ARS sin decimales con separadores de miles
 		"ars": func(v float64) string {
 			// redondeo a entero
@@ -284,7 +286,7 @@ func seedProducts(db *gorm.DB) {
 }
 
 func seedPages(db *gorm.DB) {
-	pages := []domain.Page{{Slug: "about", Title: "Sobre Chroma3D", BodyMD: "Somos un taller de impresión 3D."}, {Slug: "contact", Title: "Contacto", BodyMD: "Escribinos a hola@example.com"}}
+	pages := []domain.Page{{Slug: "about", Title: "Sobre Celusfera", BodyMD: "Somos una tienda especializada en celulares y accesorios."}, {Slug: "contact", Title: "Contacto", BodyMD: "Escribinos a ventas@celusfera.com.ar"}}
 	for _, p := range pages {
 		db.Create(&p)
 	}

@@ -21,8 +21,11 @@
   </div>
   
 </section>
-<section style="margin-top:40px">
-  <h2 class="title" style="margin-bottom:10px">Ofertas imperdibles</h2>
+<section style="margin-top:48px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <h2 style="font-size:32px;font-weight:800;margin:0;color:var(--color-text);letter-spacing:-.8px">Ofertas imperdibles</h2>
+    <a href="/products" style="color:var(--color-brand);text-decoration:none;font-weight:600;font-size:14px">Ver todos →</a>
+  </div>
   <div class="cards cards--home">
     {{range .Products}}
     <div class="card">
@@ -37,10 +40,16 @@
         
       </div>
       <div class="card-body">
+        <div class="badges">
+          <span class="badge green">12x sin interés</span>
+        </div>
         <h3 class="card-title"><a href="/product/{{.Slug}}">{{.Name}}</a></h3>
         <div class="card-meta">{{.Category}}</div>
-        <div class="price-row"><span class="price">${{printf "%.0f" .BasePrice}}</span></div>
-        <div class="actions"><a href="/product/{{.Slug}}" class="btn-secondary small">Ver oferta</a></div>
+        <div class="price-row">
+          <span class="price">${{printf "%.0f" .BasePrice}}</span>
+          <span class="price-installment">12x ${{printf "%.0f" (div .BasePrice 12.0)}} sin interés</span>
+        </div>
+        <div class="actions"><a href="/product/{{.Slug}}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a></div>
       </div>
     </div>
     {{end}}

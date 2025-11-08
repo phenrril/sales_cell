@@ -1,7 +1,9 @@
 {{define "products.html"}}
 {{template "layout_start" .}}
-<h1 class="section-title">Celulares y accesorios</h1>
-<p class="result-count">{{len .Products}} resultados{{if .Query}} para “{{.Query}}”{{end}}</p>
+<div style="margin-bottom:32px">
+  <h1 style="font-size:36px;font-weight:800;margin:0 0 8px;color:var(--color-text);letter-spacing:-1px;line-height:1.2">Celulares y accesorios</h1>
+  <p class="result-count" style="font-size:15px;color:var(--color-muted);margin:0">{{len .Products}} resultado{{if ne (len .Products) 1}}s{{end}}{{if .Query}} para "{{.Query}}"{{end}}</p>
+</div>
 <h2 class="sr-only">Filtros</h2>
 <div class="mobile-actions">
   <button class="btn-filter" aria-expanded="false" aria-controls="filterDrawer">Filtrar</button>
@@ -71,13 +73,16 @@
     <div class="card-body">
       <div class="badges">
         <span class="badge green">12x sin interés</span>
-        <span class="badge gray">Garantía</span>
+        <span class="badge gray">Garantía oficial</span>
       </div>
       <h3 class="card-title"><a href="/product/{{$p.Slug}}">{{$p.Name}}</a></h3>
       <div class="card-meta">{{$p.Category}}</div>
-      <div class="price-row"><span class="price">{{ars $p.BasePrice}}</span></div>
+      <div class="price-row">
+        <span class="price">{{ars $p.BasePrice}}</span>
+        <span class="price-installment">12x ${{printf "%.0f" (div $p.BasePrice 12.0)}} sin interés</span>
+      </div>
       <div class="actions">
-        <a href="/product/{{$p.Slug}}" class="btn-secondary btn-full">Ver oferta</a>
+        <a href="/product/{{$p.Slug}}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a>
       </div>
     </div>
   </div>

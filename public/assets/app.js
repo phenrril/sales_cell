@@ -20,48 +20,7 @@
   window.addEventListener('keydown',e=>{if(e.key==='Escape' && body.classList.contains('nav-open')) close();});
 })();
 
-// Dark mode: preferencia del SO + persistencia localStorage + toggle accesible
-(function(){
-  const storageKey='theme';
-  const body=document.body;
-  const btn=document.querySelector('.mode-toggle');
-  const prefersDark=window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-
-  function applyTheme(mode){
-    const isDark = mode === 'dark';
-    body.classList.toggle('dark', isDark);
-    if(btn){
-      btn.setAttribute('aria-pressed', String(isDark));
-      btn.title = isDark ? 'Tema claro' : 'Tema oscuro';
-      btn.textContent = isDark ? '☀️' : '🌙';
-    }
-  }
-
-  function getInitialTheme(){
-    try{ const saved=localStorage.getItem(storageKey); if(saved==='dark' || saved==='light') return saved; }catch{}
-    return prefersDark && prefersDark.matches ? 'dark' : 'light';
-  }
-
-  // Inicializar
-  applyTheme(getInitialTheme());
-
-  // Escuchar cambios del SO
-  if(prefersDark && prefersDark.addEventListener){
-    prefersDark.addEventListener('change', (e)=>{
-      try{ const saved=localStorage.getItem(storageKey); if(saved==='dark' || saved==='light') return; }catch{}
-      applyTheme(e.matches ? 'dark' : 'light');
-    });
-  }
-
-  // Toggle manual
-  if(btn){
-    btn.addEventListener('click',()=>{
-      const next = body.classList.contains('dark') ? 'light' : 'dark';
-      applyTheme(next);
-      try{ localStorage.setItem(storageKey, next); }catch{}
-    });
-  }
-})();
+// Dark mode removido - solo modo claro
 
 // Footer: revelar al final del scroll con IntersectionObserver
 (function(){

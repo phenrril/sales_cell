@@ -1,9 +1,9 @@
-# Tienda3D
+# Celusfera
 
-Proyecto de tienda online para venta de modelos 3D impresos, desarrollado en Go (arquitectura hexagonal + SSR). 
+Proyecto de tienda online para venta de celulares y accesorios, desarrollado en Go (arquitectura hexagonal + SSR). 
 
 ## Objetivo
-Permitir la carga, visualización y compra de productos impresos en 3D, con integración a MercadoPago, manejo de imágenes y flujo de checkout completo.
+Permitir la carga, visualización y compra de celulares, smartphones y accesorios, con integración a MercadoPago, manejo de imágenes y flujo de checkout completo.
 
 ## Novedades recientes
 - Carrusel en detalle de producto (autoplay, flechas, miniaturas, swipe, teclado) + layout responsive.
