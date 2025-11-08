@@ -2,7 +2,7 @@
 {{template "layout_start" .}}
 <h1>Productos</h1>
 <nav class="admin-nav"><a href="/admin/products" class="active">Productos</a> | <a href="/admin/orders">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/uncharged">Sin precio</a> | <a href="/admin/logout">Salir</a></nav>
-<section class="grid" style="margin-top:1rem;grid-template-columns:420px 1fr;gap:2rem;align-items:start">
+<section class="grid" style="margin-top:1rem;grid-template-columns:420px minmax(0,1fr);gap:2rem;align-items:start">
   <div class="admin-card" style="padding:18px 20px 24px">
     <div class="row between center" style="margin-bottom:6px">
       <h2 style="margin:0;font-size:18px">Gestión de producto</h2>
@@ -50,7 +50,7 @@
   </div>
   <div>
     <h2 style="margin:0 0 10px;font-size:18px">Listado ({{.Total}})</h2>
-    <div style="overflow:auto">
+    <div style="overflow-x:auto;overflow-y:visible;max-width:100%">
       <div class="row between center" style="margin-bottom:6px;gap:.5rem;align-items:flex-start">
         <div class="row" style="gap:.5rem;align-items:flex-start">
           <div style="display:flex;flex-direction:column;gap:6px">
@@ -76,8 +76,21 @@
           </div>
         </div>
       </div>
-      <table class="table" id="prodTable" style="font-size:0.8rem;min-width:1080px">
-        <thead><tr><th>Nombre</th><th>Slug</th><th>Marca</th><th>Modelo</th><th>Bruto</th><th>Margen</th><th>Precio</th><th>Ganancia</th><th>Listo</th><th>Imgs</th><th style="text-align:right">Acciones</th></tr></thead>
+      <table class="table" id="prodTable" style="font-size:0.8rem;width:100%;table-layout:fixed">
+        <colgroup>
+          <col style="width:15%">
+          <col style="width:12%">
+          <col style="width:8%">
+          <col style="width:10%">
+          <col style="width:7%">
+          <col style="width:6%">
+          <col style="width:8%">
+          <col style="width:8%">
+          <col style="width:4%">
+          <col style="width:4%">
+          <col style="width:18%">
+        </colgroup>
+        <thead><tr><th>Nombre</th><th>Slug</th><th>Marca</th><th>Modelo</th><th>Bruto</th><th>Margen</th><th>Precio</th><th>Ganancia</th><th>Listo</th><th>Imgs</th><th style="text-align:right;white-space:nowrap">Acciones</th></tr></thead>
         <tbody>
           {{range .Products}}
           <tr data-slug="{{.Slug}}">
@@ -95,6 +108,7 @@
               <div class="table-actions">
                 <button class="icon-btn action-edit" data-act="edit" title="Editar">✏️</button>
                 <button class="icon-btn action-search" data-act="search" title="Buscar imagen">🔎</button>
+                <button class="icon-btn action-workflow" data-act="workflow" title="Workflow: buscar y agregar imágenes automáticamente">🔄</button>
                 <button class="icon-btn action-specs" data-act="specs" title="Buscar especificaciones">📋</button>
                 <button class="icon-btn danger action-clearimg" data-act="clearimg" title="Borrar imágenes">🗑️ Img</button>
                 <button class="icon-btn danger action-del" data-act="del" title="Eliminar">🗑️</button>
@@ -152,6 +166,43 @@
   </div>
 </div>
 
+<!-- Modal de workflow de imágenes -->
+<div id="workflowModal" class="modal" style="display:none;z-index:999999">
+  <div class="modal-content" style="max-width:900px;max-height:90vh;overflow-y:auto;z-index:1000000">
+    <div class="modal-header">
+      <h3 style="margin:0;font-size:18px">🔄 Workflow: Buscar y Agregar Imágenes</h3>
+      <button id="closeWorkflowModal" class="btn-close" style="background:none;border:none;font-size:24px;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px">
+      <p style="margin:0 0 16px;color:var(--muted);font-size:14px">
+        Producto: <strong id="workflowProductName"></strong>
+      </p>
+      <div id="workflowLoading" style="display:none;text-align:center;padding:40px">
+        <div style="font-size:18px;margin-bottom:12px">🔍 Buscando imágenes...</div>
+        <div style="color:var(--muted);font-size:14px">Esto puede tardar unos segundos</div>
+      </div>
+      <div id="workflowResults" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <p style="margin:0;font-size:14px;font-weight:600">Imágenes encontradas (<span id="workflowImageCount">0</span>):</p>
+          <div style="display:flex;gap:8px">
+            <button id="workflowSelectAllBtn" class="btn-secondary" style="padding:6px 12px;font-size:12px">Seleccionar todas</button>
+            <button id="workflowDeselectAllBtn" class="btn-secondary" style="padding:6px 12px;font-size:12px">Deseleccionar todas</button>
+          </div>
+        </div>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">
+          Seleccionadas: <strong id="workflowSelectedCount">0</strong> de <span id="workflowTotalCount">0</span>
+        </p>
+        <div id="workflowImageGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="workflowAddSelectedBtn" class="btn-primary" style="flex:1">✓ Agregar imágenes seleccionadas (<span id="workflowAddCount">0</span>)</button>
+          <button id="workflowCancelBtn" class="btn-secondary">Cancelar</button>
+        </div>
+      </div>
+      <div id="workflowError" style="display:none;background:#fee;color:#c33;padding:16px;border-radius:6px;margin-bottom:16px"></div>
+    </div>
+  </div>
+</div>
+
 <style>
 .modal {
   position: fixed !important;
@@ -161,24 +212,29 @@
   height: 100vh !important;
   background: rgba(0,0,0,0.75) !important;
   z-index: 999999 !important;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
 }
-.modal[style*="display: flex"] {
+.modal.show,
+.modal[style*="display: flex"],
+.modal[style*="display:flex"] {
   display: flex !important;
 }
 .modal-content {
   background: #fff !important;
   border-radius: 8px;
   width: 100%;
-  max-width: 600px;
+  max-width: 900px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1000000;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 .modal-header {
   display: flex;
@@ -187,6 +243,9 @@
   padding: 16px 20px;
   border-bottom: 1px solid #ddd;
   background: #fff;
+}
+.modal-body {
+  padding: 24px;
 }
 </style>
 
@@ -281,6 +340,16 @@
       }
       if(btn.dataset.act==='specs'){
         searchSpecs(slug);
+        return;
+      }
+      if(btn.dataset.act==='workflow'){
+        console.log('Botón workflow clickeado, slug:', slug);
+        try {
+          workflowImages(slug);
+        } catch(err) {
+          console.error('Error en workflowImages:', err);
+          alert('Error: ' + err.message);
+        }
         return;
       }
     });
@@ -507,6 +576,332 @@
     }
   }
 
+  // Workflow: buscar y agregar imágenes automáticamente
+  async function workflowImages(slug) {
+    console.log('workflowImages llamado con slug:', slug);
+    
+    if (!slug) {
+      alert('Error: slug no válido');
+      return;
+    }
+
+    const modal = document.getElementById('workflowModal');
+    console.log('Modal encontrado:', !!modal);
+    if (!modal) {
+      alert('Error: No se encontró el modal de workflow');
+      return;
+    }
+
+    const loading = document.getElementById('workflowLoading');
+    const results = document.getElementById('workflowResults');
+    const error = document.getElementById('workflowError');
+    const productName = document.getElementById('workflowProductName');
+    const imageGrid = document.getElementById('workflowImageGrid');
+    const imageCount = document.getElementById('workflowImageCount');
+    const cancelBtn = document.getElementById('workflowCancelBtn');
+    const closeBtn = document.getElementById('closeWorkflowModal');
+
+    if (!loading || !results || !error || !productName || !imageGrid || !imageCount || !cancelBtn || !closeBtn) {
+      alert('Error: Elementos del modal no encontrados');
+      return;
+    }
+
+    // Obtener producto para mostrar nombre
+    try {
+      console.log('Obteniendo producto...');
+      const prodRes = await fetch('/api/products/' + slug, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      console.log('Respuesta producto:', prodRes.status, prodRes.ok);
+      if (!prodRes.ok) {
+        const errorText = await prodRes.text();
+        console.error('Error obteniendo producto:', errorText);
+        alert('Error obteniendo producto: ' + prodRes.status);
+        return;
+      }
+      const product = await prodRes.json();
+      console.log('Producto obtenido:', product.Name);
+      productName.textContent = product.Name;
+
+      // Mostrar modal
+      console.log('Mostrando modal...');
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+      modal.style.visibility = 'visible';
+      modal.style.opacity = '1';
+      loading.style.display = 'block';
+      results.style.display = 'none';
+      error.style.display = 'none';
+      imageGrid.innerHTML = '';
+
+      // Buscar imágenes
+      console.log('Buscando imágenes...');
+      const searchRes = await fetch('/api/products/' + encodeURIComponent(slug) + '/search-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        }
+      });
+      console.log('Respuesta búsqueda imágenes:', searchRes.status, searchRes.ok);
+
+      const searchData = await searchRes.json();
+      console.log('Datos de búsqueda:', searchData);
+      loading.style.display = 'none';
+
+      if (!searchRes.ok || searchData.status !== 'ok') {
+        console.error('Error en búsqueda:', searchData);
+        error.style.display = 'block';
+        error.textContent = '❌ ' + (searchData.message || 'Error buscando imágenes');
+        return;
+      }
+
+      const images = searchData.images || [];
+      if (images.length === 0) {
+        error.style.display = 'block';
+        error.textContent = '⚠️ No se encontraron imágenes para este producto';
+        return;
+      }
+
+      // Mostrar popup de confirmación
+      alert(`✅ Se encontraron ${images.length} imagen${images.length > 1 ? 'es' : ''} para "${product.Name}"\n\nSe abrirá un modal para que puedas revisarlas y agregarlas.`);
+
+      // Mostrar resultados
+      imageCount.textContent = images.length;
+      const totalCountEl = document.getElementById('workflowTotalCount');
+      if (totalCountEl) totalCountEl.textContent = images.length;
+      imageGrid.innerHTML = '';
+      
+      // Array para rastrear qué imágenes están seleccionadas
+      const selectedImages = new Set();
+      
+      // Función para actualizar el contador de seleccionadas
+      const updateSelectedCount = () => {
+        const count = selectedImages.size;
+        const selectedCountEl = document.getElementById('workflowSelectedCount');
+        const addCountEl = document.getElementById('workflowAddCount');
+        if (selectedCountEl) selectedCountEl.textContent = count;
+        if (addCountEl) addCountEl.textContent = count;
+        const addBtn = document.getElementById('workflowAddSelectedBtn');
+        if (addBtn) {
+          addBtn.disabled = count === 0;
+          if (count === 0) {
+            addBtn.textContent = '✓ Agregar imágenes seleccionadas (0)';
+          } else {
+            addBtn.textContent = `✓ Agregar imágenes seleccionadas (${count})`;
+          }
+        }
+      };
+      
+      images.forEach((imgUrl, index) => {
+        const imgContainer = document.createElement('div');
+        imgContainer.style.cssText = 'position:relative;border:2px solid #ddd;border-radius:8px;overflow:hidden;cursor:pointer;transition:all 0.2s';
+        
+        // Checkbox
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true; // Por defecto todas seleccionadas
+        checkbox.style.cssText = 'position:absolute;top:8px;left:8px;width:20px;height:20px;z-index:10;cursor:pointer;accent-color:#007bff';
+        checkbox.dataset.imageUrl = imgUrl;
+        checkbox.dataset.imageIndex = index;
+        
+        // Marcar como seleccionada por defecto
+        selectedImages.add(imgUrl);
+        
+        checkbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            selectedImages.add(imgUrl);
+            imgContainer.style.borderColor = '#007bff';
+            imgContainer.style.borderWidth = '3px';
+          } else {
+            selectedImages.delete(imgUrl);
+            imgContainer.style.borderColor = '#ddd';
+            imgContainer.style.borderWidth = '2px';
+          }
+          updateSelectedCount();
+        });
+        
+        imgContainer.onmouseover = () => {
+          if (checkbox.checked) {
+            imgContainer.style.borderColor = '#0056b3';
+          } else {
+            imgContainer.style.borderColor = '#007bff';
+          }
+        };
+        imgContainer.onmouseout = () => {
+          if (checkbox.checked) {
+            imgContainer.style.borderColor = '#007bff';
+          } else {
+            imgContainer.style.borderColor = '#ddd';
+          }
+        };
+        
+        // Click en el contenedor también togglea el checkbox
+        imgContainer.addEventListener('click', (e) => {
+          if (e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+          }
+        });
+        
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.style.cssText = 'width:100%;height:150px;object-fit:cover;display:block;pointer-events:none';
+        img.onerror = () => {
+          imgContainer.style.display = 'none';
+          selectedImages.delete(imgUrl);
+          updateSelectedCount();
+        };
+        
+        imgContainer.appendChild(checkbox);
+        imgContainer.appendChild(img);
+        imageGrid.appendChild(imgContainer);
+      });
+      
+      // Inicializar contador
+      updateSelectedCount();
+      
+      // Botones de seleccionar todas/deseleccionar todas
+      const selectAllBtn = document.getElementById('workflowSelectAllBtn');
+      const deselectAllBtn = document.getElementById('workflowDeselectAllBtn');
+      
+      if (selectAllBtn) {
+        selectAllBtn.onclick = () => {
+          imageGrid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = true;
+            selectedImages.add(cb.dataset.imageUrl);
+            const container = cb.closest('div');
+            if (container) {
+              container.style.borderColor = '#007bff';
+              container.style.borderWidth = '3px';
+            }
+          });
+          updateSelectedCount();
+        };
+      }
+      
+      if (deselectAllBtn) {
+        deselectAllBtn.onclick = () => {
+          imageGrid.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            selectedImages.delete(cb.dataset.imageUrl);
+            const container = cb.closest('div');
+            if (container) {
+              container.style.borderColor = '#ddd';
+              container.style.borderWidth = '2px';
+            }
+          });
+          updateSelectedCount();
+        };
+      }
+
+      results.style.display = 'block';
+      loading.style.display = 'none';
+      
+      // Asegurar que el modal sea visible
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+      modal.style.visibility = 'visible';
+      modal.style.opacity = '1';
+      modal.style.zIndex = '999999';
+      console.log('Modal display después de mostrar resultados:', window.getComputedStyle(modal).display);
+      console.log('Modal visibility:', window.getComputedStyle(modal).visibility);
+      console.log('Modal opacity:', window.getComputedStyle(modal).opacity);
+      console.log('Modal z-index:', window.getComputedStyle(modal).zIndex);
+      console.log('Results display:', window.getComputedStyle(results).display);
+      console.log('Modal tiene clase show:', modal.classList.contains('show'));
+
+      // Handler para agregar imágenes seleccionadas
+      let adding = false;
+      const addSelectedBtn = document.getElementById('workflowAddSelectedBtn');
+      if (addSelectedBtn) {
+        addSelectedBtn.onclick = async () => {
+          if (adding) return;
+          
+          // Obtener imágenes seleccionadas
+          const selectedUrls = Array.from(selectedImages);
+          if (selectedUrls.length === 0) {
+            alert('⚠️ Por favor selecciona al menos una imagen para agregar.');
+            return;
+          }
+          
+          adding = true;
+          addSelectedBtn.disabled = true;
+          addSelectedBtn.textContent = `⏳ Agregando ${selectedUrls.length} imagen${selectedUrls.length > 1 ? 'es' : ''}...`;
+
+          let successCount = 0;
+          let errorCount = 0;
+
+          for (const imgUrl of selectedUrls) {
+            try {
+              const res = await fetch('/api/products/' + encodeURIComponent(slug) + '/download-image', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ image_url: imgUrl })
+              });
+
+              const data = await res.json();
+              if (res.ok && data.status === 'ok') {
+                successCount++;
+              } else {
+                errorCount++;
+              }
+            } catch (err) {
+              console.error('Error agregando imagen:', imgUrl, err);
+              errorCount++;
+            }
+          }
+
+          if (successCount > 0) {
+            alert(`✅ Se agregaron ${successCount} imagen${successCount > 1 ? 'es' : ''} exitosamente${errorCount > 0 ? `\n⚠️ ${errorCount} imagen${errorCount > 1 ? 'es' : ''} fallaron` : ''}\n\nLa página se recargará para mostrar los cambios.`);
+            location.reload();
+          } else {
+            alert('❌ Error: No se pudo agregar ninguna imagen. Por favor, intenta nuevamente.');
+            addSelectedBtn.disabled = false;
+            addSelectedBtn.textContent = `✓ Agregar imágenes seleccionadas (${selectedUrls.length})`;
+            adding = false;
+          }
+        };
+      }
+
+      // Handler para cancelar
+      cancelBtn.onclick = () => {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+      };
+
+      // Handler para cerrar
+      closeBtn.onclick = () => {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+      };
+
+      // Cerrar al hacer click fuera del modal
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('show');
+          modal.style.display = 'none';
+          modal.style.visibility = 'hidden';
+        }
+      };
+
+    } catch (err) {
+      console.error('Error completo en workflowImages:', err);
+      loading.style.display = 'none';
+      error.style.display = 'block';
+      error.textContent = '❌ Error: ' + err.message;
+      // Asegurar que el modal sea visible para mostrar el error
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+      modal.style.visibility = 'visible';
+    }
+  }
+
   // Submit create/update + optional images
   form.addEventListener('submit', async e=>{
     e.preventDefault();
@@ -666,12 +1061,31 @@
 })();
 </script>
 
-<!-- Mover el modal fuera del main para que tenga z-index correcto -->
+<!-- Mover los modales fuera del main para que tengan z-index correcto -->
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('imageSearchModal');
-    if (modal) {
-      document.body.appendChild(modal);
+    const imageModal = document.getElementById('imageSearchModal');
+    if (imageModal && imageModal.parentNode !== document.body) {
+      document.body.appendChild(imageModal);
+    }
+    const workflowModal = document.getElementById('workflowModal');
+    if (workflowModal && workflowModal.parentNode !== document.body) {
+      document.body.appendChild(workflowModal);
+    }
+    
+    // Verificar que los elementos del modal existan
+    console.log('Modal workflow:', workflowModal ? 'encontrado' : 'NO encontrado');
+    if (workflowModal) {
+      console.log('Elementos del modal:', {
+        loading: !!document.getElementById('workflowLoading'),
+        results: !!document.getElementById('workflowResults'),
+        error: !!document.getElementById('workflowError'),
+        productName: !!document.getElementById('workflowProductName'),
+        imageGrid: !!document.getElementById('workflowImageGrid'),
+        addAllBtn: !!document.getElementById('workflowAddAllBtn'),
+        cancelBtn: !!document.getElementById('workflowCancelBtn'),
+        closeBtn: !!document.getElementById('closeWorkflowModal')
+      });
     }
   });
 </script>

@@ -45,8 +45,9 @@ type Server struct {
 	models    domain.UploadedModelRepo
 	storage   domain.FileStorage
 	customers domain.CustomerRepo
-	oauthCfg  *oauth2.Config
-	scraper   *scraper.SpecsScraper
+	oauthCfg     *oauth2.Config
+	scraper      *scraper.SpecsScraper
+	imageScraper *scraper.ImageScraper
 
 	adminAllowed map[string]struct{}
 	adminSecret  []byte
@@ -58,7 +59,7 @@ type Server struct {
 var emailRe = regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`)
 
 func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, oauthCfg *oauth2.Config) http.Handler {
-	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), mux: http.NewServeMux()}
+	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), mux: http.NewServeMux()}
 
 	allowed := map[string]struct{}{}
 	if raw := os.Getenv("ADMIN_ALLOWED_EMAILS"); raw != "" {
@@ -425,6 +426,11 @@ func (s *Server) apiProductByID(w http.ResponseWriter, r *http.Request) {
 		s.apiProductSearchSpecs(w, r)
 		return
 	}
+	// Search images: /api/products/{slug}/search-images
+	if strings.HasSuffix(r.URL.Path, "/search-images") {
+		s.apiProductSearchImages(w, r)
+		return
+	}
 	// Variantes nested: /api/products/{slug}/variants[/{id}]
 	if strings.Contains(r.URL.Path, "/variants") {
 		s.apiProductVariants(w, r)
@@ -746,6 +752,55 @@ func (s *Server) apiProductSearchSpecs(w http.ResponseWriter, r *http.Request) {
 		"status":         "ok",
 		"specifications": specs,
 		"message":        fmt.Sprintf("Se encontraron %d especificaciones", len(specs)),
+	})
+}
+
+// /api/products/{slug}/search-images - Buscar imágenes automáticamente
+func (s *Server) apiProductSearchImages(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAdmin(w, r) {
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	rest := strings.TrimPrefix(r.URL.Path, "/api/products/")
+	slugEnc := strings.TrimSuffix(rest, "/search-images")
+	slugEnc = strings.TrimSuffix(slugEnc, "/")
+	slug, _ := url.PathUnescape(slugEnc)
+
+	p, err := s.products.GetBySlug(r.Context(), slug)
+	if err != nil || p == nil {
+		writeJSON(w, 404, map[string]any{"status": "error", "message": "producto no encontrado"})
+		return
+	}
+
+	// Verificar cuántas imágenes ya tiene el producto (máximo 6)
+	currentImageCount := len(p.Images)
+	maxToAdd := 6 - currentImageCount
+	if maxToAdd <= 0 {
+		writeJSON(w, 400, map[string]any{"status": "error", "message": "el producto ya tiene el máximo de imágenes (6)"})
+		return
+	}
+
+	// Buscar imágenes
+	images, err := s.imageScraper.SearchImages(r.Context(), p.Name, p.Brand, p.Model, maxToAdd)
+	if err != nil {
+		log.Warn().Err(err).Str("product", p.Name).Msg("Error buscando imágenes")
+		writeJSON(w, 500, map[string]any{"status": "error", "message": "error buscando imágenes: " + err.Error()})
+		return
+	}
+
+	if len(images) == 0 {
+		writeJSON(w, 404, map[string]any{"status": "not_found", "message": "no se encontraron imágenes"})
+		return
+	}
+
+	writeJSON(w, 200, map[string]any{
+		"status":  "ok",
+		"images":  images,
+		"message": fmt.Sprintf("Se encontraron %d imágenes", len(images)),
 	})
 }
 
