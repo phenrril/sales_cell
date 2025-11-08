@@ -95,6 +95,7 @@
               <div class="table-actions">
                 <button class="icon-btn action-edit" data-act="edit" title="Editar">✏️</button>
                 <button class="icon-btn action-search" data-act="search" title="Buscar imagen">🔎</button>
+                <button class="icon-btn action-specs" data-act="specs" title="Buscar especificaciones">📋</button>
                 <button class="icon-btn danger action-clearimg" data-act="clearimg" title="Borrar imágenes">🗑️ Img</button>
                 <button class="icon-btn danger action-del" data-act="del" title="Eliminar">🗑️</button>
               </div>
@@ -278,7 +279,92 @@
         } finally { btn.disabled=false; btn.textContent=prev; }
         return;
       }
+      if(btn.dataset.act==='specs'){
+        searchSpecs(slug);
+        return;
+      }
     });
+  }
+
+  // Búsqueda de especificaciones técnicas
+  async function searchSpecs(slug) {
+    try {
+      // Obtener producto primero para mostrar nombre
+      const prodRes = await fetch('/api/products/' + slug, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!prodRes.ok) {
+        alert('Error obteniendo producto');
+        return;
+      }
+      const product = await prodRes.json();
+      
+      // Confirmar búsqueda
+      const proceed = confirm(
+        '🔍 Buscar especificaciones técnicas para:\n\n' +
+        product.Name + '\n\n' +
+        'Esto buscará en internet las especificaciones técnicas del producto.\n' +
+        '¿Continuar?'
+      );
+      if (!proceed) return;
+      
+      // Buscar especificaciones
+      const res = await fetch('/api/products/' + encodeURIComponent(slug) + '/search-specs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        }
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || data.status !== 'ok') {
+        alert('❌ ' + (data.message || 'Error buscando especificaciones'));
+        return;
+      }
+      
+      const specs = data.specifications || {};
+      const specKeys = Object.keys(specs);
+      
+      if (specKeys.length === 0) {
+        alert('⚠️ No se encontraron especificaciones técnicas');
+        return;
+      }
+      
+      // Mostrar preview
+      let previewText = '📋 Especificaciones encontradas:\n\n';
+      specKeys.forEach(key => {
+        previewText += `• ${key}: ${specs[key]}\n`;
+      });
+      previewText += '\n¿Deseas actualizar el producto con estas especificaciones?';
+      
+      const confirmUpdate = confirm(previewText);
+      if (!confirmUpdate) return;
+      
+      // Actualizar producto con las especificaciones
+      const updateRes = await fetch('/api/products/' + encodeURIComponent(slug), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+          specifications: specs
+        })
+      });
+      
+      if (!updateRes.ok) {
+        alert('❌ Error actualizando especificaciones');
+        return;
+      }
+      
+      alert('✅ Especificaciones actualizadas exitosamente');
+      location.reload();
+      
+    } catch (err) {
+      alert('❌ Error: ' + err.message);
+    }
   }
 
   // Búsqueda de imagen MEJORADA
