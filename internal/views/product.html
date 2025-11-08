@@ -145,20 +145,68 @@
   </div>
   
   <div class="pd-tab-content" id="tab-specs" style="display:none">
-    <div class="pd-specs-grid">
-      <div class="pd-spec-item">
-        <div class="pd-spec-label">Marca/Categoría</div>
-        <div class="pd-spec-value">{{.Product.Category}}</div>
-      </div>
-      <div class="pd-spec-item">
-        <div class="pd-spec-label">Garantía</div>
-        <div class="pd-spec-value">Oficial</div>
-      </div>
-      <div class="pd-spec-item">
-        <div class="pd-spec-label">Incluye</div>
-        <div class="pd-spec-value">Cargador, cable, manual de usuario</div>
-      </div>
-    </div>
+    {{if .Product.Specifications}}
+      <ul class="pd-specs-list" style="list-style:none;padding:0;margin:0">
+        {{$specs := .Product.Specifications}}
+        {{if $specs.Almacenamiento}}
+          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Almacenamiento:</strong>
+            <span style="color:var(--color-text)">{{$specs.Almacenamiento}}</span>
+          </li>
+        {{end}}
+        {{if $specs.Procesador}}
+          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Procesador:</strong>
+            <span style="color:var(--color-text)">{{$specs.Procesador}}</span>
+          </li>
+        {{end}}
+        {{if $specs.RAM}}
+          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">RAM:</strong>
+            <span style="color:var(--color-text)">{{$specs.RAM}}</span>
+          </li>
+        {{end}}
+        {{if index $specs "Batería"}}
+          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Batería:</strong>
+            <span style="color:var(--color-text)">{{index $specs "Batería"}}</span>
+          </li>
+        {{end}}
+        {{if $specs.Pantalla}}
+          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Pantalla:</strong>
+            <span style="color:var(--color-text)">{{$specs.Pantalla}}</span>
+          </li>
+        {{end}}
+        {{if index $specs "Sistema Operativo"}}
+          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Sistema Operativo:</strong>
+            <span style="color:var(--color-text)">{{index $specs "Sistema Operativo"}}</span>
+          </li>
+        {{end}}
+        {{if $specs.Sensores}}
+          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Sensores:</strong>
+            <span style="color:var(--color-text)">{{$specs.Sensores}}</span>
+          </li>
+        {{end}}
+      </ul>
+    {{else}}
+      <ul class="pd-specs-list" style="list-style:none;padding:0;margin:0">
+        <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+          <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Marca/Categoría:</strong>
+          <span style="color:var(--color-text)">{{.Product.Category}}</span>
+        </li>
+        <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+          <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Garantía:</strong>
+          <span style="color:var(--color-text)">Oficial</span>
+        </li>
+        <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
+          <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Incluye:</strong>
+          <span style="color:var(--color-text)">Cargador, cable, manual de usuario</span>
+        </li>
+      </ul>
+    {{end}}
   </div>
   
   <div class="pd-tab-content" id="tab-info" style="display:none">

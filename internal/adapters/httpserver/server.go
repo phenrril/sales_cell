@@ -29,6 +29,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/phenrril/tienda3d/internal/adapters/payments/mercadopago"
+	"github.com/phenrril/tienda3d/internal/adapters/scraper"
 	"github.com/phenrril/tienda3d/internal/domain"
 	"github.com/phenrril/tienda3d/internal/usecase"
 	"github.com/xuri/excelize/v2"
@@ -45,6 +46,7 @@ type Server struct {
 	storage   domain.FileStorage
 	customers domain.CustomerRepo
 	oauthCfg  *oauth2.Config
+	scraper   *scraper.SpecsScraper
 
 	adminAllowed map[string]struct{}
 	adminSecret  []byte
@@ -56,7 +58,7 @@ type Server struct {
 var emailRe = regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`)
 
 func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, oauthCfg *oauth2.Config) http.Handler {
-	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, oauthCfg: oauthCfg, mux: http.NewServeMux()}
+	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), mux: http.NewServeMux()}
 
 	allowed := map[string]struct{}{}
 	if raw := os.Getenv("ADMIN_ALLOWED_EMAILS"); raw != "" {
@@ -418,6 +420,11 @@ func (s *Server) apiProductByID(w http.ResponseWriter, r *http.Request) {
 	if !s.requireAdmin(w, r) {
 		return
 	}
+	// Search specs: /api/products/{slug}/search-specs
+	if strings.HasSuffix(r.URL.Path, "/search-specs") {
+		s.apiProductSearchSpecs(w, r)
+		return
+	}
 	// Variantes nested: /api/products/{slug}/variants[/{id}]
 	if strings.Contains(r.URL.Path, "/variants") {
 		s.apiProductVariants(w, r)
@@ -460,9 +467,10 @@ func (s *Server) apiProductByID(w http.ResponseWriter, r *http.Request) {
 			WidthMM     *float64          `json:"width_mm"`
 			HeightMM    *float64          `json:"height_mm"`
 			DepthMM     *float64          `json:"depth_mm"`
-			Brand       *string           `json:"brand"`
-			Model       *string           `json:"model"`
-			Attributes  map[string]string `json:"attributes"`
+			Brand          *string           `json:"brand"`
+			Model          *string           `json:"model"`
+			Attributes     map[string]string `json:"attributes"`
+			Specifications map[string]string `json:"specifications"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "json", 400)
@@ -510,6 +518,19 @@ func (s *Server) apiProductByID(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.Attributes != nil {
 			p.Attributes = req.Attributes
+		}
+		if req.Specifications != nil {
+			// Inicializar si no existe
+			if p.Specifications == nil {
+				p.Specifications = make(map[string]string)
+			}
+			// Sobreescribir todos los campos que vienen en el request
+			for k, v := range req.Specifications {
+				if v != "" {
+					// Siempre sobreescribir si viene un valor no vacío
+					p.Specifications[k] = v
+				}
+			}
 		}
 		if err := s.products.Create(r.Context(), p); err != nil {
 			http.Error(w, "save", 500)
@@ -685,6 +706,47 @@ func (s *Server) apiProductDownloadImage(w http.ResponseWriter, r *http.Request)
 	}
 
 	writeJSON(w, 200, map[string]any{"status": "ok", "image_url": storedPath, "message": "Imagen agregada exitosamente"})
+}
+
+// /api/products/{slug}/search-specs - Buscar especificaciones técnicas en internet
+func (s *Server) apiProductSearchSpecs(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAdmin(w, r) {
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	
+	rest := strings.TrimPrefix(r.URL.Path, "/api/products/")
+	slugEnc := strings.TrimSuffix(rest, "/search-specs")
+	slugEnc = strings.TrimSuffix(slugEnc, "/")
+	slug, _ := url.PathUnescape(slugEnc)
+	
+	p, err := s.products.GetBySlug(r.Context(), slug)
+	if err != nil || p == nil {
+		writeJSON(w, 404, map[string]any{"status": "error", "message": "producto no encontrado"})
+		return
+	}
+	
+	// Buscar especificaciones
+	specs, err := s.scraper.SearchSpecs(r.Context(), p.Name, p.Brand, p.Model)
+	if err != nil {
+		log.Warn().Err(err).Str("product", p.Name).Msg("Error buscando especificaciones")
+		writeJSON(w, 500, map[string]any{"status": "error", "message": "error buscando especificaciones: " + err.Error()})
+		return
+	}
+	
+	if len(specs) == 0 {
+		writeJSON(w, 404, map[string]any{"status": "not_found", "message": "no se encontraron especificaciones"})
+		return
+	}
+	
+	writeJSON(w, 200, map[string]any{
+		"status":         "ok",
+		"specifications": specs,
+		"message":        fmt.Sprintf("Se encontraron %d especificaciones", len(specs)),
+	})
 }
 
 func sanitizeFileName(name string) string {

@@ -7,25 +7,26 @@ import (
 )
 
 type Product struct {
-	ID          uuid.UUID         `gorm:"type:uuid;primaryKey"`
-	Slug        string            `gorm:"uniqueIndex;size:140"`
-	Name        string            `gorm:"size:180"`
-	BasePrice   float64           `gorm:"type:decimal(12,2)"`
-	GrossPrice  float64           `gorm:"type:decimal(12,2);default:0"`
-	MarginPct   float64           `gorm:"type:decimal(6,2);default:0"`
-	Category    string            `gorm:"size:100"`
-	ShortDesc   string            `gorm:"type:text"`
-	ReadyToShip bool              `gorm:"default:true"`
-	WidthMM     float64           `gorm:"type:decimal(8,2);default:0"`
-	HeightMM    float64           `gorm:"type:decimal(8,2);default:0"`
-	DepthMM     float64           `gorm:"type:decimal(8,2);default:0"`
-	Brand       string            `gorm:"size:100"`
-	Model       string            `gorm:"size:140"`
-	Attributes  map[string]string `gorm:"type:jsonb;serializer:json"`
-	Images      []Image
-	Variants    []Variant
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID             uuid.UUID         `gorm:"type:uuid;primaryKey"`
+	Slug           string            `gorm:"uniqueIndex;size:140"`
+	Name           string            `gorm:"size:180"`
+	BasePrice      float64           `gorm:"type:decimal(12,2)"`
+	GrossPrice     float64           `gorm:"type:decimal(12,2);default:0"`
+	MarginPct      float64           `gorm:"type:decimal(6,2);default:0"`
+	Category       string            `gorm:"size:100"`
+	ShortDesc      string            `gorm:"type:text"`
+	ReadyToShip    bool              `gorm:"default:true"`
+	WidthMM        float64           `gorm:"type:decimal(8,2);default:0"`
+	HeightMM       float64           `gorm:"type:decimal(8,2);default:0"`
+	DepthMM        float64           `gorm:"type:decimal(8,2);default:0"`
+	Brand          string            `gorm:"size:100"`
+	Model          string            `gorm:"size:140"`
+	Attributes     map[string]string `gorm:"type:jsonb;serializer:json"`
+	Specifications map[string]string `gorm:"type:jsonb;serializer:json"`
+	Images         []Image
+	Variants       []Variant
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type Variant struct {
