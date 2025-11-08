@@ -110,7 +110,7 @@ func (g *Gateway) CreatePreference(ctx context.Context, o *domain.Order) (string
 		},
 		AutoReturn:          "approved",
 		NotificationURL:     baseURL + "/webhooks/mp",
-		StatementDescriptor: "CHROMA3D",
+		StatementDescriptor: "CELUSFERA",
 	}
 
 	type reqExt struct {

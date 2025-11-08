@@ -1,11 +1,11 @@
 {
-  "name": "Chroma3D - Impresión 3D Mayorista y Minorista",
-  "short_name": "Chroma3D",
-  "description": "Modelos impresos de alta calidad listos para enviar o fabricar bajo demanda.",
+  "name": "Celusfera - Celulares y Accesorios",
+  "short_name": "Celusfera",
+  "description": "Tienda online de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d1117",
-  "theme_color": "#6366f1",
+  "theme_color": "#0076C7",
   "icons": [
     {
       "src": "/public/assets/img/chroma-logo.png",

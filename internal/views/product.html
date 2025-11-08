@@ -1,16 +1,26 @@
 {{define "product.html"}}
 {{template "layout_start" .}}
+<nav class="breadcrumbs" aria-label="Breadcrumb" style="margin-bottom:16px">
+  <a href="/">Tienda</a>
+  <span style="margin:0 8px;color:var(--color-muted)">›</span>
+  <a href="/products?category={{.Product.Category}}">{{.Product.Category}}</a>
+  <span style="margin:0 8px;color:var(--color-muted)">›</span>
+  <span style="color:var(--color-text)">{{.Product.Name}}</span>
+</nav>
+
 <article class="product-detail">
   <div class="pd-media">
     {{if .Product.Images}}
       <div class="pd-carousel" id="pdCarousel" data-count="{{len .Product.Images}}">
         <div class="pd-slides">
           {{range $i,$img := .Product.Images}}
-            <img class="pd-slide {{if eq $i 0}}active{{end}}" src="{{img $img.URL}}" alt="{{if $img.Alt}}{{$img.Alt}}{{else}}{{$.Product.Name}}{{end}}" data-index="{{$i}}" loading="lazy" />
+            <img class="pd-slide {{if eq $i 0}}active{{end}}" src="{{img $img.URL}}" alt="{{if $img.Alt}}{{$img.Alt}}{{else}}{{$.Product.Name}}{{end}}" data-index="{{$i}}" loading="{{if eq $i 0}}eager{{else}}lazy{{end}}" />
           {{end}}
         </div>
+        <div class="pd-counter" id="pdCounter">{{if gt (len .Product.Images) 1}}1/{{len .Product.Images}} Fotos{{end}}</div>
         <button type="button" class="pd-nav prev" aria-label="Anterior">‹</button>
         <button type="button" class="pd-nav next" aria-label="Siguiente">›</button>
+        {{if gt (len .Product.Images) 1}}
         <div class="pd-thumbs">
           {{range $i,$img := .Product.Images}}
             <button type="button" class="pd-thumb {{if eq $i 0}}active{{end}}" data-index="{{$i}}">
@@ -18,76 +28,152 @@
             </button>
           {{end}}
         </div>
+        {{end}}
       </div>
     {{else}}
       <div class="pd-carousel empty" data-count="0"><div class="pd-slides placeholder">SIN IMAGEN</div></div>
     {{end}}
   </div>
+  
   <div class="pd-info">
+    <div class="pd-badges-top">
+      <span class="badge green">12x sin interés</span>
+      <span class="badge gray">Envío gratis</span>
+    </div>
+    
     <h1 class="pd-title">{{.Product.Name}}</h1>
-    <div class="pd-price">{{ars .Product.BasePrice}}</div>
-    <div class="badge-pill">Envíos a todo el país</div>
+    
+    <div class="pd-includes" style="margin:8px 0 16px;font-size:14px;color:var(--color-muted)">
+      <strong style="color:var(--color-text)">Incluye accesorios</strong>
+    </div>
+    
     {{if .Colors}}
-    <div class="pd-colors" style="margin:8px 0 14px">
-      <div style="font-weight:600;letter-spacing:.2px;margin-bottom:6px">Colores disponibles</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px">
+    <div class="pd-selector-group">
+      <label class="pd-selector-label">Color:</label>
+      <div class="pd-selector-options">
         {{range $i,$c := .Colors}}
-          <button type="button" class="color-chip {{if eq $i 0}}selected{{end}}" data-color="{{$c}}" title="{{$c}}" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid #223140;border-radius:999px;padding:6px 10px;font-size:.85rem;cursor:pointer">
-            <span aria-hidden="true" style="width:12px;height:12px;border-radius:50%;background: {{colorhex $c}};border:1px solid #223140"></span>
+          <button type="button" class="pd-selector-option {{if eq $i 0}}selected{{end}}" data-color="{{$c}}" title="{{$c}}">
+            <span class="pd-color-dot" style="background: {{colorhex $c}};"></span>
             <span>{{$c}}</span>
           </button>
         {{end}}
       </div>
     </div>
     {{end}}
-    <div class="pd-share" id="pdShareBar" aria-label="Compartir producto">
-      <div class="pd-share-label">Compartir</div>
-      <div class="pd-share-row">
-        <button type="button" class="share-btn sb-whatsapp" data-share="whatsapp" title="Compartir en WhatsApp" aria-label="Compartir en WhatsApp">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.04 2c-5.52 0-10 4.46-10 9.97 0 1.76.46 3.48 1.34 5.01L2 22l5.2-1.36a9.96 9.96 0 0 0 4.84 1.23h.01c5.52 0 10-4.46 10-9.97 0-2.67-1.05-5.18-2.95-7.06A9.93 9.93 0 0 0 12.04 2Zm5.83 14.28c-.25.7-1.46 1.33-2.02 1.39-.52.05-1.19.07-1.92-.12-.44-.11-1-.33-1.72-.65-3.03-1.31-5-4.37-5.15-4.58-.15-.21-1.23-1.63-1.23-3.11 0-1.48.78-2.2 1.05-2.5.27-.3.6-.37.8-.37.2 0 .4 0 .57.01.18.01.43-.07.68.52.25.59.85 2.05.92 2.2.07.15.12.33.02.54-.1.21-.15.33-.3.51-.15.18-.31.4-.44.54-.15.15-.3.32-.13.63.18.3.8 1.32 1.72 2.14 1.18 1.05 2.17 1.38 2.49 1.53.32.15.5.13.68-.07.18-.2.78-.9.98-1.21.2-.3.4-.25.68-.15.27.09 1.73.81 2.03.95.3.15.5.22.57.34.07.12.07.72-.18 1.42Z"/></svg>
-          <span>WhatsApp</span>
-        </button>
-        <button type="button" class="share-btn sb-instagram" data-share="instagram" title="Compartir en Instagram" aria-label="Compartir en Instagram">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5A4.25 4.25 0 0 0 7.75 20.5h8.5a4.25 4.25 0 0 0 4.25-4.25v-8.5A4.25 4.25 0 0 0 16.25 3.5h-8.5ZM12 7.25a4.75 4.75 0 1 1 0 9.5 4.75 4.75 0 0 1 0-9.5Zm0 1.5a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5Zm5.25-.88a1.12 1.12 0 1 1 0 2.25 1.12 1.12 0 0 1 0-2.25Z"/></svg>
-          <span>Instagram</span>
-        </button>
-        <button type="button" class="share-btn sb-x" data-share="x" title="Compartir en X" aria-label="Compartir en X">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 3h4.3L14 11.1 19.7 3H21l-6.2 8.9L21 21h-4.3L10 12.9 4.3 21H3l6.2-8.9L3 3Z"/></svg>
-          <span>X</span>
-        </button>
-        <button type="button" class="share-btn sb-threads" data-share="threads" title="Compartir en Threads" aria-label="Compartir en Threads">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.01 2c5.52 0 9.99 4.47 9.99 9.99S17.53 22 12.01 22 2.02 17.53 2.02 11.99 6.49 2 12.01 2Zm3.65 10.18c.02-.2.03-.41.03-.62 0-3.16-2.17-5.26-5.66-5.26-1.52 0-2.88.46-3.81 1.12l.86 1.55c.74-.5 1.76-.86 2.89-.86 2.06 0 3.37 1.15 3.56 3.03-1.02-.47-2.21-.63-3.28-.63-2.63 0-4.56 1.3-4.56 3.58 0 2.13 1.69 3.61 4.06 3.61 1.41 0 2.56-.48 3.32-1.24.51.83 1.38 1.32 2.49 1.32h1.47v-1.68h-1.2c-.63 0-1.02-.3-1.19-.91.5-.6.82-1.36.92-2.01ZM10.3 15.9c-1.34 0-2.24-.7-2.24-1.86 0-1.2 1.02-1.98 2.77-1.98.98 0 1.97.2 2.83.66-.25 1.86-1.56 3.18-3.36 3.18Z"/></svg>
-          <span>Threads</span>
-        </button>
-        <button type="button" class="share-btn sb-copy" data-share="copy" title="Copiar enlace" aria-label="Copiar enlace">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 3a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-2v-2h2a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v2H8V3Zm-5 5a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8Zm3-1a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H6Z"/></svg>
-          <span>Copiar</span>
-        </button>
-      </div>
-      <span class="share-msg" id="shareMsg" role="status" aria-live="polite" style="display:none"></span>
+    
+    <div class="pd-price-section">
+      {{$originalPrice := mul .Product.BasePrice 1.3}}
+      <div class="pd-price-old">{{ars $originalPrice}}</div>
+      <div class="pd-price-discount">31% OFF</div>
+      <div class="pd-price-current">{{ars .Product.BasePrice}}</div>
+      <div class="pd-price-installment">12x ${{printf "%.0f" (div .Product.BasePrice 12.0)}} sin interés</div>
     </div>
     
-    <div class="pd-cat"><strong>Marca/Categoría:</strong> {{.Product.Category}}</div>
-    <div class="pd-note" role="note">
-      <strong>Incluye:</strong> garantía oficial y factura. Envío a todo el país o retiro en local. Para más info, escribinos por <a href="https://wa.me/5493416219815" target="_blank" rel="noopener">WhatsApp</a>.
+    <div class="pd-promotions" style="margin:20px 0;padding:16px;background:#F5F5F5;border-radius:8px">
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px">Promociones Financieras</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600">12 cuotas</span>
+          <span style="color:var(--color-muted)">sin interés</span>
+        </div>
+      </div>
     </div>
-    <form method="post" action="/cart" class="pd-form">
+    
+    <div class="pd-shipping" style="margin:20px 0;padding:16px;background:#F5F5F5;border-radius:8px">
+      <h3 style="font-size:16px;font-weight:600;margin:0 0 12px">Calculá el costo de envío</h3>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span>📍</span>
+        <div>
+          <div style="font-weight:500">Envío a <strong>todo el país</strong></div>
+          <div style="color:var(--color-success);font-weight:600;font-size:14px">Gratis</div>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div style="font-weight:600;margin-bottom:8px;font-size:14px">Tiempos de entrega</div>
+        <div style="font-size:13px;color:var(--color-muted);line-height:1.6">
+          <div>CABA: Hasta 48 h hábiles</div>
+          <div>GBA: de 2 a 3 días hábiles</div>
+          <div>Resto del país: hasta 4 días hábiles</div>
+        </div>
+      </div>
+    </div>
+    
+    <form method="post" action="/cart" class="pd-form" style="margin-top:24px">
       <input type="hidden" name="slug" value="{{.Product.Slug}}" />
       <input type="hidden" name="color" id="colorInput" value="{{.DefaultColor}}" />
-      <div class="pd-actions">
-        <button class="btn-primary" type="submit">Agregar al carrito</button>
-        <a href="/cart" class="btn-secondary">Ver carrito</a>
-        <span id="addedMsg" class="added-msg" {{if ne .Added 1}}hidden{{end}}>{{if eq .Added 1}}Agregado!{{end}}</span>
+      <div class="pd-actions" style="display:flex;gap:12px">
+        <button class="btn-secondary" type="button" onclick="this.form.submit()" style="flex:1;padding:14px;font-size:15px;font-weight:500">Agregar al carrito</button>
+        <button class="btn-primary" type="submit" style="flex:1;padding:14px;font-size:15px;font-weight:500">Comprar</button>
       </div>
+      <span id="addedMsg" class="added-msg" {{if ne .Added 1}}hidden{{end}} style="display:block;margin-top:12px;color:var(--color-success);font-weight:600;text-align:center">{{if eq .Added 1}}✓ Agregado al carrito{{end}}</span>
     </form>
-    
   </div>
 </article>
+
+<section class="pd-features" style="margin-top:48px">
+  <h2 style="font-size:28px;font-weight:700;margin:0 0 24px">Características de {{.Product.Name}}</h2>
+  
+  <div class="pd-tabs" style="display:flex;gap:0;border-bottom:2px solid var(--color-border);margin-bottom:24px">
+    <button class="pd-tab active" data-tab="highlights">Destacadas</button>
+    <button class="pd-tab" data-tab="specs">Especificaciones</button>
+    <button class="pd-tab" data-tab="info">Más información</button>
+  </div>
+  
+  <div class="pd-tab-content" id="tab-highlights">
+    <div class="pd-features-grid">
+      <div class="pd-feature-card">
+        <div class="pd-feature-icon">📱</div>
+        <div class="pd-feature-title">Pantalla</div>
+        <div class="pd-feature-desc">Pantalla de alta calidad para una experiencia visual superior</div>
+      </div>
+      <div class="pd-feature-card">
+        <div class="pd-feature-icon">📷</div>
+        <div class="pd-feature-title">Cámara</div>
+        <div class="pd-feature-desc">Sistema de cámaras avanzado para capturar tus mejores momentos</div>
+      </div>
+      <div class="pd-feature-card">
+        <div class="pd-feature-icon">⚡</div>
+        <div class="pd-feature-title">Rendimiento</div>
+        <div class="pd-feature-desc">Procesador potente para un rendimiento fluido y rápido</div>
+      </div>
+      <div class="pd-feature-card">
+        <div class="pd-feature-icon">🔋</div>
+        <div class="pd-feature-title">Batería</div>
+        <div class="pd-feature-desc">Batería de larga duración para todo el día</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="pd-tab-content" id="tab-specs" style="display:none">
+    <div class="pd-specs-grid">
+      <div class="pd-spec-item">
+        <div class="pd-spec-label">Marca/Categoría</div>
+        <div class="pd-spec-value">{{.Product.Category}}</div>
+      </div>
+      <div class="pd-spec-item">
+        <div class="pd-spec-label">Garantía</div>
+        <div class="pd-spec-value">Oficial</div>
+      </div>
+      <div class="pd-spec-item">
+        <div class="pd-spec-label">Incluye</div>
+        <div class="pd-spec-value">Cargador, cable, manual de usuario</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="pd-tab-content" id="tab-info" style="display:none">
+    <div class="pd-info-content" style="line-height:1.6;color:var(--color-text)">
+      <p>Garantía oficial y factura. Envío a todo el país o retiro en local.</p>
+      <p style="margin-top:12px">Para más información, escribinos por <a href="https://wa.me/5493416219815" target="_blank" rel="noopener" style="color:var(--color-brand);text-decoration:underline">WhatsApp</a>.</p>
+    </div>
+  </div>
+</section>
+
 <script>
 (function(){
   const inp=document.getElementById('colorInput');
   const defaultColor=inp?inp.value:'';
-  const chips=[...document.querySelectorAll('.color-chip')];
+  const chips=[...document.querySelectorAll('.pd-selector-option')];
   if(chips.length && inp){
     chips.forEach(btn=>btn.addEventListener('click',()=>{
       chips.forEach(b=>b.classList.remove('selected'));
@@ -96,109 +182,195 @@
       inp.value=col||defaultColor;
     }));
   }
+  
+  // Tabs
+  const tabs=document.querySelectorAll('.pd-tab');
+  const contents=document.querySelectorAll('.pd-tab-content');
+  tabs.forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      const target=tab.getAttribute('data-tab');
+      tabs.forEach(t=>t.classList.remove('active'));
+      contents.forEach(c=>c.style.display='none');
+      tab.classList.add('active');
+      const content=document.getElementById('tab-'+target);
+      if(content) content.style.display='block';
+    });
+  });
+  
+  // Carousel
   const root=document.getElementById('pdCarousel');
   if(root){
     const slides=[...root.querySelectorAll('.pd-slide')];
     const thumbs=[...root.querySelectorAll('.pd-thumb')];
-    const total=slides.length; if(total>0){
-      let idx=0; let auto=null; const AUTOPLAY=5000;
+    const counter=document.getElementById('pdCounter');
+    const total=slides.length;
+    if(total>0){
+      let idx=0;
+      let auto=null;
+      const AUTOPLAY=5000;
       const prevBtn=root.querySelector('.pd-nav.prev');
       const nextBtn=root.querySelector('.pd-nav.next');
-      if(total===1){ prevBtn.style.display='none'; nextBtn.style.display='none'; const tb=root.querySelector('.pd-thumbs'); if(tb) tb.style.display='none'; return; }
-      function show(n){slides[idx].classList.remove('active');thumbs[idx].classList.remove('active');idx=(n+total)%total;slides[idx].classList.add('active');thumbs[idx].classList.add('active');}
-      function next(){show(idx+1);} function prev(){show(idx-1);} function start(){auto=setInterval(next,AUTOPLAY);} function restart(){clearInterval(auto);start();}
-      // Delegación de eventos para robustez
-      root.addEventListener('click', (e)=>{
+      if(total===1){
+        if(prevBtn) prevBtn.style.display='none';
+        if(nextBtn) nextBtn.style.display='none';
+        const tb=root.querySelector('.pd-thumbs');
+        if(tb) tb.style.display='none';
+        if(counter) counter.style.display='none';
+        return;
+      }
+      function show(n){
+        slides[idx].classList.remove('active');
+        if(thumbs[idx]) thumbs[idx].classList.remove('active');
+        idx=(n+total)%total;
+        slides[idx].classList.add('active');
+        if(thumbs[idx]) thumbs[idx].classList.add('active');
+        if(counter) counter.textContent=(idx+1)+'/'+total+' Fotos';
+      }
+      function next(){show(idx+1);}
+      function prev(){show(idx-1);}
+      function start(){auto=setInterval(next,AUTOPLAY);}
+      function restart(){clearInterval(auto);start();}
+      root.addEventListener('click',(e)=>{
         const t=e.target.closest('.pd-thumb');
-        if(t){ const i=parseInt(t.getAttribute('data-index')||'-1'); if(!isNaN(i) && i>=0 && i<total){ show(i); restart(); } return; }
-        if(e.target.closest('.pd-nav.prev')){ prev(); restart(); return; }
-        if(e.target.closest('.pd-nav.next')){ next(); restart(); return; }
-      });
-      // Swipe support for mobile
-      let startX = 0;
-      let isSwiping = false;
-      root.addEventListener('touchstart', e => {
-        startX = e.touches[0].clientX;
-        isSwiping = true;
-      }, { passive: true });
-      root.addEventListener('touchmove', e => {
-        if (!isSwiping) return;
-        const currentX = e.touches[0].clientX;
-        const deltaX = currentX - startX;
-        if (Math.abs(deltaX) > 10) {
-          e.preventDefault(); // Prevent scroll if swiping horizontally
+        if(t){
+          const i=parseInt(t.getAttribute('data-index')||'-1');
+          if(!isNaN(i)&&i>=0&&i<total){
+            show(i);
+            restart();
+          }
+          return;
         }
-      }, { passive: false });
-      root.addEventListener('touchend', e => {
-        if (!isSwiping) return;
-        isSwiping = false;
-        const endX = e.changedTouches[0].clientX;
-        const deltaX = endX - startX;
-        if (Math.abs(deltaX) > 50) {
-          if (deltaX > 0) {
+        if(e.target.closest('.pd-nav.prev')){
+          prev();
+          restart();
+          return;
+        }
+        if(e.target.closest('.pd-nav.next')){
+          next();
+          restart();
+          return;
+        }
+      });
+      let startX=0;
+      let isSwiping=false;
+      root.addEventListener('touchstart',e=>{
+        startX=e.touches[0].clientX;
+        isSwiping=true;
+      },{passive:true});
+      root.addEventListener('touchmove',e=>{
+        if(!isSwiping)return;
+        const currentX=e.touches[0].clientX;
+        const deltaX=currentX-startX;
+        if(Math.abs(deltaX)>10){
+          e.preventDefault();
+        }
+      },{passive:false});
+      root.addEventListener('touchend',e=>{
+        if(!isSwiping)return;
+        isSwiping=false;
+        const endX=e.changedTouches[0].clientX;
+        const deltaX=endX-startX;
+        if(Math.abs(deltaX)>50){
+          if(deltaX>0){
             prev();
-          } else {
+          }else{
             next();
           }
           restart();
         }
-      }, { passive: true });
-
-      let sx=null; root.addEventListener('pointerdown',e=>{sx=e.clientX;}); root.addEventListener('pointerup',e=>{ if(sx==null) return; const dx=e.clientX-sx; if(Math.abs(dx)>40){ dx<0?next():prev(); restart(); } sx=null; });
-      root.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'){next();restart();} else if(e.key==='ArrowLeft'){prev();restart();} });
-      root.tabIndex=0; start();
+      },{passive:true});
+      let sx=null;
+      root.addEventListener('pointerdown',e=>{sx=e.clientX;});
+      root.addEventListener('pointerup',e=>{
+        if(sx==null)return;
+        const dx=e.clientX-sx;
+        if(Math.abs(dx)>40){
+          dx<0?next():prev();
+          restart();
+        }
+        sx=null;
+      });
+      root.addEventListener('keydown',e=>{
+        if(e.key==='ArrowRight'){
+          next();
+          restart();
+        }else if(e.key==='ArrowLeft'){
+          prev();
+          restart();
+        }
+      });
+      root.tabIndex=0;
+      start();
     }
   }
-})();
-// Share buttons logic movido a /public/assets/app.js por CSP
-// Nuevo: interceptar submit para añadir al carrito sin recargar
-(function(){
-  const form=document.querySelector('.pd-form'); if(!form) return;
-  const addedMsg=document.getElementById('addedMsg');
-  form.addEventListener('submit',function(e){
-    e.preventDefault();
-    const submitBtn=form.querySelector('button[type=submit]');
-    if(submitBtn) submitBtn.disabled=true;
-    const fd=new FormData(form);
-    // Forzar el valor de color a lo actualmente seleccionado
-    try{
-      const cur=(inp && typeof inp.value==='string')?inp.value.trim():'';
-      const finalCol=cur||defaultColor||'';
-      if(fd.has('color')) fd.set('color', finalCol); else fd.append('color', finalCol);
-    }catch{}
-    const usp=new URLSearchParams();
-    fd.forEach((v,k)=>{ if(typeof v==='string') usp.append(k,v); });
-    fetch('/cart',{
-      method:'POST',
-      headers:{
-        'Accept':'application/json',
-        'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
-        'X-Requested-With':'fetch'
-      },
-      body:usp.toString(),
-      redirect:'manual'
-    }).then(async res=>{
-      if(res.ok){
-        let itemsCount=null; try{ const j=await res.json(); itemsCount=j.items; }catch{}
+  
+  // Form submit
+  const form=document.querySelector('.pd-form');
+  if(form){
+    const addedMsg=document.getElementById('addedMsg');
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      const submitBtn=form.querySelector('button[type=submit]');
+      if(submitBtn) submitBtn.disabled=true;
+      const fd=new FormData(form);
+      try{
+        const cur=(inp&&typeof inp.value==='string')?inp.value.trim():'';
+        const finalCol=cur||defaultColor||'';
+        if(fd.has('color')) fd.set('color',finalCol);
+        else fd.append('color',finalCol);
+      }catch{}
+      const usp=new URLSearchParams();
+      fd.forEach((v,k)=>{if(typeof v==='string') usp.append(k,v);});
+      fetch('/cart',{
+        method:'POST',
+        headers:{
+          'Accept':'application/json',
+          'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
+          'X-Requested-With':'fetch'
+        },
+        body:usp.toString(),
+        redirect:'manual'
+      }).then(async res=>{
+        if(res.ok){
+          let itemsCount=null;
+          try{
+            const j=await res.json();
+            itemsCount=j.items;
+          }catch{}
+          if(addedMsg){
+            addedMsg.hidden=false;
+            addedMsg.textContent='✓ Agregado'+(itemsCount!=null?' (total '+itemsCount+')':'')+'!';
+            addedMsg.style.display='block';
+            setTimeout(()=>{
+              addedMsg.style.opacity='0';
+              setTimeout(()=>{addedMsg.hidden=true;addedMsg.style.opacity='1';},300);
+            },2500);
+          }
+        }else if(res.status===302){
+          if(addedMsg){
+            addedMsg.hidden=false;
+            addedMsg.textContent='✓ Agregado!';
+            addedMsg.style.display='block';
+            setTimeout(()=>{
+              addedMsg.style.opacity='0';
+              setTimeout(()=>{addedMsg.hidden=true;addedMsg.style.opacity='1';},300);
+            },2500);
+          }
+        }else{
+          throw new Error('status '+res.status);
+        }
+      }).catch(()=>{
         if(addedMsg){
           addedMsg.hidden=false;
-            addedMsg.textContent='Agregado'+(itemsCount!=null?` (total ${itemsCount})`:'')+'!';
-          addedMsg.classList.add('show');
-          setTimeout(()=>{addedMsg.classList.remove('show');},2500);
+          addedMsg.textContent='✗ Error';
+          addedMsg.style.color='var(--color-danger)';
+          addedMsg.style.display='block';
         }
-      }else if(res.status===302){
-        if(addedMsg){ addedMsg.hidden=false; addedMsg.textContent='Agregado!'; addedMsg.classList.add('show'); setTimeout(()=>addedMsg.classList.remove('show'),2500); }
-      }else{
-        throw new Error('status '+res.status);
-      }
-    }).catch(()=>{
-      if(addedMsg){
-        addedMsg.hidden=false;
-        addedMsg.textContent='Error';
-        addedMsg.classList.add('error','show');
-      }
-    }).finally(()=>{ if(submitBtn) submitBtn.disabled=false; });
-  });
+      }).finally(()=>{
+        if(submitBtn) submitBtn.disabled=false;
+      });
+    });
+  }
 })();
 </script>
 {{template "layout_end" .}}

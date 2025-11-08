@@ -278,7 +278,7 @@ func (s *Server) canonicalBase(r *http.Request) string {
 		}
 	}
 	if host == "" {
-		host = "www.chroma3d.com.ar"
+		host = "www.celusfera.com.ar"
 	}
 	return scheme + "://" + host
 }
@@ -332,7 +332,7 @@ func (s *Server) handleRobots(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(data)
 		return
 	}
-	_, _ = w.Write([]byte("User-agent: *\nDisallow:\nSitemap: https://www.chroma3d.com.ar/sitemap.xml\n"))
+	_, _ = w.Write([]byte("User-agent: *\nDisallow:\nSitemap: https://www.celusfera.com.ar/sitemap.xml\n"))
 }
 
 func (s *Server) handleQuoteView(w http.ResponseWriter, r *http.Request) {
@@ -2041,7 +2041,7 @@ func sendOrderEmail(o *domain.Order, success bool) error {
 	pass := os.Getenv("SMTP_PASS")
 	to := os.Getenv("ORDER_NOTIFY_EMAIL")
 	if to == "" {
-		to = "chroma3dimpresiones@gmail.com"
+		to = "ventas@celusfera.com.ar"
 	}
 	if host == "" || port == "" || user == "" || pass == "" {
 		log.Warn().Msg("SMTP no configurado, se omite envío de email")

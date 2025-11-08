@@ -7,13 +7,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="/public/assets/img/chroma-logo.png" />
 <link rel="apple-touch-icon" href="/public/assets/img/chroma-logo.png" />
-<link rel="stylesheet" href="/public/assets/styles.css?v=dark6" />
+<link rel="stylesheet" href="/public/assets/styles.css?v=personal9" />
 <link rel="preload" as="image" href="/public/assets/img/img1.webp">
 <link rel="manifest" href="/public/manifest.json">
-<meta name="theme-color" content="#7C3AED">
+<meta name="theme-color" content="#0076C7">
 <meta name="description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país y hasta 12x sin interés.{{end}}">
 <link rel="canonical" href="{{.CanonicalURL}}">
 <meta property="og:type" content="website">
@@ -28,6 +28,7 @@
 {{with .SchemaJSON}}<script type="application/ld+json">{{.}}</script>{{end}}
 <!-- JS unificado de UI -->
 <script type="module" src="/public/assets/app.js?v=3"></script>
+<script>document.addEventListener('DOMContentLoaded',function(){document.body.classList.remove('dark');try{localStorage.removeItem('theme');}catch(e){}});</script>
 </head>
 <body class="site">
 <header class="topbar">
@@ -43,7 +44,6 @@
       <input type="search" name="q" placeholder="Buscar celulares o accesorios..." aria-label="Buscar" value="" />
       <button type="submit" class="search-btn">🔍</button>
     </form>
-    <button class="mode-toggle" aria-label="Cambiar tema" aria-pressed="false" title="Tema oscuro">🌙</button>
     <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
     <nav class="mainnav">
       <a href="/products?category=celulares">Celulares</a>
@@ -64,15 +64,67 @@
       <span>Garantía oficial</span>
     </div>
   </div>
-  <div class="subnav">
-    <div class="container subnav-row">
-      <a href="/products" class="subnav-link">Celulares</a>
-      <a href="/products?q=Samsung" class="subnav-link">Samsung</a>
-      <a href="/products?q=Apple" class="subnav-link">Apple</a>
-      <a href="/products?q=moto" class="subnav-link">Motorola</a>
-      <a href="/products?q=Xiaomi" class="subnav-link">Xiaomi</a>
-      <a href="/products?sort=newest" class="subnav-link">Novedades</a>
-      <a href="/products?sort=price_asc" class="subnav-link">Ofertas</a>
+  <div class="subnav brands-section">
+    <div class="container">
+      <div class="brands-grid">
+        <a href="/products?q=Samsung" class="brand-circle" title="Samsung">
+          <div class="brand-icon">
+            <img src="/public/assets/logos/samsung.svg" alt="Samsung" />
+          </div>
+          <span class="brand-name">Samsung</span>
+        </a>
+        <a href="/products?q=Apple" class="brand-circle" title="Apple">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.38 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="#0076C7"/>
+            </svg>
+          </div>
+          <span class="brand-name">Apple</span>
+        </a>
+        <a href="/products?q=moto" class="brand-circle" title="Motorola">
+          <div class="brand-icon">
+            <img src="/public/assets/logos/motorola.png" alt="Motorola" />
+          </div>
+          <span class="brand-name">Motorola</span>
+        </a>
+        <a href="/products?q=Xiaomi" class="brand-circle" title="Xiaomi">
+          <div class="brand-icon">
+            <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" />
+          </div>
+          <span class="brand-name">Xiaomi</span>
+        </a>
+        <a href="/products?q=TCL" class="brand-circle" title="TCL">
+          <div class="brand-icon">
+            <img src="/public/assets/logos/tcl.svg" alt="TCL" />
+          </div>
+          <span class="brand-name">TCL</span>
+        </a>
+        <a href="/products?category=celulares" class="brand-circle" title="Todos los celulares">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z" fill="#0076C7"/>
+            </svg>
+          </div>
+          <span class="brand-name">Celulares</span>
+        </a>
+        <a href="/products?sort=newest" class="brand-circle" title="Novedades">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#0076C7"/>
+            </svg>
+          </div>
+          <span class="brand-name">Novedades</span>
+        </a>
+        <a href="/products?sort=price_asc" class="brand-circle" title="Ofertas">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 13l3 3 7-7" stroke="#0076C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="12" cy="12" r="10" stroke="#0076C7" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <span class="brand-name">Ofertas</span>
+        </a>
+      </div>
     </div>
   </div>
 </header>

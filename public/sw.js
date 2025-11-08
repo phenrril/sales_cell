@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chroma3d-v1';
+const CACHE_NAME = 'celusfera-v1';
 const urlsToCache = [
   '/',
   '/public/assets/styles.css',

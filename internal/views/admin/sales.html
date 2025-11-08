@@ -54,21 +54,21 @@
   </div>
 </div>
 <style>
-.kpi{background:#13202f;border:1px solid #223140;padding:12px 14px;border-radius:10px;display:flex;flex-direction:column;gap:4px}
-.kpi h3{margin:0;font-size:11px;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
-.kpi strong{font-size:18px;font-weight:600;color:#fff}
+.kpi{background:var(--color-surface);border:1px solid var(--color-border);padding:12px 14px;border-radius:10px;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 4px rgba(0,0,0,.08)}
+.kpi h3{margin:0;font-size:11px;letter-spacing:.5px;color:var(--color-muted);text-transform:uppercase}
+.kpi strong{font-size:18px;font-weight:600;color:var(--color-text)}
 /* Aumentado font-size de .mini */
 .admin-card table.mini{width:100%;font-size:.85rem;border-collapse:collapse}
-.admin-card table.mini td{padding:4px 6px;border-bottom:1px solid #1c2b3a}
+.admin-card table.mini td{padding:4px 6px;border-bottom:1px solid var(--color-border);color:var(--color-text)}
 /* Date range custom styling */
-.date-range{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-top:16px;background:linear-gradient(140deg,#14212c,#111a23 55%);border:1px solid #1f2c39;padding:14px 18px 18px;border-radius:22px;box-shadow:0 4px 16px -6px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.03)}
+.date-range{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-top:16px;background:var(--color-surface);border:1px solid var(--color-border);padding:14px 18px 18px;border-radius:22px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .date-range .dr-field{display:flex;flex-direction:column;gap:6px;min-width:170px}
-.date-range .dr-label{font-size:11px;font-weight:600;letter-spacing:.6px;color:var(--muted);text-transform:uppercase}
-.date-range .date-input{background:#0f1924;border:1px solid #223140;color:#fff;font:inherit;font-size:14px;padding:11px 14px 11px 42px;border-radius:16px;min-height:46px;line-height:1.3;position:relative;transition:border-color .18s,background .18s,box-shadow .18s,filter .18s;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
-.date-range .date-input:hover{background:#132232}
-.date-range .date-input:focus{outline:none;border-color:var(--accent);background:#162a3b;box-shadow:0 0 0 2px rgba(99,102,241,.32),0 4px 14px -6px rgba(0,0,0,.6)}
+.date-range .dr-label{font-size:11px;font-weight:600;letter-spacing:.6px;color:var(--color-muted);text-transform:uppercase}
+.date-range .date-input{background:#FFFFFF;border:1px solid var(--color-border);color:var(--color-text);font:inherit;font-size:14px;padding:11px 14px 11px 42px;border-radius:16px;min-height:46px;line-height:1.3;position:relative;transition:border-color .18s,background .18s,box-shadow .18s,filter .18s}
+.date-range .date-input:hover{background:#FAFAFA}
+.date-range .date-input:focus{outline:none;border-color:var(--color-brand);background:#FFFFFF;box-shadow:0 0 0 2px rgba(0,118,199,.2)}
 /* Calendar icon (inline SVG) */
-.date-range .date-input{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' stroke='%2394a3b8' fill='none' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5.2' width='14' height='12.5' rx='2' ry='2' stroke='%2394a3b8'/><line x1='3' y1='9' x2='17' y2='9' stroke='%2394a3b8'/><line x1='7' y1='3.2' x2='7' y2='6' stroke='%2394a3b8'/><line x1='13' y1='3.2' x2='13' y2='6' stroke='%2394a3b8'/></svg>");background-repeat:no-repeat;background-position:14px 50%;background-size:20px auto}
+.date-range .date-input{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' stroke='%23757575' fill='none' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5.2' width='14' height='12.5' rx='2' ry='2' stroke='%23757575'/><line x1='3' y1='9' x2='17' y2='9' stroke='%23757575'/><line x1='7' y1='3.2' x2='7' y2='6' stroke='%23757575'/><line x1='13' y1='3.2' x2='13' y2='6' stroke='%23757575'/></svg>");background-repeat:no-repeat;background-position:14px 50%;background-size:20px auto}
 /* Hide native picker icon (webkit) */
 .date-range .date-input::-webkit-calendar-picker-indicator{opacity:0;width:100%;height:100%;cursor:pointer}
 .date-range .dr-actions{display:flex;gap:10px;align-items:center;padding-top:4px}
