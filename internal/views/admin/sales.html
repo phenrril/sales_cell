@@ -1,0 +1,81 @@
+{{define "admin_sales.html"}}
+{{template "layout_start" .}}
+<h1>Reporte de Ventas</h1>
+<nav class="admin-nav"><a href="/admin/products">Productos</a> | <a href="/admin/orders">Órdenes</a> | <a href="/admin/sales" class="active">Ventas</a> | <a href="/admin/logout">Salir</a></nav>
+<form method="GET" class="date-range">
+  <div class="dr-field">
+    <span class="dr-label">Desde</span>
+    <input class="date-input" type="date" name="from" value="{{.From}}" />
+  </div>
+  <div class="dr-field">
+    <span class="dr-label">Hasta</span>
+    <input class="date-input" type="date" name="to" value="{{.To}}" />
+  </div>
+  <div class="dr-actions">
+    <button class="btn-primary" type="submit">Filtrar</button>
+    <a class="btn-secondary" href="/admin/sales?from={{.From}}&to={{.To}}&format=csv">CSV</a>
+  </div>
+</form>
+<section class="grid" style="margin-top:1.2rem;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">
+  <div class="kpi"><h3>Órdenes</h3><strong>{{.OrdersCount}}</strong></div>
+  <div class="kpi"><h3>Ingresos Totales</h3><strong>${{printf "%.2f" .TotalRevenue}}</strong></div>
+  <div class="kpi"><h3>Ingresos Items</h3><strong>${{printf "%.2f" .ItemsRevenue}}</strong></div>
+  <div class="kpi"><h3>Ingresos Envíos</h3><strong>${{printf "%.2f" .ShippingRevenue}}</strong></div>
+  <div class="kpi"><h3>Ticket Prom.</h3><strong>${{printf "%.2f" .AvgOrderValue}}</strong></div>
+</section>
+<div class="grid" style="margin-top:1.5rem;grid-template-columns:340px 1fr;gap:1.5rem;align-items:start">
+  <div class="admin-card" style="padding:16px">
+    <h2 style="margin:0 0 8px;font-size:16px">Estados</h2>
+    <table class="mini">
+      <tbody>
+        {{range $k,$v := .StatusCounts}}<tr><td>{{$k}}</td><td style="text-align:right">{{$v}}</td></tr>{{end}}
+      </tbody>
+    </table>
+    <h2 style="margin:16px 0 8px;font-size:16px">Pagos MP</h2>
+    <table class="mini"><tbody>{{range $k,$v := .MPStatusCounts}}<tr><td>{{$k}}</td><td style="text-align:right">{{$v}}</td></tr>{{end}}</tbody></table>
+    <h2 style="margin:16px 0 8px;font-size:16px">Métodos envío</h2>
+    <table class="mini"><tbody>{{range $k,$v := .ShippingMethodCounts}}<tr><td>{{$k}}</td><td style="text-align:right">{{$v}}</td></tr>{{end}}</tbody></table>
+    <h2 style="margin:16px 0 8px;font-size:16px">Provincias</h2>
+    <div style="max-height:180px;overflow:auto">
+      <table class="mini"><tbody>{{range $k,$v := .ProvinceCounts}}<tr><td>{{$k}}</td><td style="text-align:right">{{$v}}</td></tr>{{end}}</tbody></table>
+    </div>
+  </div>
+  <div class="admin-card" style="padding:16px">
+    <h2 style="margin:0 0 12px;font-size:16px">Top Productos</h2>
+    <table class="table" style="font-size:.8rem">
+      <thead><tr><th>Producto</th><th>Cant.</th><th>Ingresos</th></tr></thead>
+      <tbody>{{range .TopProducts}}<tr><td>{{.Title}}</td><td>{{.Qty}}</td><td>${{printf "%.2f" .Revenue}}</td></tr>{{end}}</tbody>
+    </table>
+    <h2 style="margin:20px 0 12px;font-size:16px">Serie Diario</h2>
+    <table class="table" style="font-size:.75rem">
+      <thead><tr><th>Día</th><th>Órdenes</th><th>Ingresos</th></tr></thead>
+      <tbody>{{range .DailySeries}}<tr><td>{{.Day}}</td><td>{{.Orders}}</td><td>${{printf "%.2f" .Revenue}}</td></tr>{{end}}</tbody>
+    </table>
+  </div>
+</div>
+<style>
+.kpi{background:#13202f;border:1px solid #223140;padding:12px 14px;border-radius:10px;display:flex;flex-direction:column;gap:4px}
+.kpi h3{margin:0;font-size:11px;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
+.kpi strong{font-size:18px;font-weight:600;color:#fff}
+/* Aumentado font-size de .mini */
+.admin-card table.mini{width:100%;font-size:.85rem;border-collapse:collapse}
+.admin-card table.mini td{padding:4px 6px;border-bottom:1px solid #1c2b3a}
+/* Date range custom styling */
+.date-range{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-top:16px;background:linear-gradient(140deg,#14212c,#111a23 55%);border:1px solid #1f2c39;padding:14px 18px 18px;border-radius:22px;box-shadow:0 4px 16px -6px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.03)}
+.date-range .dr-field{display:flex;flex-direction:column;gap:6px;min-width:170px}
+.date-range .dr-label{font-size:11px;font-weight:600;letter-spacing:.6px;color:var(--muted);text-transform:uppercase}
+.date-range .date-input{background:#0f1924;border:1px solid #223140;color:#fff;font:inherit;font-size:14px;padding:11px 14px 11px 42px;border-radius:16px;min-height:46px;line-height:1.3;position:relative;transition:border-color .18s,background .18s,box-shadow .18s,filter .18s;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
+.date-range .date-input:hover{background:#132232}
+.date-range .date-input:focus{outline:none;border-color:var(--accent);background:#162a3b;box-shadow:0 0 0 2px rgba(99,102,241,.32),0 4px 14px -6px rgba(0,0,0,.6)}
+/* Calendar icon (inline SVG) */
+.date-range .date-input{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' stroke='%2394a3b8' fill='none' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='5.2' width='14' height='12.5' rx='2' ry='2' stroke='%2394a3b8'/><line x1='3' y1='9' x2='17' y2='9' stroke='%2394a3b8'/><line x1='7' y1='3.2' x2='7' y2='6' stroke='%2394a3b8'/><line x1='13' y1='3.2' x2='13' y2='6' stroke='%2394a3b8'/></svg>");background-repeat:no-repeat;background-position:14px 50%;background-size:20px auto}
+/* Hide native picker icon (webkit) */
+.date-range .date-input::-webkit-calendar-picker-indicator{opacity:0;width:100%;height:100%;cursor:pointer}
+.date-range .dr-actions{display:flex;gap:10px;align-items:center;padding-top:4px}
+@media (max-width:560px){
+  .date-range{padding:12px 14px 16px;border-radius:18px}
+  .date-range .dr-field{min-width:130px}
+}
+</style>
+{{template "layout_end" .}}
+{{end}}

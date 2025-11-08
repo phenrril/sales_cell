@@ -1,0 +1,105 @@
+{{define "products.html"}}
+{{template "layout_start" .}}
+<h1 class="section-title">Celulares y accesorios</h1>
+<p class="result-count">{{len .Products}} resultados{{if .Query}} para “{{.Query}}”{{end}}</p>
+<h2 class="sr-only">Filtros</h2>
+<div class="mobile-actions">
+  <button class="btn-filter" aria-expanded="false" aria-controls="filterDrawer">Filtrar</button>
+  <button class="btn-sort" aria-expanded="false" aria-controls="sortSheet">Ordenar</button>
+  <noscript><style>.filters-row{display:block!important}</style></noscript>
+</div>
+
+<aside id="filterDrawer" class="drawer" hidden aria-hidden="true">
+  <form id="filtersForm" method="get" action="/products" class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+    <header class="drawer-head">
+      <h2 id="drawerTitle">Filtrar</h2>
+      <button type="button" class="drawer-close" aria-label="Cerrar">×</button>
+    </header>
+
+    <div class="drawer-body">
+      <div class="field">
+        <label for="q">Buscar por nombre</label>
+        <input id="q" type="text" name="q" value="{{.Query}}" placeholder="Buscar..." />
+      </div>
+      <div class="field">
+        <label for="category">Categoría</label>
+        <select id="category" name="category">
+          <option value="">Todas las categorías</option>
+          {{range .Categories}}
+            <option value="{{.}}" {{if eq $.Category .}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+      </div>
+      <input type="hidden" id="sortInput" name="sort" value="{{.Sort}}">
+    </div>
+
+    <footer class="drawer-foot">
+      <button type="submit" class="btn-primary">Aplicar</button>
+      <a class="link-reset" href="/products">Limpiar</a>
+    </footer>
+  </form>
+</aside>
+
+<div id="sortSheet" class="sheet" hidden aria-hidden="true">
+  <header class="sheet-head">
+    <h2>Ordenar</h2>
+    <button type="button" class="sheet-close" aria-label="Cerrar">×</button>
+  </header>
+  <ul class="sort-list">
+    <li><button type="button" data-sort="newest" aria-pressed="{{eq .Sort "newest"}}">Novedades</button></li>
+    <li><button type="button" data-sort="price_asc" aria-pressed="{{eq .Sort "price_asc"}}">Precio: menor a mayor</button></li>
+    <li><button type="button" data-sort="price_desc" aria-pressed="{{eq .Sort "price_desc"}}">Precio: mayor a menor</button></li>
+    <li><button type="button" data-sort="name" aria-pressed="{{eq .Sort "name"}}">Nombre A–Z</button></li>
+  </ul>
+</div>
+
+<div class="cards cards--products">
+  {{range $idx, $p := .Products}}
+  <div class="card">
+    <div class="card-media ar-1-1">
+      {{if $p.Images}}
+        <img src="{{img (index $p.Images 0).URL}}"
+             alt="{{if (index $p.Images 0).Alt}}{{(index $p.Images 0).Alt}}{{else}}{{$p.Name}}{{end}}"
+             loading="lazy" decoding="async" {{if eq $idx 0}}fetchpriority="high"{{end}}
+             srcset="{{img (index $p.Images 0).URL}} 300w, {{imgw (index $p.Images 0).URL 480}} 480w, {{imgw (index $p.Images 0).URL 640}} 640w"
+             sizes="(max-width:480px) 92vw, (max-width:768px) 44vw, 300px"
+             class="card-img" />
+      {{else}}
+        <div class="placeholder">IMG</div>
+      {{end}}
+    </div>
+    <div class="card-body">
+      <div class="badges">
+        <span class="badge green">12x sin interés</span>
+        <span class="badge gray">Garantía</span>
+      </div>
+      <h3 class="card-title"><a href="/product/{{$p.Slug}}">{{$p.Name}}</a></h3>
+      <div class="card-meta">{{$p.Category}}</div>
+      <div class="price-row"><span class="price">{{ars $p.BasePrice}}</span></div>
+      <div class="actions">
+        <a href="/product/{{$p.Slug}}" class="btn-secondary btn-full">Ver oferta</a>
+      </div>
+    </div>
+  </div>
+  {{end}}
+  {{if not .Products}}
+    <p class="empty">No se encontraron productos.</p>
+  {{end}}
+</div>
+
+<div style="text-align:center;margin:12px 0">
+  <button id="loadMore" class="btn-secondary" data-next="{{if lt .Page .Pages}}?page={{add .Page 1}}&q={{.Query}}&category={{.Category}}&sort={{.Sort}}{{end}}" {{if not (lt .Page .Pages)}}disabled{{end}}>Cargar más</button>
+  <div id="loadMoreStatus" class="sr-only" aria-live="polite"></div>
+</div>
+
+{{if and .Page .Pages}}
+<div class="pagination">
+  {{if gt .Page 1}}<a href="?page={{sub .Page 1}}&q={{.Query}}&category={{.Category}}&sort={{.Sort}}" class="page-btn">‹ Anterior</a>{{end}}
+  <span>Página {{.Page}} / {{.Pages}}</span>
+  {{if lt .Page .Pages}}<a href="?page={{add .Page 1}}&q={{.Query}}&category={{.Category}}&sort={{.Sort}}" class="page-btn">Siguiente ›</a>{{end}}
+</div>
+{{end}}
+
+<!-- JS movido a /public/assets/app.js -->
+{{template "layout_end" .}}
+{{end}}

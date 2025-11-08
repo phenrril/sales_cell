@@ -1,0 +1,106 @@
+{{define "layout_start"}}
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>{{if .PageTitle}}{{.PageTitle}}{{else}}Celusfera — Celulares y accesorios{{end}}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="/public/assets/img/chroma-logo.png" />
+<link rel="apple-touch-icon" href="/public/assets/img/chroma-logo.png" />
+<link rel="stylesheet" href="/public/assets/styles.css?v=dark6" />
+<link rel="preload" as="image" href="/public/assets/img/img1.webp">
+<link rel="manifest" href="/public/manifest.json">
+<meta name="theme-color" content="#7C3AED">
+<meta name="description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país y hasta 12x sin interés.{{end}}">
+<link rel="canonical" href="{{.CanonicalURL}}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}Celusfera — Celulares y accesorios{{end}}">
+<meta property="og:description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país y hasta 12x sin interés.{{end}}">
+<meta property="og:url" content="{{.CanonicalURL}}">
+<meta property="og:image" content="{{.OGImage}}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}Celusfera — Celulares y accesorios{{end}}">
+<meta name="twitter:description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país y hasta 12x sin interés.{{end}}">
+<meta name="twitter:image" content="{{.OGImage}}">
+{{with .SchemaJSON}}<script type="application/ld+json">{{.}}</script>{{end}}
+<!-- JS unificado de UI -->
+<script type="module" src="/public/assets/app.js?v=3"></script>
+</head>
+<body class="site">
+<header class="topbar">
+  <div class="container row between center">
+    <a href="/" class="brand">
+      <span class="brand-text">
+        <span class="brand-title">Celusfera</span>
+        <span class="brand-sub">Celulares y accesorios</span>
+      </span>
+    </a>
+
+    <form class="searchbar" action="/products" method="get" role="search">
+      <input type="search" name="q" placeholder="Buscar celulares o accesorios..." aria-label="Buscar" value="" />
+      <button type="submit" class="search-btn">🔍</button>
+    </form>
+    <button class="mode-toggle" aria-label="Cambiar tema" aria-pressed="false" title="Tema oscuro">🌙</button>
+    <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+    <nav class="mainnav">
+      <a href="/products?category=celulares">Celulares</a>
+      <a href="/products?q=Accesorios">Accesorios</a>
+      <a href="/products?sort=price_asc">Ofertas</a>
+      <a href="/products?q=Reacondicionado">Reacondicionados</a>
+      <a href="/cart" class="cart-link">Carrito</a>
+      <a class="whatsapp" href="https://wa.me/5493416219815" target="_blank" rel="noopener" aria-label="WhatsApp">
+        <img src="/public/assets/img/whats.svg" alt="" width="22" height="22" aria-hidden="true" />
+        <span class="sr-only">WhatsApp</span>
+      </a>
+    </nav>
+  </div>
+  <div class="promobar">
+    <div class="container promobar-row">
+      <span>Hasta <strong>12x sin interés</strong></span>
+      <span>Envíos a todo el país</span>
+      <span>Garantía oficial</span>
+    </div>
+  </div>
+  <div class="subnav">
+    <div class="container subnav-row">
+      <a href="/products" class="subnav-link">Celulares</a>
+      <a href="/products?q=Samsung" class="subnav-link">Samsung</a>
+      <a href="/products?q=Apple" class="subnav-link">Apple</a>
+      <a href="/products?q=moto" class="subnav-link">Motorola</a>
+      <a href="/products?q=Xiaomi" class="subnav-link">Xiaomi</a>
+      <a href="/products?sort=newest" class="subnav-link">Novedades</a>
+      <a href="/products?sort=price_asc" class="subnav-link">Ofertas</a>
+    </div>
+  </div>
+</header>
+
+<div class="nav-backdrop"></div>
+<main class="container content">
+{{end}}
+
+{{define "layout_end"}}
+</main>
+<div id="modals-root"></div>
+<div id="footerSentinel" class="footer-sentinel" aria-hidden="true"></div>
+<footer class="footer">
+  <div class="container grid-3">
+    <div>
+      <div class="f-title">Horarios de contacto</div>
+      <ul class="f-list">
+        <li>Lunes a viernes: 9 a 18 hs</li>
+        <li>Sábados: 10 a 13 hs</li>
+      </ul>
+    </div>
+  </div>
+  <div class="copyright">© 2025 Celusfera — <a class="link" href="https://www.roxiumlabs.com/" target="_blank" rel="noopener">Dev by RoxiumLabs</a></div>
+</footer>
+
+<a href="https://wa.me/5493416219815" class="fab-whatsapp" aria-label="WhatsApp" target="_blank" rel="noopener" data-badge="1">
+  <img src="/public/assets/img/whats.svg" alt="" width="28" height="28" aria-hidden="true" />
+</a>
+</body>
+</html>
+{{end}}

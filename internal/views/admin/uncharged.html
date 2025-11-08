@@ -1,0 +1,120 @@
+{{define "admin_uncharged.html"}}
+{{template "layout_start" .}}
+<h1>Productos sin precio / no cargados</h1>
+<nav class="admin-nav"><a href="/admin/products">Productos</a> | <a href="/admin/orders">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/uncharged" class="active">Sin precio</a> | <a href="/admin/logout">Salir</a></nav>
+
+<section class="admin-card" style="margin-top:1rem;padding:18px 20px 24px">
+  <p style="margin:0 0 10px;color:var(--muted)">Última importación: {{if .Report.Timestamp}}{{.Report.Timestamp}}{{else}}-{{end}}</p>
+  <div class="row" style="gap:1rem;align-items:flex-start;flex-wrap:wrap">
+    <div style="flex:1;min-width:320px">
+      <h2 style="margin:0 0 8px;font-size:18px">Sin precio ({{len .Report.UnmatchedItems}} únicos)</h2>
+      {{if .Report.UnmatchedItems}}
+      <table class="table" style="font-size:0.85rem">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Colores</th>
+            <th>Razón</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{range $nombre, $cantidad := .Report.UnmatchedItems}}
+          <tr>
+            <td style="font-family:monospace">{{$nombre}}</td>
+            <td style="text-align:center">×{{$cantidad}}</td>
+            <td>
+              {{$razon := index $.Report.UnmatchedReasons $nombre}}
+              {{if eq $razon "sin_stock"}}
+                <span style="color:#f59e0b">📦 Sin Stock</span>
+              {{else if eq $razon "no_encontrado"}}
+                <span style="color:#ef4444">❌ No en precios</span>
+              {{else if eq $razon "formato_diferente"}}
+                <span style="color:#8b5cf6">🔀 Formato diferente</span>
+              {{else if eq $razon "precio_invalido"}}
+                <span style="color:#6b7280">⚠️ Precio inválido</span>
+              {{else if eq $razon "openai_sin_precio"}}
+                <span style="color:#06b6d4">🤖 OpenAI sin match</span>
+              {{else}}
+                <span style="color:var(--muted)">? Desconocido</span>
+              {{end}}
+            </td>
+          </tr>
+        {{end}}
+        </tbody>
+      </table>
+      <div style="margin-top:12px;padding:12px;background:#f8f9fa;border-radius:6px;font-size:12px">
+        <strong>Leyenda:</strong>
+        <ul style="margin:6px 0 0;padding-left:20px">
+          <li>📦 <strong>Sin Stock</strong>: Producto marcado como "Sin Stock" en el archivo de precios</li>
+          <li>❌ <strong>No en precios</strong>: Producto no encontrado en el archivo de precios (agregar línea al TXT)</li>
+          <li>🔀 <strong>Formato diferente</strong>: Producto existe pero nombre no coincide (revisar formato)</li>
+          <li>⚠️ <strong>Precio inválido</strong>: Producto encontrado pero precio no parseado correctamente</li>
+          <li>🤖 <strong>OpenAI sin match</strong>: OpenAI no pudo encontrar coincidencia</li>
+        </ul>
+      </div>
+      {{else}}
+      <p>No hay items sin precio.</p>
+      {{end}}
+    </div>
+    <div style="flex:1;min-width:280px">
+      <h2 style="margin:0 0 8px;font-size:18px">Productos creados ({{len .Report.CreatedProductSlugs}})</h2>
+      {{if .Report.CreatedProductSlugs}}
+      <ul>
+        {{range .Report.CreatedProductSlugs}}
+          <li><a href="/product/{{.}}" target="_blank" rel="noopener">{{.}}</a></li>
+        {{end}}
+      </ul>
+      {{else}}<p>-</p>{{end}}
+      <h3 style="margin:10px 0 6px">Actualizados ({{len .Report.UpdatedProductSlugs}})</h3>
+      {{if .Report.UpdatedProductSlugs}}
+      <ul>
+        {{range .Report.UpdatedProductSlugs}}
+          <li><a href="/product/{{.}}" target="_blank" rel="noopener">{{.}}</a></li>
+        {{end}}
+      </ul>
+      {{else}}<p>-</p>{{end}}
+    </div>
+    <div style="flex:1;min-width:280px">
+      <h2 style="margin:0 0 8px;font-size:18px">Variantes</h2>
+      <h3 style="margin:0 0 6px">Creadas ({{len .Report.CreatedVariantKeys}})</h3>
+      {{if .Report.CreatedVariantKeys}}
+      <ul>
+        {{range .Report.CreatedVariantKeys}}
+          <li style="font-family:monospace">{{.}}</li>
+        {{end}}
+      </ul>
+      {{else}}<p>-</p>{{end}}
+      <h3 style="margin:10px 0 6px">Actualizadas ({{len .Report.UpdatedVariantKeys}})</h3>
+      {{if .Report.UpdatedVariantKeys}}
+      <ul>
+        {{range .Report.UpdatedVariantKeys}}
+          <li style="font-family:monospace">{{.}}</li>
+        {{end}}
+      </ul>
+      {{else}}<p>-</p>{{end}}
+    </div>
+  </div>
+  {{if .Report.UnmatchedItems}}
+  <ul>
+    {{range .Report.UnmatchedItems}}
+      <li style="font-family:monospace">{{.}}</li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p>No hay items pendientes o la importación aún no se ejecutó.</p>
+  {{end}}
+
+  {{if .Report.Errors}}
+  <h3 style="margin:16px 0 6px">Errores</h3>
+  <ul>
+    {{range .Report.Errors}}
+      <li>{{.}}</li>
+    {{end}}
+  </ul>
+  {{end}}
+</section>
+
+{{template "layout_end" .}}
+{{end}}
+
+

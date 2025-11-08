@@ -1,0 +1,115 @@
+{{define "cart.html"}}
+{{template "layout_start" .}}
+<div class="cart-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px">
+  <a href="/products" class="btn-secondary" style="text-decoration:none">‹ Volver</a>
+  <h1 style="margin:0">Carrito</h1>
+  <div style="width:90px"></div>
+</div>
+{{if not .Lines}}
+<p>No hay productos en el carrito.</p>
+<p><a class="btn-primary" href="/products">Ir a productos</a></p>
+{{else}}
+<div class="table-responsive">
+<table class="cart-table">
+  <thead>
+    <tr>
+      <th>Producto</th>
+      <th>Color</th>
+      <th style="width:140px">Cant.</th>
+      <th>Unitario</th>
+      <th>Subtotal</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Lines}}
+    <tr>
+      <td class="cart-prod">
+        {{if .Image}}<img src="{{.Image}}" alt="{{.Name}}" class="thumb" loading="lazy" />{{end}}
+        <span class="name">{{.Name}}</span>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="color-dot" style="background: {{colorhex .Color}};"></div>
+          <span class="mono" style="font-size:.9rem">{{.Color}}</span>
+        </div>
+      </td>
+      <td>
+        <form method="post" action="/cart/update" class="qty-form">
+          <input type="hidden" name="slug" value="{{.Slug}}" />
+          <input type="hidden" name="color" value="{{.Color}}" />
+            <button name="op" value="dec" class="qbtn" type="submit">-</button>
+            <span class="qval">{{.Qty}}</span>
+            <button name="op" value="inc" class="qbtn" type="submit">+</button>
+        </form>
+      </td>
+      <td>${{printf "%.2f" .UnitPrice}}</td>
+      <td>${{printf "%.2f" .Subtotal}}</td>
+      <td>
+        <form method="post" action="/cart/remove">
+          <input type="hidden" name="slug" value="{{.Slug}}" />
+          <input type="hidden" name="color" value="{{.Color}}" />
+          <button class="link danger" type="submit">✕</button>
+        </form>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+</div>
+<div class="cart-summary">
+  <div class="total">Subtotal: <strong id="subtotalVal">${{printf "%.2f" .Total}}</strong></div>
+  <form class="checkout-form" method="post" action="/cart/checkout" id="checkoutForm" novalidate>
+    <div class="form-group">
+      <label class="form-label" for="name">Nombre completo</label>
+      <input class="form-input" id="name" type="text" name="name" placeholder="Tu nombre" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="email">Email</label>
+      <input class="form-input" id="email" type="email" name="email" placeholder="Tu email" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="phone">Teléfono</label>
+      <input class="form-input" id="phone" type="text" name="phone" placeholder="Celular" />
+    </div>
+    <fieldset class="shipping-box">
+      <legend>Entrega</legend>
+      <div class="shipping-options">
+        <label class="radio-option">
+          <input type="radio" name="shipping" value="retiro" checked />
+          <span>Retiro en local <small>(sin costo)</small></span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="shipping" value="cadete" />
+          <span>Cadete en Rosario <small>($5000)</small></span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="shipping" value="envio" />
+          <span>Envío a domicilio <small>(según provincia)</small></span>
+        </label>
+      </div>
+      <div id="cadeteGroup" class="province-group" style="display:none">
+        <input type="text" name="address_cadete" placeholder="Dirección en Rosario" class="form-input" />
+      </div>
+      <div id="envioGroup" class="province-group" style="display:none">
+        <select name="province" id="provinceSelect" class="form-input">
+          <option value="">Seleccioná provincia</option>
+          {{range .Provinces}}<option value="{{.}}">{{.}}</option>{{end}}
+        </select>
+        <input type="text" name="address_envio" placeholder="Dirección completa" class="form-input" />
+        <input type="text" name="postal_code" placeholder="Código postal" class="form-input" />
+        <input type="text" name="dni" placeholder="DNI" class="form-input" />
+      </div>
+      <div class="cost-row">Costo envío: <span id="shipCost" class="mono">$0.00</span></div>
+      <div class="grand-row">Total final: <span id="grandTotal" class="grand-val">${{printf "%.2f" .Total}}</span></div>
+    </fieldset>
+    <div id="pcData" style="display:none">
+      {{range $k,$v := .ProvinceCosts}}<span data-prov="{{$k}}" data-cost="{{$v}}"></span>{{end}}
+    </div>
+    <button type="submit" class="btn-primary pay-btn">Pagar con MercadoPago</button>
+  </form>
+</div>
+ 
+{{end}}
+{{template "layout_end" .}}
+{{end}}

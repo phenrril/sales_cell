@@ -1,0 +1,50 @@
+{{define "home.html"}}
+{{template "layout_start" .}}
+<style>
+/* Fallback modal (evita problemas de caché) */
+#howBuyBackdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:20px;z-index:110;opacity:0;pointer-events:none;transition:opacity .25s ease}
+#howBuyBackdrop.show{opacity:1;pointer-events:auto}
+#howBuyBackdrop .modal{background:#1a2430;border:1px solid #243044;border-radius:22px;padding:24px 24px 28px;max-width:560px;width:100%;color:#e5e7eb;font-family:Poppins,sans-serif;opacity:0;transform:translateY(20px) scale(.94);transition:opacity .28s ease,transform .35s cubic-bezier(.4,0,.2,1)}
+#howBuyBackdrop.show .modal{opacity:1;transform:translateY(0) scale(1)}
+#howBuyBackdrop .modal-title{margin:0 0 14px;font-size:24px}
+#howBuyBackdrop .modal-close{position:absolute;top:10px;right:10px;background:#12202c;border:1px solid #243044;color:#e5e7eb;width:36px;height:36px;border-radius:12px;cursor:pointer;font-size:20px;font-weight:600}
+#howBuyBackdrop .modal-close:hover{background:#1f2c39}
+</style>
+<section class="banner">
+  <div class="banner-carousel" id="bannerCarousel" data-interval="7000">
+    <img class="bc-slide active" src="/public/assets/img/img1.webp" alt="Banner 1" sizes="100vw" fetchpriority="high" decoding="async" />
+    <img class="bc-slide" src="/public/assets/img/img2.webp" alt="Banner 2" sizes="100vw" loading="lazy" decoding="async" />
+    <img class="bc-slide" src="/public/assets/img/img3.webp" alt="Banner 3" sizes="100vw" loading="lazy" decoding="async" />
+    <img class="bc-slide" src="/public/assets/img/img4.webp" alt="Banner 4" sizes="100vw" loading="lazy" decoding="async" />
+    <img class="bc-slide" src="/public/assets/img/img1.webp" alt="Banner 5" sizes="100vw" loading="lazy" decoding="async" />
+    <div class="bc-dots" id="bcDots"></div>
+  </div>
+  
+</section>
+<section style="margin-top:40px">
+  <h2 class="title" style="margin-bottom:10px">Ofertas imperdibles</h2>
+  <div class="cards cards--home">
+    {{range .Products}}
+    <div class="card">
+      <div class="card-media">
+        {{if .Images}}
+          <img src="{{img (index .Images 0).URL}}"
+               alt="{{if (index .Images 0).Alt}}{{(index .Images 0).Alt}}{{else}}{{.Name}}{{end}}"
+               loading="lazy" decoding="async"
+               srcset="{{img (index .Images 0).URL}} 300w, {{imgw (index .Images 0).URL 480}} 480w, {{imgw (index .Images 0).URL 640}} 640w"
+               sizes="(max-width:480px) 92vw, (max-width:768px) 44vw, 300px" />
+        {{else}}<div class="placeholder">IMG</div>{{end}}
+        
+      </div>
+      <div class="card-body">
+        <h3 class="card-title"><a href="/product/{{.Slug}}">{{.Name}}</a></h3>
+        <div class="card-meta">{{.Category}}</div>
+        <div class="price-row"><span class="price">${{printf "%.0f" .BasePrice}}</span></div>
+        <div class="actions"><a href="/product/{{.Slug}}" class="btn-secondary small">Ver oferta</a></div>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</section>
+{{template "layout_end" .}}
+{{end}}

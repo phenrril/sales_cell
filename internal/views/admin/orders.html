@@ -1,0 +1,29 @@
+{{define "admin_orders.html"}}
+{{template "layout_start" .}}
+<h1>Órdenes</h1>
+<nav class="admin-nav"><a href="/admin/products">Productos</a> | <a href="/admin/orders" class="active">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/logout">Salir</a></nav>
+<form method="GET" class="filter-bar" style="margin:12px 0 4px;display:flex;align-items:center;gap:16px">
+  <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">
+    <input type="checkbox" name="approved" value="1" {{if .FilterApproved}}checked{{end}} /> Solo aprobadas MP
+  </label>
+  <button class="btn-secondary small" type="submit" style="padding:6px 10px">Aplicar</button>
+  {{if .FilterApproved}}<a class="btn-secondary small" href="/admin/orders" style="padding:6px 10px">Limpiar</a>{{end}}
+</form>
+<table class="table" style="width:100%;font-size:0.9rem;margin-top:4px">
+  <thead><tr><th>ID</th><th>Email</th><th>Estado</th><th>Total</th><th>MP</th><th>Creada</th></tr></thead>
+  <tbody>
+    {{range .Orders}}
+    <tr>
+      <td style="font-family:monospace">{{.ID}}</td>
+      <td>{{.Email}}</td>
+      <td>{{.Status}}</td>
+      <td>${{printf "%.2f" .Total}}</td>
+      <td>{{.MPStatus}}</td>
+      <td>{{.CreatedAt}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+<div class="pager">Página {{.Page}} / {{.Pages}}</div>
+{{template "layout_end" .}}
+{{end}}

@@ -1,0 +1,12 @@
+{{define "admin_auth.html"}}
+{{template "layout_start" .}}
+<h1>Acceso Admin</h1>
+<form method="post" action="/admin/auth" class="form-card" style="max-width:360px">
+  <label>Usuario<input type="text" name="user" required /></label>
+  <label>Contraseña<input type="password" name="pass" required /></label>
+  <button class="btn-primary" type="submit">Ingresar</button>
+</form>
+<p style="margin-top:1rem;font-size:0.85rem;color:#555">Configurar credenciales vía ENV: ADMIN_USER / ADMIN_PASS.</p>
+{{template "layout_end" .}}
+{{end}}
+

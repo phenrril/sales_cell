@@ -1,0 +1,594 @@
+{{define "admin_products.html"}}
+{{template "layout_start" .}}
+<h1>Productos</h1>
+<nav class="admin-nav"><a href="/admin/products" class="active">Productos</a> | <a href="/admin/orders">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/uncharged">Sin precio</a> | <a href="/admin/logout">Salir</a></nav>
+<section class="grid" style="margin-top:1rem;grid-template-columns:420px 1fr;gap:2rem;align-items:start">
+  <div class="admin-card" style="padding:18px 20px 24px">
+    <div class="row between center" style="margin-bottom:6px">
+      <h2 style="margin:0;font-size:18px">Gestión de producto</h2>
+      <span id="formMode" class="mode-badge create">Creación</span>
+    </div>
+    <form id="prodForm" class="form-card" autocomplete="off">
+      <input type="hidden" name="slug" id="pfSlug" />
+      <label>Nombre<input type="text" name="name" id="pfName" required placeholder="Nombre visible" /></label>
+      <label>Categoría<input type="text" name="category" id="pfCategory" placeholder="(opcional)" /></label>
+      <div class="row" style="gap:.5rem">
+        <label style="flex:1">Marca<input type="text" name="brand" id="pfBrand" placeholder="(opcional)" /></label>
+        <label style="flex:1">Modelo<input type="text" name="model" id="pfModel" placeholder="(opcional)" /></label>
+      </div>
+      <label>Descripción corta<textarea name="short_desc" id="pfShort" placeholder="Resumen / marketing"></textarea></label>
+      <div class="row" style="gap:.5rem">
+        <label style="flex:1">Precio bruto<input type="number" step="0.01" min="0" id="pfGross" placeholder="0.00" /></label>
+        <label style="flex:1">Margen (%)<input type="number" step="0.01" min="0" id="pfMargin" placeholder="0" /></label>
+      </div>
+      <div class="row" style="gap:.5rem">
+        <label style="flex:1">Ancho (mm)<input type="number" step="0.1" min="0" id="pfWidth" placeholder="0" /></label>
+        <label style="flex:1">Alto (mm)<input type="number" step="0.1" min="0" id="pfHeight" placeholder="0" /></label>
+        <label style="flex:1">Profundidad (mm)<input type="number" step="0.1" min="0" id="pfDepth" placeholder="0" /></label>
+      </div>
+      <label>Precio venta<input type="number" step="0.01" min="0" name="base_price" id="pfPrice" required placeholder="0.00" /></label>
+      <small id="pfGainInfo" style="display:block;margin:-6px 0 8px;color:var(--muted)">Ganancia estimada: $0.00</small>
+      <label class="row center" style="gap:.5rem"><input type="checkbox" name="ready_to_ship" id="pfReady" checked /> Listo para envío</label>
+      <label>Atributos (JSON opcional)<textarea name="attributes" id="pfAttrs" placeholder='{"color":"Negro","capacidad":"128GB"}'></textarea></label>
+      <div class="uploader-block">
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;letter-spacing:.6px;color:var(--muted);text-transform:uppercase">Imágenes (opcional / arrastrar)
+          <div id="dropZone" class="dropzone small" style="padding:18px 14px">
+            <input type="file" multiple accept="image/*" id="pfImages" />
+            <span class="dz-hint">Soltá aquí o hacé click para seleccionar</span>
+            <small class="dz-count" style="display:block;margin-top:4px;color:var(--muted)">0 archivos</small>
+            <div id="preview" class="dz-preview"></div>
+          </div>
+        </label>
+      </div>
+      <div class="inline-btns" style="margin-top:4px">
+        <button class="btn-primary" type="submit" id="pfSubmit">Crear</button>
+        <button class="btn-secondary" type="button" id="pfReset">Nuevo</button>
+        <button class="btn-danger" type="button" id="pfDelete" style="display:none">Eliminar</button>
+      </div>
+    </form>
+    <p style="margin:14px 0 0;font-size:11px;color:var(--muted);line-height:1.4">Flujo: completar datos y (opcional) elegir imágenes. Al guardar, si es creación primero se crea el producto y luego se suben las imágenes seleccionadas. En edición podés cambiar datos y agregar nuevas imágenes (no reemplaza las existentes). Para remover imágenes viejas usar futura gestión de galería.</p>
+  </div>
+  <div>
+    <h2 style="margin:0 0 10px;font-size:18px">Listado ({{.Total}})</h2>
+    <div style="overflow:auto">
+      <div class="row between center" style="margin-bottom:6px;gap:.5rem;align-items:flex-start">
+        <div class="row" style="gap:.5rem;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="inline-btns" style="gap:.5rem;align-items:center">
+              <label class="btn-secondary" for="bulkXlsx" style="cursor:pointer">📄 XLSX Colores</label>
+              <button class="btn-primary" type="button" id="bulkRun" title="Importar XLSX + precios">⬆️ Importar</button>
+            </div>
+            <input type="file" id="bulkXlsx" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" style="display:none" />
+            <div class="row" style="gap:.5rem">
+              <label>TC USD→ARS<input type="number" id="bulkFx" step="0.01" min="0" placeholder="Ej: 1100" style="width:140px" /></label>
+              <label>Margen %<input type="number" id="bulkMargin" step="0.01" min="0" placeholder="Ej: 20" style="width:120px" /></label>
+            </div>
+            <label class="row center" style="gap:.5rem;margin-top:4px">
+              <input type="checkbox" id="bulkUseOpenAI" />
+              <span style="font-size:12px">🤖 OpenAI (experimental, lento, requiere API key)</span>
+            </label>
+            <small style="color:var(--muted);font-size:10px;margin-top:-4px">Por defecto usa método tradicional (instantáneo, 90%+ match)</small>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <label class="btn-secondary" for="bulkPrices" style="cursor:pointer;text-align:center">📄 Archivo de precios USD (.txt)</label>
+            <input type="file" id="bulkPrices" accept=".txt,text/plain" style="display:none" />
+            <div id="pricesFileName" style="font-size:11px;color:var(--muted);margin-top:4px;min-height:16px"></div>
+          </div>
+        </div>
+      </div>
+      <table class="table" id="prodTable" style="font-size:0.8rem;min-width:1080px">
+        <thead><tr><th>Nombre</th><th>Slug</th><th>Marca</th><th>Modelo</th><th>Bruto</th><th>Margen</th><th>Precio</th><th>Ganancia</th><th>Listo</th><th>Imgs</th><th style="text-align:right">Acciones</th></tr></thead>
+        <tbody>
+          {{range .Products}}
+          <tr data-slug="{{.Slug}}">
+            <td>{{.Name}}</td>
+            <td style="font-family:monospace">{{.Slug}}</td>
+            <td>{{.Brand}}</td>
+            <td>{{.Model}}</td>
+            <td>${{printf "%.2f" .GrossPrice}}</td>
+            <td>{{printf "%.0f" .MarginPct}}%</td>
+            <td>${{printf "%.2f" .BasePrice}}</td>
+            <td>${{printf "%.2f" (gain .GrossPrice .MarginPct)}}</td>
+            <td>{{if .ReadyToShip}}✔{{else}}-{{end}}</td>
+            <td>{{len .Images}}</td>
+            <td style="text-align:right">
+              <div class="table-actions">
+                <button class="icon-btn action-edit" data-act="edit" title="Editar">✏️</button>
+                <button class="icon-btn action-search" data-act="search" title="Buscar imagen">🔎</button>
+                <button class="icon-btn danger action-clearimg" data-act="clearimg" title="Borrar imágenes">🗑️ Img</button>
+                <button class="icon-btn danger action-del" data-act="del" title="Eliminar">🗑️</button>
+              </div>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Modal de búsqueda de imágenes -->
+<div id="imageSearchModal" class="modal" style="display:none">
+  <div class="modal-content" style="max-width:600px">
+    <div class="modal-header">
+      <h3 style="margin:0;font-size:18px">Agregar imagen desde URL</h3>
+      <button id="closeModal" class="btn-close" style="background:none;border:none;font-size:24px;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px">
+      <p style="margin:0 0 16px;color:var(--muted);font-size:14px">
+        Producto: <strong id="modalProductName"></strong>
+      </p>
+      <div style="background:#f8f9fa;padding:16px;border-radius:6px;margin-bottom:20px">
+        <p style="margin:0 0 12px;font-size:14px;font-weight:600">📝 Instrucciones:</p>
+        <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.6">
+          <li>Hacé click en "Buscar en Google" para ver imágenes del producto</li>
+          <li>Click derecho en la imagen que te guste → "Copiar dirección de imagen"</li>
+          <li>Pegá la URL aquí abajo y hacé click en "Agregar imagen"</li>
+        </ol>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button id="openGoogleBtn" class="btn-primary" style="flex:1">
+          🔍 Buscar en Google
+        </button>
+      </div>
+      <label style="display:block;margin-bottom:16px">
+        <span style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--muted)">URL de la imagen:</span>
+        <input type="url" id="imageUrlInput" placeholder="https://ejemplo.com/imagen.jpg" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-size:14px" />
+      </label>
+      <div style="display:flex;gap:8px">
+        <button id="addImageBtn" class="btn-primary" style="flex:1">
+          ✓ Agregar imagen
+        </button>
+        <button id="cancelBtn" class="btn-secondary">
+          Cancelar
+        </button>
+      </div>
+      <div id="imagePreview" style="margin-top:16px;display:none">
+        <p style="font-size:13px;font-weight:600;margin-bottom:8px">Vista previa:</p>
+        <img id="previewImg" style="max-width:100%;max-height:300px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.1)" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0,0,0,0.75) !important;
+  z-index: 999999 !important;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal[style*="display: flex"] {
+  display: flex !important;
+}
+.modal-content {
+  background: #fff !important;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1000000;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+}
+</style>
+
+<script>
+(function(){
+  const token='{{.AdminToken}}';
+  const tbl=document.getElementById('prodTable');
+  const form=document.getElementById('prodForm');
+  const fSlug=document.getElementById('pfSlug');
+  const fName=document.getElementById('pfName');
+  const fCat=document.getElementById('pfCategory');
+  const fBrand=document.getElementById('pfBrand');
+  const fModel=document.getElementById('pfModel');
+  const fDesc=document.getElementById('pfShort');
+  const fPrice=document.getElementById('pfPrice');
+  const fGross=document.getElementById('pfGross');
+  const fMargin=document.getElementById('pfMargin');
+  const fReady=document.getElementById('pfReady');
+  const fWidth=document.getElementById('pfWidth');
+  const fHeight=document.getElementById('pfHeight');
+  const fDepth=document.getElementById('pfDepth');
+  const fAttrs=document.getElementById('pfAttrs');
+  const btnDel=document.getElementById('pfDelete');
+  const btnReset=document.getElementById('pfReset');
+  const btnSubmit=document.getElementById('pfSubmit');
+  const modeBadge=document.getElementById('formMode');
+  const imagesInput=document.getElementById('pfImages');
+  const dropZone=document.getElementById('dropZone');
+  const preview=document.getElementById('preview');
+  const dzCount=document.querySelector('.dz-count');
+  const gainInfo=document.getElementById('pfGainInfo');
+
+  function recomputePrice(){
+    const gross=parseFloat(fGross.value||'0');
+    const margin=parseFloat(fMargin.value||'0');
+    if(gross>=0 && margin>=0){
+      const sale=gross * (1 + margin/100);
+      const gain=gross * (margin/100);
+      if(!Number.isNaN(sale)) fPrice.value = sale.toFixed(2);
+      if(gainInfo) gainInfo.textContent = 'Ganancia estimada: $'+ (Number.isNaN(gain)?'0.00':gain.toFixed(2));
+    }
+  }
+
+  function setModeEdit(edit){
+    if(edit){
+      modeBadge.textContent='Edición';
+      modeBadge.classList.remove('create');
+      modeBadge.classList.add('edit');
+      btnSubmit.textContent='Actualizar';
+    } else {
+      modeBadge.textContent='Creación';
+      modeBadge.classList.remove('edit');
+      modeBadge.classList.add('create');
+      btnSubmit.textContent='Crear';
+    }
+  }
+  function fill(p){
+    fSlug.value=p.Slug; fName.value=p.Name; fCat.value=p.Category||''; fBrand.value=p.Brand||''; fModel.value=p.Model||''; fDesc.value=p.ShortDesc||''; fGross.value=(p.GrossPrice||0); fMargin.value=(p.MarginPct||0); fPrice.value=p.BasePrice; fReady.checked=(p.ReadyToShip!==false); fWidth.value=p.WidthMM||0; fHeight.value=p.HeightMM||0; fDepth.value=p.DepthMM||0; fAttrs.value=p.Attributes?JSON.stringify(p.Attributes):''; btnDel.style.display=''; setModeEdit(true); recomputePrice();
+  }
+  function clear(){ form.reset(); fSlug.value=''; btnDel.style.display='none'; fReady.checked=true; fWidth.value=fHeight.value=fDepth.value=''; fAttrs.value=''; fGross.value=''; fMargin.value=''; if(gainInfo) gainInfo.textContent='Ganancia estimada: $0.00'; imagesInput.value=''; preview.innerHTML=''; dzCount.textContent='0 archivos'; setModeEdit(false); }
+
+  // Row actions
+  if(tbl){
+    tbl.addEventListener('click', async e=>{
+      const btn=e.target.closest('button');
+      if(!btn) return;
+      const tr=btn.closest('tr');
+      if(!tr) return;
+      const slug=tr.dataset.slug;
+      if(btn.dataset.act==='edit'){
+        const res=await fetch('/api/products/'+slug,{headers:{Authorization:'Bearer '+token}}); if(res.ok){ const p=await res.json(); fill(p);} return;
+      }
+      if(btn.dataset.act==='del'){
+        if(!confirm('Eliminar producto y todos sus datos?')) return;
+        const res=await fetch('/api/products/'+slug,{method:'DELETE',headers:{Authorization:'Bearer '+token}}); if(res.ok){ location.reload(); } else { alert('Error eliminando'); }
+        return;
+      }
+      if(btn.dataset.act==='search'){
+        searchImageSimple(slug);
+        return;
+      }
+      if(btn.dataset.act==='clearimg'){
+        if(!confirm('Borrar TODAS las imágenes de este producto?')) return;
+        const prev=btn.textContent; btn.disabled=true; btn.textContent='⏳';
+        try{
+          const res=await fetch('/api/products/clear-images/'+encodeURIComponent(slug),{method:'POST',headers:{Authorization:'Bearer '+token}});
+          const txt=await res.text(); let out=null; try{ out=JSON.parse(txt);}catch{}
+          if(!res.ok){ alert((out&&out.message)||'Error borrando imágenes'); return; }
+          alert('Imágenes borradas'); location.reload();
+        } finally { btn.disabled=false; btn.textContent=prev; }
+        return;
+      }
+    });
+  }
+
+  // Búsqueda de imagen MEJORADA
+  async function searchImageSimple(slug) {
+    try {
+      // Obtener producto
+      const res = await fetch('/api/products/' + slug, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      
+      if (!res.ok) {
+        alert('Error obteniendo producto');
+        return;
+      }
+      
+      const product = await res.json();
+      
+      // Construir query de búsqueda
+      let brand = (product.Brand || '').trim();
+      if (brand.toLowerCase() === 'moto') brand = 'motorola';
+      const model = (product.Model || '').trim();
+      const query = [brand, model, 'smartphone'].filter(x => x).join(' ') || product.Name;
+      
+      // Mostrar instrucciones primero
+      const proceed = confirm(
+        '🔍 Buscar imagen para: ' + product.Name + '\n\n' +
+        'Se abrirá Google Imágenes con la búsqueda automática.\n' +
+        'Luego podrás pegar la URL de la imagen que elijas.\n\n' +
+        '¿Continuar?'
+      );
+      
+      if (!proceed) return;
+      
+      // Abrir Google Images en popup
+      const popup = window.open(
+        'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(query), 
+        'googleImages',
+        'width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no'
+      );
+      
+      // Enfocar el popup
+      if (popup) {
+        popup.focus();
+      }
+      
+      // Mostrar instrucciones inmediatamente
+      alert(
+        '📋 INSTRUCCIONES:\n\n' +
+        '1. ✅ Se abrió Google Imágenes en un popup\n' +
+        '2. 🔍 Buscá la imagen que querés usar\n' +
+        '3. 🖱️ Click DERECHO en la imagen\n' +
+        '4. 📋 Seleccioná "Copiar dirección de imagen"\n' +
+        '5. 📝 Volvé aquí y hacé click en "Pegar URL"\n\n' +
+        'Producto: ' + product.Name
+      );
+      
+      // Agregar botón temporal para pegar URL
+      addPasteUrlButton(slug, product.Name);
+      
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  }
+  
+  function addPasteUrlButton(slug, productName) {
+    // Crear botón temporal
+    const button = document.createElement('button');
+    button.textContent = '📝 Pegar URL de imagen';
+    button.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 999999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+    
+    button.onclick = () => {
+      const imageUrl = prompt(
+        '📋 PEGAR URL DE IMAGEN:\n\n' +
+        '1. ✅ Copiaste la URL de la imagen\n' +
+        '2. 📝 Pegá la URL aquí abajo:\n\n' +
+        'Producto: ' + productName
+      );
+      
+      if (!imageUrl || !imageUrl.trim()) {
+        return; // Usuario canceló
+      }
+      
+      if (!imageUrl.startsWith('http')) {
+        alert('❌ URL inválida. Debe comenzar con http:// o https://\n\nEjemplo: https://example.com/imagen.jpg');
+        return;
+      }
+      
+      // Descargar imagen
+      downloadAndAddImage(slug, imageUrl.trim());
+      
+      // Remover botón
+      button.remove();
+    };
+    
+    document.body.appendChild(button);
+    
+    // Auto-remover después de 5 minutos
+    setTimeout(() => {
+      if (button.parentNode) {
+        button.remove();
+      }
+    }, 300000);
+  }
+  
+  async function downloadAndAddImage(slug, imageUrl) {
+    try {
+      const res = await fetch('/api/products/' + encodeURIComponent(slug) + '/download-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ image_url: imageUrl })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || data.status !== 'ok') {
+        throw new Error(data.message || 'Error descargando imagen');
+      }
+      
+      alert('✅ ' + (data.message || 'Imagen agregada exitosamente'));
+      location.reload();
+    } catch (err) {
+      alert('❌ Error: ' + err.message);
+    }
+  }
+
+  // Submit create/update + optional images
+  form.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const slug=fSlug.value.trim();
+    let attrs=null; try{ attrs=fAttrs.value.trim()?JSON.parse(fAttrs.value):null; }catch{ alert('Atributos JSON inválido'); return; }
+    const payload={ name:fName.value.trim(), category:fCat.value.trim(), brand:fBrand.value.trim(), model:fModel.value.trim(), short_desc:fDesc.value, gross_price:parseFloat(fGross.value||'0'), margin_pct:parseFloat(fMargin.value||'0'), base_price:parseFloat(fPrice.value||'0'), ready_to_ship:fReady.checked, width_mm:parseFloat(fWidth.value||'0'), height_mm:parseFloat(fHeight.value||'0'), depth_mm:parseFloat(fDepth.value||'0'), attributes:attrs };
+    if(!payload.name){ alert('Nombre requerido'); return; }
+    if(payload.base_price<0){ alert('Precio inválido'); return; }
+    let method='POST', url='/api/products';
+    if(slug){ method='PUT'; url='/api/products/'+slug; }
+    const res=await fetch(url,{method, headers:{'Content-Type':'application/json', Authorization:'Bearer '+token}, body:JSON.stringify(payload)});
+    if(!res.ok){ alert('Error guardando'); return; }
+    const prod=await res.json();
+    const finalSlug=prod.Slug || slug;
+    // Images?
+    if(imagesInput.files && imagesInput.files.length>0){
+      const fd=new FormData();
+      fd.append('existing_slug', finalSlug);
+      fd.append('brand', fBrand.value.trim());
+      fd.append('model', fModel.value.trim());
+      if(attrs){ fd.append('attributes', JSON.stringify(attrs)); }
+      for(const f of imagesInput.files){ fd.append('images', f); }
+      const upRes=await fetch('/api/products/upload',{method:'POST', headers:{Authorization:'Bearer '+token}, body:fd});
+      if(!upRes.ok){ alert('Producto guardado, pero error subiendo imágenes'); location.reload(); return; }
+    }
+    location.reload();
+  });
+  // Carga masiva CSV
+  const bulkXlsx=document.getElementById('bulkXlsx');
+  const bulkRun=document.getElementById('bulkRun');
+  const bulkPrices=document.getElementById('bulkPrices');
+  const pricesFileName=document.getElementById('pricesFileName');
+  const bulkFx=document.getElementById('bulkFx');
+  const bulkMargin=document.getElementById('bulkMargin');
+  const bulkUseOpenAI=document.getElementById('bulkUseOpenAI');
+  
+  // Mostrar nombre del archivo de precios seleccionado
+  if(bulkPrices){
+    bulkPrices.addEventListener('change', ()=>{
+      if(bulkPrices.files && bulkPrices.files.length>0){
+        pricesFileName.textContent = '✓ ' + bulkPrices.files[0].name;
+      } else {
+        pricesFileName.textContent = '';
+      }
+    });
+  }
+  
+  async function runBulkUpload(){
+    if(!bulkXlsx || !bulkXlsx.files || bulkXlsx.files.length===0){ alert('Seleccioná el archivo XLSX de colores'); return; }
+    if(!bulkPrices || !bulkPrices.files || bulkPrices.files.length===0){ 
+      if(!confirm('No seleccionaste el archivo de precios. ¿Continuar sin precios?')) return; 
+    }
+    if(!bulkFx || !bulkFx.value){ alert('Ingresá el tipo de cambio USD→ARS'); return; }
+    
+    const useAI = bulkUseOpenAI && bulkUseOpenAI.checked;
+    const prevTxt = bulkRun.textContent; 
+    bulkRun.disabled = true; 
+    bulkRun.textContent = useAI ? '🤖 Normalizando con OpenAI...' : 'Importando...';
+    
+    const fd=new FormData();
+    fd.append('file', bulkXlsx.files[0]);
+    
+    // Leer el archivo de precios y enviarlo como texto
+    let pricesText = '';
+    if(bulkPrices.files && bulkPrices.files.length > 0){
+      try {
+        pricesText = await bulkPrices.files[0].text();
+      } catch(e) {
+        console.error('Error leyendo archivo de precios:', e);
+      }
+    }
+    
+    fd.append('prices_text', pricesText);
+    fd.append('fx_rate', bulkFx.value||'0');
+    fd.append('default_margin_pct', bulkMargin.value||'0');
+    fd.append('use_openai', useAI ? 'true' : 'false');
+    
+    const res=await fetch('/admin/import/csv',{method:'POST', headers:{Authorization:'Bearer '+token}, body:fd});
+    
+    bulkRun.disabled=false; 
+    bulkRun.textContent=prevTxt;
+    
+    if(!res.ok){ 
+      try {
+        const errorData = await res.json();
+        alert('❌ Error: ' + (errorData.message || 'Error importando archivo'));
+      } catch(e) {
+        alert('❌ Error importando archivo');
+      }
+      return; 
+    }
+    
+    const out=await res.json();
+    if(out.error){
+      alert('❌ Error: ' + (out.message || out.error));
+      return;
+    }
+    
+    alert('✅ Importación OK!\n\n' +
+      'Productos creados: '+(out.created_products||0)+'\n' +
+      'Productos actualizados: '+(out.updated_products||0)+'\n' +
+      'Variantes creadas: '+(out.created_variants||0)+'\n' +
+      'Variantes actualizadas: '+(out.updated_variants||0)+
+      (out.unmatched ? '\n\n⚠️ Sin precio: '+out.unmatched : ''));
+    location.reload();
+  }
+  
+  if(bulkRun){ 
+    bulkRun.addEventListener('click', ()=>{ 
+      if(!bulkXlsx.files || bulkXlsx.files.length===0){ 
+        bulkXlsx.click(); 
+      } else if(!bulkPrices.files || bulkPrices.files.length===0){
+        bulkPrices.click();
+      } else { 
+        runBulkUpload(); 
+      } 
+    }); 
+  }
+  
+  // Auto-run después de seleccionar el segundo archivo
+  if(bulkXlsx){ 
+    bulkXlsx.addEventListener('change', ()=>{ 
+      if(bulkXlsx.files && bulkXlsx.files.length>0 && bulkPrices.files && bulkPrices.files.length>0){ 
+        runBulkUpload(); 
+      }
+    }); 
+  }
+  if(bulkPrices){
+    bulkPrices.addEventListener('change', ()=>{ 
+      if(bulkXlsx.files && bulkXlsx.files.length>0 && bulkPrices.files && bulkPrices.files.length>0){ 
+        runBulkUpload(); 
+      }
+    }); 
+  }
+
+  btnReset.addEventListener('click', clear);
+  btnDel.addEventListener('click', async ()=>{ const slug=fSlug.value.trim(); if(!slug) return; if(!confirm('Eliminar producto y sus imágenes?')) return; const res=await fetch('/api/products/'+slug,{method:'DELETE', headers:{Authorization:'Bearer '+token}}); if(res.ok){ clear(); location.reload(); } else { alert('Error'); } });
+
+  // Drag & drop images preview
+  function refreshPreview(){
+    preview.innerHTML='';
+    const files=Array.from(imagesInput.files||[]);
+    dzCount.textContent=files.length+ (files.length===1?' archivo':' archivos');
+    files.slice(0,6).forEach(f=>{
+      const r=new FileReader();
+      r.onload=ev=>{ const img=document.createElement('img'); img.src=ev.target.result; img.alt=f.name; img.style.width='52px'; img.style.height='52px'; img.style.objectFit='cover'; img.style.borderRadius='10px'; img.style.border='1px solid #223140'; preview.appendChild(img); };
+      r.readAsDataURL(f);
+    });
+  }
+  imagesInput.addEventListener('change', refreshPreview);
+  fGross.addEventListener('input', recomputePrice);
+  fMargin.addEventListener('input', recomputePrice);
+  ;['dragenter','dragover'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault(); dropZone.classList.add('drag');}));
+  ;['dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault(); dropZone.classList.remove('drag');}));
+  dropZone.addEventListener('drop', e=>{ const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')); if(files.length){ const dt=new DataTransfer(); files.forEach(f=>dt.items.add(f)); imagesInput.files=dt.files; refreshPreview(); }});
+
+})();
+</script>
+
+<!-- Mover el modal fuera del main para que tenga z-index correcto -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('imageSearchModal');
+    if (modal) {
+      document.body.appendChild(modal);
+    }
+  });
+</script>
+
+{{template "layout_end" .}}
+{{end}}

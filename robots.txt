@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://www.chroma3d.com.ar/sitemap.xml

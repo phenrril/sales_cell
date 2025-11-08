@@ -1,0 +1,21 @@
+{
+  "name": "Chroma3D - Impresión 3D Mayorista y Minorista",
+  "short_name": "Chroma3D",
+  "description": "Modelos impresos de alta calidad listos para enviar o fabricar bajo demanda.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/public/assets/img/chroma-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/public/assets/img/chroma-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
