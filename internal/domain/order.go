@@ -37,6 +37,8 @@ type Order struct {
 	Total          float64    `gorm:"type:decimal(12,2)"`
 	ShippingMethod string     `gorm:"size:30"`
 	ShippingCost   float64    `gorm:"type:decimal(12,2)"`
+	PaymentMethod  string     `gorm:"size:30;index"`
+	DiscountAmount float64    `gorm:"type:decimal(12,2)"`
 	Notified       bool       `gorm:"not null;default:false"`
 
 	CreatedAt time.Time

@@ -41,13 +41,12 @@
       </div>
       <div class="card-body">
         <div class="badges">
-          <span class="badge green">12x sin interés</span>
+          <span class="badge green">En stock</span>
         </div>
         <h3 class="card-title"><a href="/product/{{.Slug}}">{{.Name}}</a></h3>
         <div class="card-meta">{{.Category}}</div>
         <div class="price-row">
           <span class="price">${{printf "%.0f" .BasePrice}}</span>
-          <span class="price-installment">12x ${{printf "%.0f" (div .BasePrice 12.0)}} sin interés</span>
         </div>
         <div class="actions"><a href="/product/{{.Slug}}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a></div>
       </div>

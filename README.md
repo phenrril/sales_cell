@@ -1,4 +1,4 @@
-# Celusfera
+# NewMobile
 
 Proyecto de tienda online para venta de celulares y accesorios, desarrollado en Go (arquitectura hexagonal + SSR). 
 

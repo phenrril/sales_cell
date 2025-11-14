@@ -52,32 +52,77 @@ func (r *ProductRepo) List(ctx context.Context, f domain.ProductFilter) ([]domai
 	var list []domain.Product
 	q := r.db.WithContext(ctx).Model(&domain.Product{})
 	if f.Category != "" {
-		q = q.Where("category = ?", f.Category)
+		// Si category=celulares, buscar productos de marcas de celulares
+		if f.Category == "celulares" {
+			q = q.Where("LOWER(category) IN ('iphone', 'samsung', 'xiaomi', 'moto', 'poco')")
+		} else {
+			q = q.Where("category = ?", f.Category)
+		}
 	}
 	if f.ReadyToShip != nil {
 		q = q.Where("ready_to_ship = ?", *f.ReadyToShip)
 	}
 	if f.Query != "" {
 		query := strings.TrimSpace(f.Query)
-		like := "%" + query + "%"
-		// Caso especial: "moto" debe incluir Motorola por marca
-		if strings.EqualFold(query, "moto") {
-			q = q.Where("LOWER(name) LIKE LOWER(?) OR LOWER(category) LIKE LOWER(?) OR LOWER(brand) = 'motorola'", like, like)
-		} else if strings.EqualFold(query, "apple") {
-			// Ecosistema Apple: iPhone, iPad, Mac, Macbook, iMac, Watch, AirPods, AirTag, HomePod, Apple TV
-			terms := []string{"apple", "iphone", "ipad", "mac", "macbook", "imac", "watch", "apple watch", "airpods", "airtag", "homepod", "apple tv"}
-			ors := []string{}
-			args := []interface{}{}
-			for _, t := range terms {
-				lk := "%" + strings.ToLower(strings.TrimSpace(t)) + "%"
-				ors = append(ors, "LOWER(name) LIKE ?", "LOWER(category) LIKE ?", "LOWER(brand) LIKE ?", "LOWER(model) LIKE ?")
-				args = append(args, lk, lk, lk, lk)
+		
+		// Caso especial: "novedades" -> Todo lo que NO sea celulares ni smartwatches (consolas, auriculares, etc.)
+		if strings.EqualFold(query, "novedades") {
+			// Excluir categorías de celulares y smartwatches
+			q = q.Where("LOWER(category) NOT IN ('iphone', 'samsung', 'xiaomi', 'moto', 'poco', 'pencil para ipad usb-c') AND LOWER(brand) != 'watch' AND LOWER(name) NOT LIKE '%watch%'")
+		} else if strings.EqualFold(query, "ofertas") {
+			// Ofertas -> Smartwatches (Apple Watch están en categoría "pencil para ipad usb-c" con brand "Watch")
+			q = q.Where("LOWER(brand) = 'watch' OR LOWER(category) = 'pencil para ipad usb-c' OR LOWER(name) LIKE '%watch%'")
+		} else if strings.EqualFold(query, "auriculares") {
+			// Auriculares -> Buscar por categoría audio-auris o productos con "auri", "airpod" en el nombre
+			q = q.Where("LOWER(category) = 'audio-auris' OR LOWER(name) LIKE '%auri%' OR LOWER(name) LIKE '%auricular%' OR LOWER(name) LIKE '%airpod%'")
+		} else if strings.EqualFold(query, "notebooks") {
+			// Notebooks -> Buscar por categoría notebooks o productos con "notebook", "macbook", "nb " en el nombre
+			q = q.Where("LOWER(category) = 'notebooks' OR LOWER(name) LIKE '%notebook%' OR LOWER(name) LIKE '%macbook%' OR LOWER(name) LIKE 'nb %'")
+		} else if strings.EqualFold(query, "samsung") {
+			// Samsung -> Buscar por category (más preciso)
+			if f.Category == "celulares" {
+				// Ya está filtrado por celulares, buscar Samsung
+				q = q.Where("LOWER(category) = 'samsung'")
+			} else {
+				// Buscar todos los Samsung
+				q = q.Where("LOWER(category) = 'samsung' OR LOWER(brand) = 'samsung'")
 			}
-			// Además, categoría que contenga 'ecosistema' y 'apple'
-			ors = append(ors, "(LOWER(category) LIKE ? AND LOWER(category) LIKE ?)")
-			args = append(args, "%ecosistema%", "%apple%")
-			q = q.Where("("+strings.Join(ors, " OR ")+")", args...)
+		} else if strings.EqualFold(query, "apple") || strings.EqualFold(query, "iphone") {
+			// Apple -> Solo celulares iPhone cuando category=celulares
+			if f.Category == "celulares" {
+				// Ya está filtrado por celulares, buscar solo iPhone (excluir Watch)
+				q = q.Where("LOWER(category) = 'iphone' AND LOWER(brand) != 'watch'")
+			} else {
+				// Ecosistema Apple completo: iPhone + Watch
+				q = q.Where("LOWER(category) = 'iphone' OR (LOWER(category) = 'pencil para ipad usb-c' AND LOWER(brand) = 'watch')")
+			}
+		} else if strings.EqualFold(query, "moto") || strings.EqualFold(query, "motorola") {
+			// Motorola -> Buscar por category
+			if f.Category == "celulares" {
+				// Ya está filtrado por celulares, buscar Motorola
+				q = q.Where("LOWER(category) = 'moto'")
+			} else {
+				q = q.Where("LOWER(category) = 'moto' OR LOWER(brand) = 'moto'")
+			}
+		} else if strings.EqualFold(query, "xiaomi") {
+			// Xiaomi -> Buscar por category (incluye Xiaomi y Poco)
+			if f.Category == "celulares" {
+				// Ya está filtrado por celulares, buscar Xiaomi y Poco
+				q = q.Where("LOWER(category) IN ('xiaomi', 'poco')")
+			} else {
+				q = q.Where("LOWER(category) IN ('xiaomi', 'poco') OR LOWER(brand) IN ('xiaomi', 'poco')")
+			}
+		} else if strings.EqualFold(query, "tcl") {
+			// TCL -> Buscar por brand y name (no hay categoría TCL en la BD actual)
+			if f.Category == "celulares" {
+				// Ya está filtrado por celulares, buscar TCL
+				q = q.Where("LOWER(brand) = 'tcl' OR LOWER(name) LIKE 'tcl%'")
+			} else {
+				q = q.Where("LOWER(brand) = 'tcl' OR LOWER(name) LIKE 'tcl%'")
+			}
 		} else {
+			// Búsqueda genérica
+			like := "%" + query + "%"
 			q = q.Where("LOWER(name) LIKE LOWER(?) OR LOWER(category) LIKE LOWER(?) OR LOWER(brand) LIKE LOWER(?) OR LOWER(model) LIKE LOWER(?)", like, like, like, like)
 		}
 	}

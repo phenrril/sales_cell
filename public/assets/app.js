@@ -149,12 +149,17 @@
 (function(){
   const form=document.getElementById('checkoutForm'); if(!form) return;
   const shipRadios=form.querySelectorAll('input[name="shipping"]');
+  const paymentRadios=form.querySelectorAll('input[name="payment_method"]');
   const envioGroup=document.getElementById('envioGroup');
   const cadeteGroup=document.getElementById('cadeteGroup');
   const provinceSelect=document.getElementById('provinceSelect');
   const shipCostEl=document.getElementById('shipCost');
   const grandEl=document.getElementById('grandTotal');
   const subtotalEl=document.getElementById('subtotalVal');
+  const discountRow=document.getElementById('discountRow');
+  const discountAmountEl=document.getElementById('discountAmount');
+  const discountSummaryRow=document.getElementById('discountSummaryRow');
+  const discountSummary=document.getElementById('discountSummary');
   const base=parseFloat(((grandEl && grandEl.textContent) || '').replace(/[^0-9.,]/g,'').replace(',','.'))||0;
   const CADETE_COST=5000;
   const COSTS=(()=>{ const m={}; document.querySelectorAll('#pcData [data-prov]').forEach(n=>{ const k=n.getAttribute('data-prov'); const v=parseFloat(n.getAttribute('data-cost')||'0'); if(k){ m[k]=v; } }); return m; })();
@@ -166,6 +171,7 @@
   function setRequired(el,flag){ if(!el) return; if(flag){el.setAttribute('required','required')} else {el.removeAttribute('required')} }
   function calcCost(){
     let method='retiro'; shipRadios.forEach(r=>{ if(r.checked) method=r.value });
+    let paymentMethod='mercadopago'; paymentRadios.forEach(r=>{ if(r.checked) paymentMethod=r.value });
     if(envioGroup) envioGroup.style.display='none'; if(cadeteGroup) cadeteGroup.style.display='none';
     setRequired(phone,false); setRequired(addrCadete,false); setRequired(addrEnvio,false); setRequired(provinceSelect,false); setRequired(postal,false); setRequired(dni,false);
     let cost=0;
@@ -179,11 +185,17 @@
       cost=CADETE_COST;
     }
     if(shipCostEl) shipCostEl.textContent='$'+cost.toFixed(2);
-    const withShip=(base+cost).toFixed(2);
-    if(grandEl) grandEl.textContent='$'+withShip;
-    if(subtotalEl) subtotalEl.textContent='$'+withShip;
+    const subtotal=base+cost;
+    // Sin descuentos - el cliente paga el precio total
+    const discount=0;
+    if(discountRow) discountRow.style.display='none';
+    if(discountSummaryRow) discountSummaryRow.style.display='none';
+    const total=subtotal.toFixed(2);
+    if(grandEl) grandEl.textContent='$'+total;
+    if(subtotalEl) subtotalEl.textContent='$'+subtotal.toFixed(2);
   }
   shipRadios.forEach(r=>r.addEventListener('change',calcCost));
+  paymentRadios.forEach(r=>r.addEventListener('change',calcCost));
   provinceSelect && provinceSelect.addEventListener('change',calcCost);
   calcCost();
 })();
@@ -321,6 +333,7 @@ if ('serviceWorker' in navigator) {
   form.addEventListener('submit',()=>{ if(!inp.value.trim()){ inp.value=defaultColor; } });
   setPreview(defaultColor);
 })();
+
 
 // Admin: productos (form + tabla + dropzone) sin inline JS
 (function(){
