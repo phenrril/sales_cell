@@ -117,8 +117,13 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/cart/update", s.handleCartUpdate)
 	s.mux.HandleFunc("/cart/remove", s.handleCartRemove)
 	s.mux.HandleFunc("/cart/checkout", s.handleCartCheckout)
+	
+	// API endpoints para checkout por pasos
+	s.mux.HandleFunc("/api/checkout/step", s.apiCheckoutStep)
+	s.mux.HandleFunc("/api/checkout/data", s.apiCheckoutData)
 
 	s.mux.HandleFunc("/api/products", s.apiProducts)
+	s.mux.HandleFunc("/api/products/search", s.apiProductsSearch) // Búsqueda pública para autocompletado
 	s.mux.HandleFunc("/api/products/", s.apiProductByID)
 	s.mux.HandleFunc("/api/products/clear-images/", s.apiProductClearImages)
 
@@ -281,7 +286,7 @@ func (s *Server) canonicalBase(r *http.Request) string {
 		}
 	}
 	if host == "" {
-		host = "www.celusfera.com.ar"
+		host = "www.newmobile.com.ar"
 	}
 	return scheme + "://" + host
 }
@@ -335,7 +340,7 @@ func (s *Server) handleRobots(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(data)
 		return
 	}
-	_, _ = w.Write([]byte("User-agent: *\nDisallow:\nSitemap: https://www.celusfera.com.ar/sitemap.xml\n"))
+	_, _ = w.Write([]byte("User-agent: *\nDisallow:\nSitemap: https://www.newmobile.com.ar/sitemap.xml\n"))
 }
 
 func (s *Server) handleQuoteView(w http.ResponseWriter, r *http.Request) {
@@ -415,6 +420,41 @@ func (s *Server) apiProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Error(w, "method", 405)
+}
+
+// apiProductsSearch - Búsqueda pública para autocompletado (sin autenticación)
+func (s *Server) apiProductsSearch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if len(query) < 3 {
+		writeJSON(w, 200, map[string]any{"products": []any{}, "total": 0})
+		return
+	}
+	// Buscar productos limitados a 8 resultados para autocompletado
+	list, total, _ := s.products.List(r.Context(), domain.ProductFilter{
+		Page:     1,
+		PageSize: 8,
+		Query:    query,
+	})
+	// Formatear resultados con imagen
+	results := make([]map[string]any, 0, len(list))
+	for _, p := range list {
+		imageURL := "/public/assets/img/no imagen.jpg"
+		if len(p.Images) > 0 && p.Images[0].URL != "" {
+			imageURL = p.Images[0].URL
+		}
+		results = append(results, map[string]any{
+			"slug":      p.Slug,
+			"name":      p.Name,
+			"price":     p.BasePrice,
+			"image":     imageURL,
+			"category":  p.Category,
+		})
+	}
+	writeJSON(w, 200, map[string]any{"products": results, "total": total})
 }
 
 func (s *Server) apiProductByID(w http.ResponseWriter, r *http.Request) {
@@ -1474,69 +1514,293 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method", 405)
 		return
 	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "form", 400)
+	
+	// Manejar panics
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Error().Interface("panic", rec).Msg("panic en handleCartCheckout")
+			if isJSON := r.Header.Get("Content-Type"); strings.Contains(isJSON, "application/json") {
+				writeJSON(w, 500, map[string]string{"error": "error interno del servidor"})
+			} else {
+				http.Error(w, "error interno", 500)
+			}
+		}
+	}()
+	
+	// Intentar leer como JSON primero (nuevo flujo por pasos)
+	var step2Data, step3Data, step4Data map[string]interface{}
+	var isJSON bool
+	
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(contentType, "application/json") {
+		isJSON = true
+		var req struct {
+			Step2 map[string]interface{} `json:"step2"`
+			Step3 map[string]interface{} `json:"step3"`
+			Step4 map[string]interface{} `json:"step4"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+			step2Data = req.Step2
+			step3Data = req.Step3
+			step4Data = req.Step4
+			log.Debug().
+				Interface("step2", step2Data).
+				Interface("step3", step3Data).
+				Interface("step4", step4Data).
+				Msg("datos recibidos en checkout")
+		} else {
+			log.Error().Err(err).Msg("error decodificando JSON en checkout")
+			writeJSON(w, 400, map[string]string{"error": "invalid json: " + err.Error()})
+			return
+		}
+	} else {
+		// Flujo legacy: parsear formulario
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "form", 400)
+			return
+		}
+	}
+	
+	// Extraer datos del paso 2 (datos personales)
+	var email, firstName, lastName, dni, areaCode, phoneNumber string
+	if isJSON {
+		if step2Data != nil {
+			if v, ok := step2Data["email"].(string); ok {
+				email = v
+			}
+			if v, ok := step2Data["firstName"].(string); ok {
+				firstName = v
+			}
+			if v, ok := step2Data["lastName"].(string); ok {
+				lastName = v
+			}
+			if v, ok := step2Data["dni"].(string); ok {
+				dni = v
+			}
+			if v, ok := step2Data["areaCode"].(string); ok {
+				areaCode = v
+			}
+			if v, ok := step2Data["phoneNumber"].(string); ok {
+				phoneNumber = v
+			}
+		}
+	} else {
+		email = r.FormValue("email")
+		firstName = r.FormValue("name")
+		phoneNumber = r.FormValue("phone")
+		dni = r.FormValue("dni")
+	}
+	
+	if email == "" || firstName == "" {
+		if isJSON {
+			writeJSON(w, 400, map[string]string{"error": "email y nombre son obligatorios"})
+		} else {
+			http.Redirect(w, r, "/cart?err=datos", 302)
+		}
 		return
 	}
-	email := r.FormValue("email")
-	name := r.FormValue("name")
-	phone := r.FormValue("phone")
-	dni := r.FormValue("dni")
-	postal := r.FormValue("postal_code")
-	if email == "" || name == "" {
-		http.Redirect(w, r, "/cart?err=datos", 302)
-		return
+	
+	name := firstName
+	if lastName != "" {
+		name = firstName + " " + lastName
 	}
-	shippingMethod := r.FormValue("shipping")
+	
+	phone := ""
+	if areaCode != "" && phoneNumber != "" {
+		phone = areaCode + " " + phoneNumber
+	} else if phoneNumber != "" {
+		phone = phoneNumber
+	}
+	
+	// Extraer datos del paso 3 (método de entrega)
+	var shippingMethod, province, postal, address string
+	if isJSON {
+		if step3Data != nil {
+			if v, ok := step3Data["shipping_method"].(string); ok {
+				shippingMethod = v
+			}
+			if v, ok := step3Data["province"].(string); ok {
+				province = v
+			}
+			if v, ok := step3Data["postal_code"].(string); ok {
+				postal = v
+			}
+			if v, ok := step3Data["address"].(string); ok {
+				address = v
+			} else if v, ok := step3Data["street"].(string); ok {
+				streetNum := ""
+				if v2, ok2 := step3Data["street_number"].(string); ok2 {
+					streetNum = v2
+				}
+				locality := ""
+				if v2, ok2 := step3Data["locality"].(string); ok2 {
+					locality = v2
+				}
+				address = v
+				if streetNum != "" {
+					address += " " + streetNum
+				}
+				if locality != "" {
+					address += ", " + locality
+				}
+			}
+		}
+	} else {
+		shippingMethod = r.FormValue("shipping")
+		province = r.FormValue("province")
+		postal = r.FormValue("postal_code")
+		addrEnvio := r.FormValue("address_envio")
+		addrCadete := r.FormValue("address_cadete")
+		switch shippingMethod {
+		case "envio":
+			address = addrEnvio
+		case "cadete":
+			address = addrCadete
+		default:
+			address = r.FormValue("address")
+		}
+	}
+	
 	if shippingMethod == "" {
 		shippingMethod = "retiro"
 	}
-
-	addrEnvio := r.FormValue("address_envio")
-	addrCadete := r.FormValue("address_cadete")
-	legacyAddr := r.FormValue("address")
-	province := r.FormValue("province")
-	address := ""
-	switch shippingMethod {
-	case "envio":
-		address = addrEnvio
-	case "cadete":
-		address = addrCadete
-	default:
-		address = legacyAddr
+	
+	// Extraer datos del paso 4 (método de pago)
+	var paymentMethod string
+	if isJSON {
+		if step4Data != nil {
+			if v, ok := step4Data["payment_method"].(string); ok && v != "" {
+				paymentMethod = v
+			}
+		}
+	} else {
+		paymentMethod = r.FormValue("payment_method")
 	}
-
+	if paymentMethod == "" {
+		paymentMethod = "mercadopago"
+	}
+	
+	// Validar que el método de pago sea válido
+	validPaymentMethods := map[string]bool{
+		"mercadopago":   true,
+		"transferencia": true,
+	}
+	if !validPaymentMethods[paymentMethod] {
+		log.Warn().Str("payment_method", paymentMethod).Msg("método de pago inválido, usando mercadopago")
+		paymentMethod = "mercadopago"
+	}
+	
+	// Validaciones
 	if shippingMethod == "envio" {
-		if province == "" || address == "" || postal == "" || dni == "" || phone == "" {
-			http.Redirect(w, r, "/cart?err=envio", 302)
+		if province == "" || address == "" || postal == "" || dni == "" {
+			if isJSON {
+				writeJSON(w, 400, map[string]string{"error": "faltan datos de envío"})
+			} else {
+				http.Redirect(w, r, "/cart?err=envio", 302)
+			}
 			return
 		}
 		dniRe := regexp.MustCompile(`^\d{7,8}$`)
 		pcRe := regexp.MustCompile(`^\d{4,5}$`)
 		if !dniRe.MatchString(dni) || !pcRe.MatchString(postal) {
-			http.Redirect(w, r, "/cart?err=formato", 302)
+			if isJSON {
+				writeJSON(w, 400, map[string]string{"error": "formato inválido de DNI o código postal"})
+			} else {
+				http.Redirect(w, r, "/cart?err=formato", 302)
+			}
 			return
 		}
 	} else if shippingMethod == "cadete" {
-		if address == "" || phone == "" {
-			http.Redirect(w, r, "/cart?err=cadete", 302)
+		if address == "" {
+			if isJSON {
+				writeJSON(w, 400, map[string]string{"error": "faltan datos de cadete"})
+			} else {
+				http.Redirect(w, r, "/cart?err=cadete", 302)
+			}
 			return
 		}
 		if province == "" {
 			province = "Santa Fe"
 		}
 	}
+	
+	// Obtener productos del carrito
 	cp := readCart(r)
 	if len(cp.Items) == 0 {
-		http.Redirect(w, r, "/cart?err=vacio", 302)
+		if isJSON {
+			writeJSON(w, 400, map[string]string{"error": "carrito vacío"})
+		} else {
+			http.Redirect(w, r, "/cart?err=vacio", 302)
+		}
 		return
 	}
 	lines := aggregateCart(cp, func(slug string) (*domain.Product, error) { return s.products.GetBySlug(r.Context(), slug) })
 	if len(lines) == 0 {
-		http.Redirect(w, r, "/cart?err=vacio", 302)
+		if isJSON {
+			writeJSON(w, 400, map[string]string{"error": "carrito vacío"})
+		} else {
+			http.Redirect(w, r, "/cart?err=vacio", 302)
+		}
 		return
 	}
-	o := &domain.Order{ID: uuid.New(), Status: domain.OrderStatusAwaitingPay, Email: email, Name: name, Phone: phone, DNI: dni, PostalCode: postal, ShippingMethod: shippingMethod}
+	
+	// Crear o actualizar cliente
+	var customerID *uuid.UUID
+	if s.customers != nil {
+		cust, err := s.customers.FindByEmail(r.Context(), email)
+		if err != nil && err == domain.ErrNotFound {
+			// Crear nuevo cliente
+			newCust := &domain.Customer{
+				ID:    uuid.New(),
+				Email: strings.ToLower(email),
+				Name:  name,
+				Phone: phone,
+			}
+			if err := s.customers.Save(r.Context(), newCust); err == nil {
+				customerID = &newCust.ID
+			} else {
+				log.Warn().Err(err).Str("email", email).Msg("error creando cliente, continuando sin customer_id")
+			}
+		} else if err == nil && cust != nil {
+			// Actualizar cliente existente
+			cust.Name = name
+			cust.Phone = phone
+			if err := s.customers.Save(r.Context(), cust); err == nil {
+				customerID = &cust.ID
+			} else {
+				log.Warn().Err(err).Str("email", email).Msg("error actualizando cliente, continuando sin customer_id")
+			}
+		} else {
+			log.Warn().Err(err).Str("email", email).Msg("error buscando cliente, continuando sin customer_id")
+		}
+	}
+	
+	// Crear orden
+	o := &domain.Order{
+		ID:             uuid.New(),
+		Status:         domain.OrderStatusAwaitingPay,
+		Email:          email,
+		Name:           name,
+		Phone:          phone,
+		DNI:            dni,
+		PostalCode:     postal,
+		ShippingMethod: shippingMethod,
+		PaymentMethod:  paymentMethod,
+		CustomerID:     customerID,
+		DiscountAmount: 0.0, // Se calculará después
+		ShippingCost:   0.0, // Se calculará después
+		Total:          0.0, // Se calculará después
+		Notified:       false,
+	}
+	
+	log.Debug().
+		Str("email", email).
+		Str("name", name).
+		Str("payment_method", paymentMethod).
+		Str("shipping_method", shippingMethod).
+		Int("items_count", len(lines)).
+		Msg("creando orden")
+	
 	itemsTotal := 0.0
 	for _, l := range lines {
 		p, _ := s.products.GetBySlug(r.Context(), l.Slug)
@@ -1548,9 +1812,26 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		} else {
 			title = "Producto"
 		}
-		o.Items = append(o.Items, domain.OrderItem{ID: uuid.New(), ProductID: pid, Qty: l.Qty, UnitPrice: l.UnitPrice, Title: title, Color: normalizeColorName(l.Color)})
+		o.Items = append(o.Items, domain.OrderItem{
+			ID:        uuid.New(),
+			ProductID: pid,
+			Qty:       l.Qty,
+			UnitPrice: l.UnitPrice,
+			Title:     title,
+			Color:     normalizeColorName(l.Color),
+		})
 		itemsTotal += l.UnitPrice * float64(l.Qty)
 	}
+	
+	if len(o.Items) == 0 {
+		if isJSON {
+			writeJSON(w, 400, map[string]string{"error": "no hay items en la orden"})
+		} else {
+			http.Redirect(w, r, "/cart?err=vacio", 302)
+		}
+		return
+	}
+	
 	shippingCost := 0.0
 	if shippingMethod == "envio" {
 		shippingCost = shippingCostFor(province)
@@ -1571,19 +1852,121 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		o.Province = province
 	}
 	o.ShippingCost = shippingCost
-	o.Total = itemsTotal + shippingCost
+	subtotal := itemsTotal + shippingCost
+	
+	// Sin descuentos - el cliente paga el precio total
+	o.DiscountAmount = 0.0
+	o.Total = subtotal
+	
+	log.Debug().
+		Str("order_id", o.ID.String()).
+		Float64("items_total", itemsTotal).
+		Float64("shipping_cost", shippingCost).
+		Float64("discount_amount", o.DiscountAmount).
+		Float64("total", o.Total).
+		Int("items_count", len(o.Items)).
+		Msg("orden calculada, guardando")
+	
 	if err := s.orders.Orders.Save(r.Context(), o); err != nil {
-		http.Redirect(w, r, "/cart?err=orden", 302)
+		log.Error().Err(err).Str("order_id", o.ID.String()).Msg("error guardando orden")
+		if isJSON {
+			writeJSON(w, 500, map[string]string{"error": "error creando orden: " + err.Error()})
+		} else {
+			http.Redirect(w, r, "/cart?err=orden", 302)
+		}
 		return
 	}
-	redirURL, err := s.payments.CreatePreference(r.Context(), o)
-	if err != nil {
-		redirURL = "/pay/" + o.ID.String()
-	} else {
+	
+	log.Info().Str("order_id", o.ID.String()).Str("payment_method", paymentMethod).Msg("orden guardada exitosamente")
+	
+	// Limpiar datos del checkout
+	writeCheckoutData(w, checkoutDataPayload{})
+	
+	// Manejar según método de pago
+	switch paymentMethod {
+	case "transferencia":
+		// Orden con pago pendiente
+		o.Status = domain.OrderStatusAwaitingPay
+		o.MPStatus = "transferencia_pending"
 		_ = s.orders.Orders.Save(r.Context(), o)
+		sendOrderNotify(o, false)
+		writeCart(w, cartPayload{})
+		if isJSON {
+			writeJSON(w, 200, map[string]interface{}{
+				"success":   true,
+				"order_id":  o.ID.String(),
+				"redirect_url": "/pay/" + o.ID.String() + "?status=pending",
+			})
+		} else {
+			http.Redirect(w, r, "/pay/"+o.ID.String()+"?status=pending", 302)
+		}
+	case "mercadopago":
+		// Validar que el servicio de pagos esté disponible
+		if s.payments == nil {
+			log.Error().Str("order_id", o.ID.String()).Msg("servicio de pagos no disponible")
+			if isJSON {
+				writeJSON(w, 500, map[string]string{"error": "Servicio de pagos no disponible"})
+			} else {
+				http.Redirect(w, r, "/pay/"+o.ID.String()+"?error=mp", 302)
+			}
+			return
+		}
+		// Redirigir a Mercado Pago
+		log.Info().Str("order_id", o.ID.String()).Msg("creando preferencia de MercadoPago")
+		redirURL, err := s.payments.CreatePreference(r.Context(), o)
+		if err != nil {
+			log.Error().Err(err).Str("order_id", o.ID.String()).Msg("error creando preferencia MP")
+			if isJSON {
+				writeJSON(w, 500, map[string]string{"error": "Error al crear la preferencia de pago: " + err.Error()})
+			} else {
+				http.Redirect(w, r, "/pay/"+o.ID.String()+"?error=mp", 302)
+			}
+			return
+		}
+		if redirURL == "" {
+			log.Error().Str("order_id", o.ID.String()).Msg("URL de redirección vacía de MercadoPago")
+			if isJSON {
+				writeJSON(w, 500, map[string]string{"error": "Error: URL de pago vacía"})
+			} else {
+				http.Redirect(w, r, "/pay/"+o.ID.String()+"?error=mp", 302)
+			}
+			return
+		}
+		// Guardar la orden con el MPPreferenceID actualizado
+		if err := s.orders.Orders.Save(r.Context(), o); err != nil {
+			log.Error().Err(err).Str("order_id", o.ID.String()).Msg("error guardando orden después de MP")
+			// Continuar de todas formas ya que la preferencia se creó
+		}
+		log.Info().Str("order_id", o.ID.String()).Str("redirect_url", redirURL).Msg("preferencia MP creada, redirigiendo")
+		writeCart(w, cartPayload{})
+		if isJSON {
+			writeJSON(w, 200, map[string]interface{}{
+				"success":      true,
+				"order_id":     o.ID.String(),
+				"redirect_url": redirURL,
+			})
+		} else {
+			http.Redirect(w, r, redirURL, 302)
+		}
+	default:
+		// Fallback: usar Mercado Pago
+		redirURL, err := s.payments.CreatePreference(r.Context(), o)
+		if err != nil {
+			redirURL = "/pay/" + o.ID.String()
+		} else {
+			_ = s.orders.Orders.Save(r.Context(), o)
+		}
+		writeCart(w, cartPayload{})
+		if isJSON {
+			writeJSON(w, 200, map[string]interface{}{
+				"success":      true,
+				"order_id":     o.ID.String(),
+				"redirect_url": redirURL,
+			})
+		} else {
+			http.Redirect(w, r, redirURL, 302)
+		}
 	}
-	writeCart(w, cartPayload{})
-	http.Redirect(w, r, redirURL, 302)
 }
 
 func (s *Server) handlePaySimulated(w http.ResponseWriter, r *http.Request) {
@@ -1630,11 +2013,70 @@ func (s *Server) handlePaySimulated(w http.ResponseWriter, r *http.Request) {
 	if success {
 		msg = "Pago aprobado. Gracias por tu compra."
 	}
-	data := map[string]any{"Order": o, "StatusMsg": msg, "Success": success}
+	// Mensajes específicos según método de pago
+	if o.PaymentMethod == "efectivo" && status == "pending" {
+		msg = "Pedido recibido. Te contactaremos para coordinar el pago en efectivo."
+	} else if o.PaymentMethod == "transferencia" && status == "pending" {
+		msg = "Pedido recibido. Por favor realiza la transferencia y envía el comprobante."
+	}
+	data := map[string]any{
+		"Order":              o,
+		"StatusMsg":          msg,
+		"Success":            success,
+		"IsTransferenciaPending": o.PaymentMethod == "transferencia" && (status == "pending" || o.MPStatus == "transferencia_pending"),
+	}
 	if u := readUserSession(w, r); u != nil {
 		data["User"] = u
 	}
 	s.render(w, "pay.html", data)
+}
+
+// API endpoints para checkout por pasos
+func (s *Server) apiCheckoutStep(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", 405)
+		return
+	}
+	
+	var req struct {
+		Step int                    `json:"step"`
+		Data map[string]interface{} `json:"data"`
+	}
+	
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid json", 400)
+		return
+	}
+	
+	if req.Step < 1 || req.Step > 4 {
+		http.Error(w, "invalid step", 400)
+		return
+	}
+	
+	checkoutData := readCheckoutData(r)
+	switch req.Step {
+	case 1:
+		checkoutData.Step1 = req.Data
+	case 2:
+		checkoutData.Step2 = req.Data
+	case 3:
+		checkoutData.Step3 = req.Data
+	case 4:
+		checkoutData.Step4 = req.Data
+	}
+	
+	writeCheckoutData(w, checkoutData)
+	writeJSON(w, 200, map[string]interface{}{"success": true})
+}
+
+func (s *Server) apiCheckoutData(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", 405)
+		return
+	}
+	
+	checkoutData := readCheckoutData(r)
+	writeJSON(w, 200, checkoutData)
 }
 
 func (s *Server) render(w http.ResponseWriter, name string, data any) {
@@ -1704,6 +2146,43 @@ func writeCart(w http.ResponseWriter, cp cartPayload) {
 	sig := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
 	val := sig + "." + base64.RawURLEncoding.EncodeToString(b)
 	http.SetCookie(w, &http.Cookie{Name: "cart", Value: val, Path: "/", MaxAge: 60 * 60 * 24 * 7, HttpOnly: true})
+}
+
+type checkoutDataPayload struct {
+	Step1 map[string]interface{} `json:"step1"`
+	Step2 map[string]interface{} `json:"step2"`
+	Step3 map[string]interface{} `json:"step3"`
+	Step4 map[string]interface{} `json:"step4"`
+}
+
+func readCheckoutData(r *http.Request) checkoutDataPayload {
+	c, err := r.Cookie("checkout_data")
+	if err != nil {
+		return checkoutDataPayload{}
+	}
+	parts := strings.SplitN(c.Value, ".", 2)
+	if len(parts) != 2 {
+		return checkoutDataPayload{}
+	}
+	sig, _ := base64.RawURLEncoding.DecodeString(parts[0])
+	payload, _ := base64.RawURLEncoding.DecodeString(parts[1])
+	h := hmac.New(sha256.New, secretKey())
+	h.Write(payload)
+	if !hmac.Equal(sig, h.Sum(nil)) {
+		return checkoutDataPayload{}
+	}
+	var cp checkoutDataPayload
+	_ = json.Unmarshal(payload, &cp)
+	return cp
+}
+
+func writeCheckoutData(w http.ResponseWriter, cp checkoutDataPayload) {
+	b, _ := json.Marshal(cp)
+	h := hmac.New(sha256.New, secretKey())
+	h.Write(b)
+	sig := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+	val := sig + "." + base64.RawURLEncoding.EncodeToString(b)
+	http.SetCookie(w, &http.Cookie{Name: "checkout_data", Value: val, Path: "/", MaxAge: 60 * 60 * 24 * 7, HttpOnly: true})
 }
 
 func (s *Server) apiProductUpload(w http.ResponseWriter, r *http.Request) {
@@ -2158,7 +2637,7 @@ func sendOrderEmail(o *domain.Order, success bool) error {
 	pass := os.Getenv("SMTP_PASS")
 	to := os.Getenv("ORDER_NOTIFY_EMAIL")
 	if to == "" {
-		to = "ventas@celusfera.com.ar"
+		to = "ventas@newmobile.com.ar"
 	}
 	if host == "" || port == "" || user == "" || pass == "" {
 		log.Warn().Msg("SMTP no configurado, se omite envío de email")
@@ -2581,6 +3060,13 @@ func (s *Server) handleAdminImportCSV(w http.ResponseWriter, r *http.Request) {
 		// Método tradicional
 		priceMap := parseUSDPrices(pricesText)
 		createdP, updatedP, createdV, updatedV, unmatched = s.importFromXLSXCombined(r, data, priceMap, pricesText, fxRate, defaultMargin)
+		
+		// También importar productos de texto.txt que NO estén en el Excel (ej: notebooks sin colores)
+		cp, up, cv, uv := s.importFromPricesTextOnly(r, priceMap, pricesText, fxRate, defaultMargin, data)
+		createdP += cp
+		updatedP += up
+		createdV += cv
+		updatedV += uv
 	}
 
 	// devolver también resumen del reporte
@@ -2807,6 +3293,150 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 	return createdP, updatedP, createdV, updatedV, unmatched
 }
 
+// importFromPricesTextOnly importa productos que están en texto.txt pero NO en el Excel
+// Útil para productos sin colores como notebooks, tablets, etc.
+func (s *Server) importFromPricesTextOnly(r *http.Request, priceUSD map[string]float64, pricesText string, fxRate float64, defaultMargin float64, xlsxData []byte) (int, int, int, int) {
+	// Extraer productos del Excel para saber cuáles ya fueron procesados
+	excelProducts := make(map[string]bool)
+	if len(xlsxData) > 0 {
+		f, err := excelize.OpenReader(bytes.NewReader(xlsxData))
+		if err == nil {
+			defer f.Close()
+			sheets := f.GetSheetList()
+			for _, sh := range sheets {
+				rows, err := f.GetRows(sh)
+				if err != nil || len(rows) == 0 {
+					continue
+				}
+				for _, row := range rows {
+					if len(row) > 1 {
+						name := strings.TrimSpace(row[1])
+						if name != "" && !isSectionTitle(name) {
+							baseKey := normalizeBaseKey(removeColorFromName(name))
+							excelProducts[baseKey] = true
+						}
+					}
+				}
+			}
+		}
+	}
+
+	createdP, updatedP := 0, 0
+	createdV, updatedV := 0, 0
+
+	// Procesar productos de texto.txt que NO están en el Excel
+	for baseKey, usd := range priceUSD {
+		// Si ya está en el Excel, saltarlo (ya fue procesado)
+		if excelProducts[baseKey] {
+			continue
+		}
+
+		// Solo procesar si tiene precio válido
+		if usd <= 0 {
+			continue
+		}
+
+		gross := usd * fxRate
+		margin := defaultMargin
+		price := gross * (1.0 + margin/100.0)
+
+		brand, model := inferBrandModel(baseKey)
+		
+		// Inferir categoría del nombre basándose en texto.txt
+		category := ""
+		baseLower := strings.ToLower(baseKey)
+		
+		// Detectar categoría basándose en secciones de texto.txt
+		// Buscar en qué sección del texto está el producto
+		lines := strings.Split(pricesText, "\n")
+		currentSection := ""
+		for _, line := range lines {
+			lineTrim := strings.TrimSpace(line)
+			if lineTrim == "" {
+				continue
+			}
+			// Detectar secciones (líneas en mayúsculas sin números)
+			if isSectionTitle(lineTrim) {
+				currentSection = strings.ToLower(lineTrim)
+				continue
+			}
+			// Si esta línea contiene el producto, usar la sección actual
+			if strings.Contains(strings.ToLower(lineTrim), baseLower) {
+				category = currentSection
+				break
+			}
+		}
+		
+		// Fallback: inferir por nombre si no se encontró en el texto
+		if category == "" {
+			if strings.Contains(baseLower, "macbook") || strings.Contains(baseLower, "notebook") || strings.Contains(baseLower, "nb ") {
+				category = "notebooks"
+			} else if strings.Contains(baseLower, "ipad") || strings.Contains(baseLower, "tablet") {
+				category = "tablets"
+			} else if strings.Contains(baseLower, "watch") && !strings.Contains(baseLower, "iphone") {
+				category = "pencil para ipad usb-c" // Apple Watch usa esta categoría
+			} else if strings.Contains(baseLower, "airpods") || strings.Contains(baseLower, "airtag") || strings.Contains(baseLower, "pencil") {
+				category = "pencil para ipad usb-c" // Ecosistema Apple
+			} else if strings.Contains(baseLower, "jbl") {
+				if strings.Contains(baseLower, "auri") {
+					category = "audio-auris"
+				} else {
+					category = "audio-parlantes"
+				}
+			} else if strings.Contains(baseLower, "ps5") || strings.Contains(baseLower, "xbox") || strings.Contains(baseLower, "nintendo") || strings.Contains(baseLower, "quest") {
+				category = "consolas/gaming"
+			} else if strings.Contains(baseLower, "amazfit") || strings.Contains(baseLower, "garmin") || strings.Contains(baseLower, "smart band") || strings.Contains(baseLower, "galaxy fit") || strings.Contains(baseLower, "poco watch") || strings.Contains(baseLower, "x-view") {
+				category = "smartwatches"
+			} else if strings.Contains(baseLower, "echo") || strings.Contains(baseLower, "kindle") || strings.Contains(baseLower, "gopro") || strings.Contains(baseLower, "insta360") {
+				category = "electrónica liviana"
+			}
+		}
+
+		// Buscar o crear producto
+		p, _ := s.products.GetBySlug(r.Context(), slugify(baseKey))
+		if p == nil {
+			p = &domain.Product{
+				Name:       baseKey,
+				Category:   category,
+				Brand:      brand,
+				Model:      model,
+				GrossPrice: gross,
+				MarginPct:  margin,
+				BasePrice:  price,
+			}
+			_ = s.products.Create(r.Context(), p)
+			createdP++
+		} else {
+			// Actualizar precios y categoría si está vacía
+			p.GrossPrice = gross
+			p.MarginPct = margin
+			p.BasePrice = price
+			if p.Category == "" && category != "" {
+				p.Category = category
+			}
+			_ = s.products.Create(r.Context(), p)
+			updatedP++
+		}
+
+		// Crear una variante "Default" si no tiene variantes
+		if p != nil {
+			vs, _ := s.products.ListVariants(r.Context(), p.ID)
+			if len(vs) == 0 {
+				// Crear variante sin color (o "Default")
+				v := &domain.Variant{
+					ProductID: p.ID,
+					Color:     "", // Sin color para productos sin colores
+					Stock:     10, // Stock por defecto
+				}
+				_ = s.products.CreateVariant(r.Context(), v)
+				createdV++
+			}
+		}
+	}
+
+	return createdP, updatedP, createdV, updatedV
+}
+
 func isSectionTitle(s string) bool {
 	s = strings.TrimSpace(strings.ToUpper(s))
 	if s == "" {
@@ -2883,13 +3513,22 @@ func normalizeBaseKey(s string) string {
 	// Limpiar espacios múltiples
 	s = strings.Join(strings.Fields(s), " ")
 
+	// Normalizar pulgadas: "13.3"" -> "13""", "13"" -> "13"""
+	reInch := regexp.MustCompile(`(\d+)\.\d+\s*"`)
+	s = reInch.ReplaceAllString(s, "$1\"")
+
 	// normalizar capacidades individuales sin espacio (ej: 256GB → 256 GB)
-	re := regexp.MustCompile(`(\d+)(GB|TB|MHz|mm|")`)
+	re := regexp.MustCompile(`(\d+)(GB|TB|MHz|mm)`)
 	s = re.ReplaceAllString(s, "$1 $2")
 
 	// normalizar separadores "x/y" en RAM/Storage (ej: 12/512 GB → 12/512 GB)
 	re2 := regexp.MustCompile(`(\d+)/(\d+)\s*(GB|TB)`)
 	s = re2.ReplaceAllString(s, "$1/$2 $3")
+
+	// Normalizar variaciones comunes de WiFi
+	s = strings.ReplaceAll(s, "Wifi", "WiFi")
+	s = strings.ReplaceAll(s, "wifi", "WiFi")
+	s = strings.ReplaceAll(s, "wi-fi", "WiFi")
 
 	// Normalizar variaciones comunes
 	s = strings.ReplaceAll(s, "  ", " ")
@@ -2926,6 +3565,9 @@ func matchUSDPrice(m map[string]float64, baseKey string) float64 {
 		s = strings.ToLower(s)
 		// Quitar paréntesis y contenido
 		s = regexp.MustCompile(`\s*\([^)]*\)`).ReplaceAllString(s, "")
+		// Normalizar pulgadas: "13.3"" -> "13", "13"" -> "13"
+		s = regexp.MustCompile(`(\d+)\.\d+\s*"`).ReplaceAllString(s, "$1")
+		s = strings.ReplaceAll(s, "\"", "")
 		// Quitar sufijos comunes (orden importa: más específicos primero)
 		suffixes := []string{" 5g ds", " 4g ds", " 5g", " 4g", " ds", " wifi", " wi-fi", " lte"}
 		for _, suf := range suffixes {
@@ -2933,10 +3575,11 @@ func matchUSDPrice(m map[string]float64, baseKey string) float64 {
 		}
 		// Limpiar caracteres especiales
 		s = strings.ReplaceAll(s, "\u00a0", " ")
-		s = strings.ReplaceAll(s, "\"", "")
 		s = strings.ReplaceAll(s, "+", " ")
-		// Normalizar espacios
+		// Normalizar espacios y orden de palabras comunes
 		s = strings.Join(strings.Fields(s), " ")
+		// Normalizar orden: "iPad 11 A16" -> "iPad A16 11" para mejor matching
+		s = regexp.MustCompile(`ipad\s+(\d+)\s+(a\d+)`).ReplaceAllString(s, "ipad $2 $1")
 		return strings.TrimSpace(s)
 	}
 
@@ -2949,19 +3592,47 @@ func matchUSDPrice(m map[string]float64, baseKey string) float64 {
 		}
 	}
 
-	// Intento 3: Match parcial (contiene)
-	// Útil para "Samsung S25+" que puede venir como "Samsung S25+ 12/256 GB"
-	for k, v := range m {
-		kNorm := normalize(k)
-		// Si la clave normalizada está contenida en baseNorm o viceversa
-		if len(kNorm) > 10 && len(baseNorm) > 10 { // Solo para nombres razonablemente largos
-			if strings.Contains(baseNorm, kNorm) || strings.Contains(kNorm, baseNorm) {
-				return v
+	// Intento 3: Match parcial mejorado (contiene palabras clave importantes)
+	// Extraer palabras clave del baseKey (marca + modelo principal)
+	baseWords := strings.Fields(baseNorm)
+	if len(baseWords) >= 2 {
+		// Construir patrón con primeras 2-3 palabras (marca + modelo)
+		keyPattern := strings.Join(baseWords[:min(3, len(baseWords))], " ")
+		for k, v := range m {
+			kNorm := normalize(k)
+			// Si el patrón está contenido en la clave o viceversa
+			if strings.Contains(kNorm, keyPattern) || strings.Contains(keyPattern, kNorm) {
+				// Verificar que las palabras clave coincidan
+				kWords := strings.Fields(kNorm)
+				if len(kWords) >= 2 {
+					kPattern := strings.Join(kWords[:min(3, len(kWords))], " ")
+					// Si hay suficiente coincidencia (al menos 2 palabras clave)
+					baseSet := make(map[string]bool)
+					for _, w := range baseWords[:min(3, len(baseWords))] {
+						baseSet[w] = true
+					}
+					matches := 0
+					for _, w := range kWords[:min(3, len(kWords))] {
+						if baseSet[w] {
+							matches++
+						}
+					}
+					if matches >= 2 && len(keyPattern) > 8 && len(kPattern) > 8 {
+						return v
+					}
+				}
 			}
 		}
 	}
 
 	return 0
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (s *Server) handleAdminExportCSV(w http.ResponseWriter, r *http.Request) {

@@ -41,6 +41,7 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./public:/app/public
+      - ./internal/views:/app/internal/views
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8080 || exit 1"]
       interval: 10s

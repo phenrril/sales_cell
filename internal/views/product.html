@@ -37,7 +37,7 @@
   
   <div class="pd-info">
     <div class="pd-badges-top">
-      <span class="badge green">12x sin interés</span>
+      <span class="badge green">En stock</span>
       <span class="badge gray">Envío gratis</span>
     </div>
     
@@ -66,30 +66,23 @@
       <div class="pd-price-old">{{ars $originalPrice}}</div>
       <div class="pd-price-discount">31% OFF</div>
       <div class="pd-price-current">{{ars .Product.BasePrice}}</div>
-      <div class="pd-price-installment">12x ${{printf "%.0f" (div .Product.BasePrice 12.0)}} sin interés</div>
     </div>
     
-    <div class="pd-promotions" style="margin:20px 0;padding:16px;background:#F5F5F5;border-radius:8px">
-      <div style="font-weight:600;margin-bottom:12px;font-size:14px">Promociones Financieras</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
+    <div class="pd-shipping pd-shipping-accordion" style="margin:20px 0;padding:0;background:#F5F5F5;border-radius:8px;overflow:hidden">
+      <button type="button" class="pd-accordion-header" style="width:100%;padding:16px;background:#F5F5F5;border:none;display:flex;justify-content:space-between;align-items:center;cursor:pointer;text-align:left">
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-weight:600">12 cuotas</span>
-          <span style="color:var(--color-muted)">sin interés</span>
+          <span>📍</span>
+          <div>
+            <div style="font-weight:600;font-size:15px;color:var(--color-text)">Envío a todo el país</div>
+            <div style="color:var(--color-success);font-weight:600;font-size:13px">Gratis</div>
+          </div>
         </div>
-      </div>
-    </div>
-    
-    <div class="pd-shipping" style="margin:20px 0;padding:16px;background:#F5F5F5;border-radius:8px">
-      <h3 style="font-size:16px;font-weight:600;margin:0 0 12px">Calculá el costo de envío</h3>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <span>📍</span>
-        <div>
-          <div style="font-weight:500">Envío a <strong>todo el país</strong></div>
-          <div style="color:var(--color-success);font-weight:600;font-size:14px">Gratis</div>
-        </div>
-      </div>
-      <div style="margin-top:16px">
-        <div style="font-weight:600;margin-bottom:8px;font-size:14px">Tiempos de entrega</div>
+        <svg class="accordion-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.3s">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="pd-accordion-content" style="display:none;padding:0 16px 16px">
+        <div style="font-weight:600;margin-bottom:8px;font-size:14px;color:var(--color-text)">Tiempos de entrega</div>
         <div style="font-size:13px;color:var(--color-muted);line-height:1.6">
           <div>CABA: Hasta 48 h hábiles</div>
           <div>GBA: de 2 a 3 días hábiles</div>
@@ -102,24 +95,53 @@
       <input type="hidden" name="slug" value="{{.Product.Slug}}" />
       <input type="hidden" name="color" id="colorInput" value="{{.DefaultColor}}" />
       <div class="pd-actions" style="display:flex;gap:12px">
-        <button class="btn-secondary" type="button" onclick="this.form.submit()" style="flex:1;padding:14px;font-size:15px;font-weight:500">Agregar al carrito</button>
-        <button class="btn-primary" type="submit" style="flex:1;padding:14px;font-size:15px;font-weight:500">Comprar</button>
+        <button class="btn-secondary" type="button" id="addToCartBtn" style="flex:1;padding:14px;font-size:15px;font-weight:500">Agregar al carrito</button>
+        <a href="/cart" class="btn-primary" id="viewCartBtn" style="flex:1;padding:14px;font-size:15px;font-weight:500;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center">Ver carrito</a>
       </div>
       <span id="addedMsg" class="added-msg" {{if ne .Added 1}}hidden{{end}} style="display:block;margin-top:12px;color:var(--color-success);font-weight:600;text-align:center">{{if eq .Added 1}}✓ Agregado al carrito{{end}}</span>
     </form>
   </div>
 </article>
 
+<!-- Sticky Action Bar (Mobile Only) -->
+<div class="sticky-action-bar">
+  <div class="sticky-action-content">
+    <div class="sticky-price-info">
+      <div class="sticky-price">{{ars .Product.BasePrice}}</div>
+      <div class="sticky-price-label">Envío gratis</div>
+    </div>
+    <button type="button" id="stickyAddToCart" class="btn-primary sticky-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+      Agregar al carrito
+    </button>
+  </div>
+</div>
+
 <section class="pd-features" style="margin-top:48px">
-  <h2 style="font-size:28px;font-weight:700;margin:0 0 24px">Características de {{.Product.Name}}</h2>
+  <h2 class="pd-features-title" style="font-size:28px;font-weight:700;margin:0 0 24px">Características de {{.Product.Name}}</h2>
   
-  <div class="pd-tabs" style="display:flex;gap:0;border-bottom:2px solid var(--color-border);margin-bottom:24px">
+  <!-- Desktop tabs -->
+  <div class="pd-tabs pd-tabs-desktop" style="display:flex;gap:0;border-bottom:2px solid var(--color-border);margin-bottom:24px">
     <button class="pd-tab active" data-tab="highlights">Destacadas</button>
     <button class="pd-tab" data-tab="specs">Especificaciones</button>
     <button class="pd-tab" data-tab="info">Más información</button>
   </div>
   
-  <div class="pd-tab-content" id="tab-highlights">
+  <!-- Mobile accordion -->
+  <div class="pd-accordion-mobile">
+    <button type="button" class="pd-accordion-btn active" data-accordion="highlights">
+      <span>📱 Destacadas</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+    <div class="pd-accordion-panel" id="accordion-highlights" style="display:block">
+  
+  <div class="pd-tab-content pd-tab-content-desktop" id="tab-highlights">
     <div class="pd-features-grid">
       <div class="pd-feature-card">
         <div class="pd-feature-icon">📱</div>
@@ -143,8 +165,17 @@
       </div>
     </div>
   </div>
+    </div><!-- Close accordion-highlights -->
   
-  <div class="pd-tab-content" id="tab-specs" style="display:none">
+    <button type="button" class="pd-accordion-btn" data-accordion="specs">
+      <span>📋 Especificaciones</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+    <div class="pd-accordion-panel" id="accordion-specs" style="display:none">
+  
+  <div class="pd-tab-content pd-tab-content-desktop" id="tab-specs" style="display:none">
     {{if .Product.Specifications}}
       <ul class="pd-specs-list" style="list-style:none;padding:0;margin:0">
         {{$specs := .Product.Specifications}}
@@ -208,14 +239,356 @@
       </ul>
     {{end}}
   </div>
+    </div><!-- Close accordion-specs -->
   
-  <div class="pd-tab-content" id="tab-info" style="display:none">
+    <button type="button" class="pd-accordion-btn" data-accordion="info">
+      <span>ℹ️ Más información</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+    <div class="pd-accordion-panel" id="accordion-info" style="display:none">
+  
+  <div class="pd-tab-content pd-tab-content-desktop" id="tab-info" style="display:none">
     <div class="pd-info-content" style="line-height:1.6;color:var(--color-text)">
-      <p>Garantía oficial y factura. Envío a todo el país o retiro en local.</p>
-      <p style="margin-top:12px">Para más información, escribinos por <a href="https://wa.me/5493416219815" target="_blank" rel="noopener" style="color:var(--color-brand);text-decoration:underline">WhatsApp</a>.</p>
+      <p>Envío en el día y factura. Envío a todo el país o retiro en local.</p>
+      <p style="margin-top:12px">Para más información, escribinos por <a href="https://wa.me/5493416620117?text=buen%20dia,%20te%20escribo%20para%20saber%20mas%20del%20celular.." target="_blank" rel="noopener" style="color:var(--color-brand);text-decoration:underline">WhatsApp</a>.</p>
     </div>
   </div>
+    </div><!-- Close accordion-info -->
+  </div><!-- Close pd-accordion-mobile -->
 </section>
+
+<style>
+/* ========== MOBILE PRODUCT OPTIMIZATIONS ========== */
+
+/* Sticky Action Bar */
+.sticky-action-bar {
+  display: none; /* Hidden by default, shown only on mobile */
+}
+
+@media (max-width: 768px) {
+  .sticky-action-bar {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 70px !important; /* Position above bottom-nav (60px + safe area) */
+    left: 0 !important;
+    right: 0 !important;
+    background: #FFFFFF !important;
+    border-top: 1px solid #e5e7eb !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.1) !important;
+    z-index: 9999 !important; /* Above bottom-nav (9998) */
+    padding: 12px 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  /* Ensure no parent container hides it */
+  .content .sticky-action-bar,
+  .container .sticky-action-bar,
+  article ~ .sticky-action-bar {
+    display: flex !important;
+    position: fixed !important;
+  }
+}
+
+.sticky-action-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  width: 100%;
+}
+
+.sticky-price-info {
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.sticky-price {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-brand);
+  line-height: 1;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.sticky-price-label {
+  font-size: 11px;
+  color: var(--color-success);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sticky-btn {
+  flex: 1;
+  min-height: 50px;
+  height: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 0 16px;
+}
+
+.sticky-btn svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+/* Mobile Accordion for tabs */
+.pd-accordion-mobile {
+  display: none;
+}
+
+.pd-accordion-btn {
+  width: 100%;
+  padding: 16px;
+  background: #FFFFFF;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  transition: all 0.2s;
+}
+
+.pd-accordion-btn:hover {
+  background: #f9fafb;
+  border-color: var(--color-brand);
+}
+
+.pd-accordion-btn.active {
+  background: color-mix(in srgb, var(--color-brand) 5%, #fff);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.pd-accordion-btn.active svg {
+  transform: rotate(180deg);
+}
+
+.pd-accordion-btn svg {
+  flex-shrink: 0;
+  transition: transform 0.3s;
+}
+
+.pd-accordion-panel {
+  margin-bottom: 16px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shipping Accordion */
+.pd-accordion-header:hover {
+  background: #EEEEEE !important;
+}
+
+.pd-accordion-header.active svg {
+  transform: rotate(180deg);
+}
+
+/* Always hide sticky on desktop */
+@media (min-width: 769px) {
+  .sticky-action-bar {
+    display: none !important;
+  }
+  
+  .pd-accordion-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Show mobile elements */
+  .sticky-action-bar {
+    display: block !important;
+  }
+  
+  .pd-accordion-mobile {
+    display: block !important;
+  }
+  
+  /* Hide desktop elements */
+  .pd-tabs-desktop {
+    display: none !important;
+  }
+  
+  .pd-tab-content-desktop {
+    display: block !important;
+  }
+  
+  .pd-actions {
+    display: none !important;
+  }
+  
+  /* Adjust product detail layout */
+  .product-detail {
+    gap: 20px;
+  }
+  
+  /* Full-width gallery */
+  .pd-media {
+    margin: 0 -16px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    padding: 16px;
+  }
+  
+  .pd-slides {
+    height: 70vw;
+    max-height: 500px;
+  }
+  
+  /* Larger thumbnails for mobile */
+  .pd-thumb img {
+    width: 70px;
+    height: 70px;
+  }
+  
+  /* Improved color selector */
+  .pd-selector-option {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+  
+  .pd-color-dot {
+    width: 24px;
+    height: 24px;
+  }
+  
+  /* Price section more prominent */
+  .pd-price-section {
+    margin: 16px 0;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 12px;
+  }
+  
+  .pd-price-current {
+    font-size: 32px;
+  }
+  
+  .pd-price-old {
+    font-size: 18px;
+  }
+  
+  /* Hide non-sticky actions on mobile */
+  .pd-actions {
+    display: none !important;
+  }
+  
+  /* Title adjustments */
+  .pd-title {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  
+  .pd-features-title {
+    font-size: 22px;
+  }
+  
+  /* Features grid single column */
+  .pd-features-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .pd-feature-card {
+    padding: 20px;
+  }
+  
+  /* Specs adjustments */
+  .pd-spec-list-item strong {
+    display: block !important;
+    min-width: auto !important;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  
+  .pd-spec-list-item {
+    padding: 16px 0 !important;
+  }
+  
+  /* Bottom padding for sticky bar + bottom nav */
+  .content {
+    padding-bottom: 160px !important; /* 80px sticky + 80px bottom-nav */
+  }
+  
+  /* Navigation arrows smaller */
+  .pd-nav {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+  
+  .pd-nav.prev {
+    left: 8px;
+  }
+  
+  .pd-nav.next {
+    right: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pd-title {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+  
+  .pd-price-current {
+    font-size: 28px;
+  }
+  
+  .sticky-price {
+    font-size: 20px;
+  }
+  
+  .sticky-btn {
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+  
+  .pd-thumb img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .pd-features-title {
+    font-size: 20px;
+  }
+}
+</style>
 
 <script>
 (function(){
@@ -356,67 +729,161 @@
   const form=document.querySelector('.pd-form');
   if(form){
     const addedMsg=document.getElementById('addedMsg');
-    form.addEventListener('submit',function(e){
-      e.preventDefault();
-      const submitBtn=form.querySelector('button[type=submit]');
-      if(submitBtn) submitBtn.disabled=true;
-      const fd=new FormData(form);
-      try{
-        const cur=(inp&&typeof inp.value==='string')?inp.value.trim():'';
-        const finalCol=cur||defaultColor||'';
-        if(fd.has('color')) fd.set('color',finalCol);
-        else fd.append('color',finalCol);
-      }catch{}
-      const usp=new URLSearchParams();
-      fd.forEach((v,k)=>{if(typeof v==='string') usp.append(k,v);});
-      fetch('/cart',{
-        method:'POST',
-        headers:{
-          'Accept':'application/json',
-          'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
-          'X-Requested-With':'fetch'
-        },
-        body:usp.toString(),
-        redirect:'manual'
-      }).then(async res=>{
-        if(res.ok){
-          let itemsCount=null;
-          try{
-            const j=await res.json();
-            itemsCount=j.items;
-          }catch{}
+    const addBtn=document.getElementById('addToCartBtn');
+    
+    if(addBtn){
+      addBtn.addEventListener('click',function(e){
+        e.preventDefault();
+        addBtn.disabled=true;
+        const fd=new FormData(form);
+        try{
+          const cur=(inp&&typeof inp.value==='string')?inp.value.trim():'';
+          const finalCol=cur||defaultColor||'';
+          if(fd.has('color')) fd.set('color',finalCol);
+          else fd.append('color',finalCol);
+        }catch{}
+        const usp=new URLSearchParams();
+        fd.forEach((v,k)=>{if(typeof v==='string') usp.append(k,v);});
+        fetch('/cart',{
+          method:'POST',
+          headers:{
+            'Accept':'application/json',
+            'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
+            'X-Requested-With':'fetch'
+          },
+          body:usp.toString(),
+          redirect:'manual'
+        }).then(async res=>{
+          if(res.ok){
+            let itemsCount=null;
+            try{
+              const j=await res.json();
+              itemsCount=j.items;
+            }catch{}
+            if(addedMsg){
+              addedMsg.hidden=false;
+              addedMsg.textContent='✓ Agregado'+(itemsCount!=null?' (total '+itemsCount+')':'')+'!';
+              addedMsg.style.display='block';
+              setTimeout(()=>{
+                addedMsg.style.opacity='0';
+                setTimeout(()=>{addedMsg.hidden=true;addedMsg.style.opacity='1';},300);
+              },2500);
+            }
+          }else if(res.status===302){
+            if(addedMsg){
+              addedMsg.hidden=false;
+              addedMsg.textContent='✓ Agregado!';
+              addedMsg.style.display='block';
+              setTimeout(()=>{
+                addedMsg.style.opacity='0';
+                setTimeout(()=>{addedMsg.hidden=true;addedMsg.style.opacity='1';},300);
+              },2500);
+            }
+          }else{
+            throw new Error('status '+res.status);
+          }
+        }).catch(()=>{
           if(addedMsg){
             addedMsg.hidden=false;
-            addedMsg.textContent='✓ Agregado'+(itemsCount!=null?' (total '+itemsCount+')':'')+'!';
+            addedMsg.textContent='✗ Error';
+            addedMsg.style.color='var(--color-danger)';
             addedMsg.style.display='block';
-            setTimeout(()=>{
-              addedMsg.style.opacity='0';
-              setTimeout(()=>{addedMsg.hidden=true;addedMsg.style.opacity='1';},300);
-            },2500);
           }
-        }else if(res.status===302){
-          if(addedMsg){
-            addedMsg.hidden=false;
-            addedMsg.textContent='✓ Agregado!';
-            addedMsg.style.display='block';
-            setTimeout(()=>{
-              addedMsg.style.opacity='0';
-              setTimeout(()=>{addedMsg.hidden=true;addedMsg.style.opacity='1';},300);
-            },2500);
-          }
-        }else{
-          throw new Error('status '+res.status);
-        }
-      }).catch(()=>{
-        if(addedMsg){
-          addedMsg.hidden=false;
-          addedMsg.textContent='✗ Error';
-          addedMsg.style.color='var(--color-danger)';
-          addedMsg.style.display='block';
-        }
-      }).finally(()=>{
-        if(submitBtn) submitBtn.disabled=false;
+        }).finally(()=>{
+          addBtn.disabled=false;
+        });
       });
+    }
+  }
+})();
+
+// Mobile accordions functionality
+(function() {
+  // Shipping accordion
+  const shippingHeader = document.querySelector('.pd-accordion-header');
+  const shippingContent = document.querySelector('.pd-accordion-content');
+  
+  if (shippingHeader && shippingContent) {
+    shippingHeader.addEventListener('click', function() {
+      const isActive = this.classList.contains('active');
+      this.classList.toggle('active');
+      
+      if (isActive) {
+        shippingContent.style.display = 'none';
+      } else {
+        shippingContent.style.display = 'block';
+      }
+    });
+  }
+  
+  // Features accordion (mobile)
+  const accordionBtns = document.querySelectorAll('.pd-accordion-btn');
+  
+  accordionBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = 'accordion-' + this.dataset.accordion;
+      const panel = document.getElementById(targetId);
+      
+      if (!panel) return;
+      
+      const isActive = this.classList.contains('active');
+      
+      // Close all other accordions
+      accordionBtns.forEach(b => {
+        if (b !== this) {
+          b.classList.remove('active');
+          const otherId = 'accordion-' + b.dataset.accordion;
+          const otherPanel = document.getElementById(otherId);
+          if (otherPanel) otherPanel.style.display = 'none';
+        }
+      });
+      
+      // Toggle current accordion
+      this.classList.toggle('active');
+      panel.style.display = isActive ? 'none' : 'block';
+    });
+  });
+  
+  // Sticky action bar - trigger add to cart
+  const stickyBar = document.querySelector('.sticky-action-bar');
+  const stickyBtn = document.getElementById('stickyAddToCart');
+  const addToCartBtn = document.getElementById('addToCartBtn');
+  
+  // Debug: Log to verify element exists
+  if (stickyBar) {
+    console.log('Sticky bar found:', stickyBar);
+    // Force visibility on mobile
+    if (window.innerWidth <= 768) {
+      stickyBar.style.display = 'flex';
+      stickyBar.style.position = 'fixed';
+      stickyBar.style.bottom = '70px';
+      stickyBar.style.left = '0';
+      stickyBar.style.right = '0';
+      stickyBar.style.zIndex = '9999';
+      stickyBar.style.background = '#FFFFFF';
+      stickyBar.style.width = '100%';
+    }
+  } else {
+    console.log('Sticky bar NOT found!');
+  }
+  
+  if (stickyBtn && addToCartBtn) {
+    stickyBtn.addEventListener('click', function() {
+      // Scroll to top to show feedback
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Trigger the main add to cart button
+      addToCartBtn.click();
+      
+      // Visual feedback
+      const originalHTML = this.innerHTML;
+      this.innerHTML = '✓ Agregado';
+      this.style.background = 'var(--color-success)';
+      
+      setTimeout(() => {
+        this.innerHTML = originalHTML;
+        this.style.background = '';
+      }, 2000);
     });
   }
 })();

@@ -105,21 +105,36 @@ func SecurityAndStaticCache(next http.Handler) http.Handler {
 		w.Header().Set("Cross-Origin-Opener-Policy", coop)
 		w.Header().Set("Content-Security-Policy", csp)
 
-		// Caché estático fuerte para /public/
+		// Caché estático para /public/
 		if strings.HasPrefix(r.URL.Path, "/public/") && r.Method == http.MethodGet {
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-
-			// ETag/Last-Modified basado en FS local
-			rel := strings.TrimPrefix(r.URL.Path, "/")
-			rel = filepath.Clean(rel)
-			if strings.HasPrefix(rel, "public"+string(filepath.Separator)) || rel == "public" {
-				if fi, err := os.Stat(rel); err == nil && fi.Mode().IsRegular() {
-					w.Header().Set("Last-Modified", fi.ModTime().UTC().Format(http.TimeFormat))
-					etag := "W=\"" + strconv.FormatInt(fi.Size(), 10) + "-" + strconv.FormatInt(fi.ModTime().Unix(), 16) + "\""
-					w.Header().Set("ETag", etag)
-					if inm := r.Header.Get("If-None-Match"); inm != "" && strings.Contains(inm, etag) {
-						w.WriteHeader(http.StatusNotModified)
-						return
+			// En desarrollo, deshabilitar completamente el caché para ver cambios inmediatos
+			appEnv := os.Getenv("APP_ENV")
+			isDev := appEnv == "" || appEnv == "development" || appEnv == "dev"
+			
+			// Si tiene parámetro de versión en query string (ej: ?v=123), no cachear agresivamente
+			hasVersion := r.URL.Query().Get("v") != ""
+			
+			if isDev || hasVersion {
+				// En desarrollo: deshabilitar completamente el caché
+				w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+				w.Header().Set("Pragma", "no-cache")
+				w.Header().Set("Expires", "0")
+			} else {
+				// En producción: caché fuerte
+				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+				
+				// ETag/Last-Modified basado en FS local (solo en producción)
+				rel := strings.TrimPrefix(r.URL.Path, "/")
+				rel = filepath.Clean(rel)
+				if strings.HasPrefix(rel, "public"+string(filepath.Separator)) || rel == "public" {
+					if fi, err := os.Stat(rel); err == nil && fi.Mode().IsRegular() {
+						w.Header().Set("Last-Modified", fi.ModTime().UTC().Format(http.TimeFormat))
+						etag := "W=\"" + strconv.FormatInt(fi.Size(), 10) + "-" + strconv.FormatInt(fi.ModTime().Unix(), 16) + "\""
+						w.Header().Set("ETag", etag)
+						if inm := r.Header.Get("If-None-Match"); inm != "" && strings.Contains(inm, etag) {
+							w.WriteHeader(http.StatusNotModified)
+							return
+						}
 					}
 				}
 			}

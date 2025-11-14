@@ -50,6 +50,9 @@
   </div>
   <div>
     <h2 style="margin:0 0 10px;font-size:18px">Listado ({{.Total}})</h2>
+    <div style="margin-bottom:12px">
+      <input type="text" id="prodSearch" placeholder="Buscar productos por nombre, slug, marca o modelo..." aria-label="Buscar productos" style="width:100%;max-width:500px;background:#FFFFFF;border:1px solid var(--color-border);color:var(--color-text);font:inherit;padding:11px 14px;border-radius:14px;font-size:14px;line-height:1.3;transition:border-color .18s,background .18s,box-shadow .18s" />
+    </div>
     <div style="overflow-x:auto;overflow-y:visible;max-width:100%">
       <div class="row between center" style="margin-bottom:6px;gap:.5rem;align-items:flex-start">
         <div class="row" style="gap:.5rem;align-items:flex-start">
@@ -204,6 +207,12 @@
 </div>
 
 <style>
+#prodSearch:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 2px rgba(0,118,199,.2);
+}
 .modal {
   position: fixed !important;
   top: 0 !important;
@@ -254,6 +263,7 @@
   const token='{{.AdminToken}}';
   const tbl=document.getElementById('prodTable');
   const form=document.getElementById('prodForm');
+  const searchInput=document.getElementById('prodSearch');
   const fSlug=document.getElementById('pfSlug');
   const fName=document.getElementById('pfName');
   const fCat=document.getElementById('pfCategory');
@@ -1039,6 +1049,35 @@
 
   btnReset.addEventListener('click', clear);
   btnDel.addEventListener('click', async ()=>{ const slug=fSlug.value.trim(); if(!slug) return; if(!confirm('Eliminar producto y sus imágenes?')) return; const res=await fetch('/api/products/'+slug,{method:'DELETE', headers:{Authorization:'Bearer '+token}}); if(res.ok){ clear(); location.reload(); } else { alert('Error'); } });
+
+  // Búsqueda de productos en la tabla
+  if(searchInput && tbl){
+    searchInput.addEventListener('input', (e)=>{
+      const searchTerm=e.target.value.toLowerCase().trim();
+      const rows=tbl.querySelectorAll('tbody tr');
+      let visibleCount=0;
+      rows.forEach(row=>{
+        const name=(row.cells[0]?.textContent||'').toLowerCase();
+        const slug=(row.cells[1]?.textContent||'').toLowerCase();
+        const brand=(row.cells[2]?.textContent||'').toLowerCase();
+        const model=(row.cells[3]?.textContent||'').toLowerCase();
+        const matches=!searchTerm || name.includes(searchTerm) || slug.includes(searchTerm) || brand.includes(searchTerm) || model.includes(searchTerm);
+        row.style.display=matches?'':'none';
+        if(matches) visibleCount++;
+      });
+      // Actualizar contador en el título si es necesario
+      const titleEl=document.querySelector('div > h2');
+      if(titleEl && titleEl.textContent.includes('Listado')){
+        const totalMatch=titleEl.textContent.match(/\((\d+)\)/);
+        const total=totalMatch?parseInt(totalMatch[1]):rows.length;
+        if(searchTerm){
+          titleEl.textContent=`Listado (${visibleCount}${visibleCount!==total?' de '+total:''})`;
+        } else {
+          titleEl.textContent=`Listado (${total})`;
+        }
+      }
+    });
+  }
 
   // Drag & drop images preview
   function refreshPreview(){

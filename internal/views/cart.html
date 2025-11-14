@@ -1,115 +1,788 @@
 {{define "cart.html"}}
 {{template "layout_start" .}}
-<div class="cart-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px">
-  <a href="/products" class="btn-secondary" style="text-decoration:none">‹ Volver</a>
-  <h1 style="margin:0">Carrito</h1>
-  <div style="width:90px"></div>
-</div>
-{{if not .Lines}}
-<p>No hay productos en el carrito.</p>
-<p><a class="btn-primary" href="/products">Ir a productos</a></p>
-{{else}}
-<div class="table-responsive">
-<table class="cart-table">
-  <thead>
-    <tr>
-      <th>Producto</th>
-      <th>Color</th>
-      <th style="width:140px">Cant.</th>
-      <th>Unitario</th>
-      <th>Subtotal</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {{range .Lines}}
-    <tr>
-      <td class="cart-prod">
-        {{if .Image}}<img src="{{.Image}}" alt="{{.Name}}" class="thumb" loading="lazy" />{{end}}
-        <span class="name">{{.Name}}</span>
-      </td>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="color-dot" style="background: {{colorhex .Color}};"></div>
-          <span class="mono" style="font-size:.9rem">{{.Color}}</span>
+<div class="checkout-container" style="max-width:1400px;margin:0 auto;padding:0 16px">
+  
+  <!-- Header con navegación -->
+  <div class="checkout-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;padding:16px 0">
+    <button id="btnBack" class="btn-back" style="background:none;border:none;cursor:pointer;font-size:24px;color:var(--color-text);padding:8px;display:none;align-items:center" onclick="goToStep(currentStep - 1)">
+      ←
+    </button>
+    <h1 id="checkoutTitle" style="margin:0;font-size:24px;font-weight:700;flex:1;text-align:center">Carrito de compras</h1>
+    <div style="width:40px"></div>
+  </div>
+
+  {{if not .Lines}}
+  <div style="text-align:center;padding:60px 20px">
+    <div style="font-size:64px;margin-bottom:16px">🛒</div>
+    <h2 style="font-size:24px;font-weight:600;margin-bottom:12px">Tu carrito está vacío</h2>
+    <p style="color:var(--color-muted);margin-bottom:24px">Agregá productos para comenzar tu compra</p>
+    <a class="btn-primary" href="/products" style="display:inline-block;text-decoration:none">Ver productos</a>
+  </div>
+  {{else}}
+  
+  <!-- Barra de progreso -->
+  <div class="progress-bar" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;position:relative;max-width:800px;margin-left:auto;margin-right:auto">
+    <div class="progress-line" style="position:absolute;top:20px;left:0;right:0;height:2px;background:#e5e7eb;z-index:0"></div>
+    <div class="progress-line-active" id="progressLine" style="position:absolute;top:20px;left:0;height:2px;background:#0076C7;z-index:1;transition:width 0.3s ease"></div>
+    
+    <div class="progress-step" data-step="1" style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer" onclick="goToStep(1)">
+      <div class="step-circle" id="stepCircle1" style="width:40px;height:40px;border-radius:50%;background:#0076C7;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.1)">1</div>
+      <span class="step-label" style="font-size:12px;font-weight:600;color:#0076C7;text-align:center">Carrito</span>
+    </div>
+    
+    <div class="progress-step" data-step="2" style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer" onclick="goToStep(2)">
+      <div class="step-circle" id="stepCircle2" style="width:40px;height:40px;border-radius:50%;background:#e5e7eb;color:#6b7280;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.1)">2</div>
+      <span class="step-label" style="font-size:12px;font-weight:600;color:#6b7280;text-align:center">Datos</span>
+    </div>
+    
+    <div class="progress-step" data-step="3" style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer" onclick="goToStep(3)">
+      <div class="step-circle" id="stepCircle3" style="width:40px;height:40px;border-radius:50%;background:#e5e7eb;color:#6b7280;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.1)">3</div>
+      <span class="step-label" style="font-size:12px;font-weight:600;color:#6b7280;text-align:center">Envío</span>
+    </div>
+    
+    <div class="progress-step" data-step="4" style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer" onclick="goToStep(4)">
+      <div class="step-circle" id="stepCircle4" style="width:40px;height:40px;border-radius:50%;background:#e5e7eb;color:#6b7280;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.1)">4</div>
+      <span class="step-label" style="font-size:12px;font-weight:600;color:#6b7280;text-align:center">Pago</span>
+    </div>
+  </div>
+
+  <!-- Layout principal: dos columnas -->
+  <div class="checkout-layout" style="display:grid;grid-template-columns:1fr 400px;gap:32px;align-items:start">
+    
+    <!-- Columna izquierda: Pasos del checkout -->
+    <div class="checkout-steps" style="background:var(--panel);border-radius:16px;border:1px solid var(--border);padding:32px;min-height:500px">
+      
+      <!-- Paso 1: Carrito de compras -->
+      <div class="checkout-step" id="step1" data-step="1" style="display:block">
+        <h2 style="margin:0 0 24px;font-size:24px;font-weight:700">Carrito de compras</h2>
+        
+        <div class="cart-items-list" style="display:flex;flex-direction:column;gap:16px">
+          {{range .Lines}}
+          <div class="cart-item-card" style="display:flex;gap:16px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px">
+            {{if .Image}}
+            <img src="{{.Image}}" alt="{{.Name}}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border);flex-shrink:0" />
+            {{end}}
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;margin-bottom:8px;font-size:16px">{{.Name}}</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <div class="color-dot" style="background: {{colorhex .Color}};width:20px;height:20px;border-radius:50%;border:2px solid var(--border)"></div>
+                <span style="font-size:14px;color:var(--color-muted)">Color: {{.Color}}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;margin-top:12px">
+                <form method="post" action="/cart/update" style="display:inline-flex;align-items:center;gap:8px">
+                  <input type="hidden" name="slug" value="{{.Slug}}" />
+                  <input type="hidden" name="color" value="{{.Color}}" />
+                  <button name="op" value="dec" type="submit" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px">-</button>
+                  <span style="min-width:50px;text-align:center;font-weight:600;font-size:16px">{{.Qty}}</span>
+                  <button name="op" value="inc" type="submit" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px">+</button>
+                </form>
+                <form method="post" action="/cart/remove" style="display:inline-flex;align-items:center;gap:8px;margin-left:auto">
+                  <input type="hidden" name="slug" value="{{.Slug}}" />
+                  <input type="hidden" name="color" value="{{.Color}}" />
+                  <button type="submit" style="background:none;border:none;color:#dc2626;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500">
+                    <span>🗑️</span>
+                    <span>Eliminar</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+            <div style="text-align:right;min-width:120px">
+              <div style="font-size:14px;color:var(--color-muted);margin-bottom:4px">${{printf "%.2f" .UnitPrice}} c/u</div>
+              <div style="font-weight:700;font-size:20px;color:#0076C7">${{printf "%.2f" .Subtotal}}</div>
+            </div>
+          </div>
+          {{end}}
         </div>
-      </td>
-      <td>
-        <form method="post" action="/cart/update" class="qty-form">
-          <input type="hidden" name="slug" value="{{.Slug}}" />
-          <input type="hidden" name="color" value="{{.Color}}" />
-            <button name="op" value="dec" class="qbtn" type="submit">-</button>
-            <span class="qval">{{.Qty}}</span>
-            <button name="op" value="inc" class="qbtn" type="submit">+</button>
-        </form>
-      </td>
-      <td>${{printf "%.2f" .UnitPrice}}</td>
-      <td>${{printf "%.2f" .Subtotal}}</td>
-      <td>
-        <form method="post" action="/cart/remove">
-          <input type="hidden" name="slug" value="{{.Slug}}" />
-          <input type="hidden" name="color" value="{{.Color}}" />
-          <button class="link danger" type="submit">✕</button>
-        </form>
-      </td>
-    </tr>
-    {{end}}
-  </tbody>
-</table>
+        
+        <div style="margin-top:32px;padding-top:24px;border-top:2px solid var(--border)">
+          <button onclick="validateAndGoToStep(1, 2)" class="btn-primary" style="width:100%;padding:16px;font-size:18px;font-weight:700;border-radius:12px">
+            Iniciar compra
+          </button>
+          <a href="/products" class="btn-secondary" style="display:block;text-align:center;margin-top:16px;text-decoration:none;padding:12px;border-radius:12px">
+            Elegir más productos
+          </a>
+        </div>
+      </div>
+
+      <!-- Paso 2: Datos personales -->
+      <div class="checkout-step" id="step2" data-step="2" style="display:none">
+        <h2 style="margin:0 0 8px;font-size:24px;font-weight:700">Datos personales</h2>
+        <p style="margin:0 0 24px;color:var(--color-muted);font-size:16px">¡Empecemos! Ingresá tus datos para avanzar con la compra</p>
+        
+        <div style="margin-bottom:32px">
+          <h3 style="margin:0 0 16px;font-size:18px;font-weight:600">Datos obligatorios *</h3>
+          
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px;margin-bottom:24px">
+            <p style="margin:0;font-size:14px;color:#0369a1;line-height:1.6">
+              ¿Tenés más de un servicio? Ingresá el DNI de la persona titular y aprovechá el descuento Conexión Total.
+            </p>
+          </div>
+          
+          <div class="form-section" style="margin-bottom:24px">
+            <h4 style="margin:0 0 16px;font-size:16px;font-weight:600">Completá los datos</h4>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label" for="firstName" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Nombre/s *</label>
+              <input class="form-input" id="firstName" type="text" name="first_name" placeholder="Como figura en el DNI" required style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+            </div>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label" for="lastName" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Apellido/s *</label>
+              <input class="form-input" id="lastName" type="text" name="last_name" placeholder="Como figura en el DNI" required style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+            </div>
+            <div class="form-group" style="margin-bottom:24px">
+              <label class="form-label" for="dni" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">DNI *</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input class="form-input" id="dni" type="text" name="dni" placeholder="Ej: 34770653" required style="flex:1;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+                <button type="button" onclick="document.getElementById('dni').focus()" style="background:none;border:none;cursor:pointer;padding:8px;color:var(--color-muted)">✏️</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-section">
+            <h4 style="margin:0 0 16px;font-size:16px;font-weight:600">Datos de contacto</h4>
+            <p style="margin:0 0 16px;font-size:14px;color:var(--color-muted);line-height:1.6">
+              En el email y teléfono que ingreses vas a recibir información sobre el seguimiento de tu compra.
+            </p>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label" for="email" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Email *</label>
+              <input class="form-input" id="email" type="email" name="email" placeholder="maildecontacto@mail.com" required style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+            </div>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label" for="phoneType" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Tipo de tel. *</label>
+              <select class="form-input" id="phoneType" name="phone_type" required style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+                <option value="celular" selected>Celular</option>
+                <option value="fijo">Fijo</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+              <div class="form-group">
+                <label class="form-label" for="areaCode" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Cód. de área *</label>
+                <input class="form-input" id="areaCode" type="text" name="area_code" placeholder="0 3488" required style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+                <small style="font-size:12px;color:var(--color-muted);margin-top:4px;display:block">Número sin 0</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="phoneNumber" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Número *</label>
+                <input class="form-input" id="phoneNumber" type="text" name="phone_number" placeholder="15 46538907" required style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+                <small style="font-size:12px;color:var(--color-muted);margin-top:4px;display:block">Número sin 15</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display:flex;gap:16px;margin-top:32px;padding-top:24px;border-top:2px solid var(--border)">
+          <button onclick="goToStep(1)" class="btn-secondary" style="flex:1;padding:16px;font-size:16px;font-weight:600;border-radius:12px;text-decoration:none;text-align:center">
+            Volver
+          </button>
+          <button onclick="validateAndGoToStep(2, 3)" class="btn-primary" style="flex:1;padding:16px;font-size:16px;font-weight:700;border-radius:12px">
+            Continuar
+          </button>
+        </div>
+      </div>
+
+      <!-- Paso 3: Método de entrega -->
+      <div class="checkout-step" id="step3" data-step="3" style="display:none">
+        <h2 style="margin:0 0 24px;font-size:24px;font-weight:700">Método de entrega</h2>
+        
+        <div style="margin-bottom:24px">
+          <h3 style="margin:0 0 16px;font-size:18px;font-weight:600">Envío a domicilio</h3>
+          
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:16px;margin-bottom:24px">
+            <h4 style="margin:0 0 12px;font-size:14px;font-weight:600;color:#0369a1">Tiempos de entrega</h4>
+            <ul style="margin:0;padding-left:20px;color:#0369a1;font-size:14px;line-height:1.8">
+              <li>CABA: hasta 48 h hábiles</li>
+              <li>GBA: de 2 a 3 días hábiles</li>
+              <li>Resto del país: hasta 4 días hábiles</li>
+            </ul>
+          </div>
+          
+          <div class="shipping-options" style="margin-bottom:24px">
+            <label class="radio-option-large" style="display:flex;align-items:center;gap:16px;padding:20px;border:2px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:16px;transition:all 0.2s" onclick="selectShipping('retiro')">
+              <input type="radio" name="shipping_method" value="retiro" checked style="width:20px;height:20px;cursor:pointer" />
+              <div style="flex:1">
+                <div style="font-weight:600;margin-bottom:4px;font-size:16px">Retiro en local</div>
+                <div style="font-size:14px;color:var(--color-muted)">Sin costo adicional</div>
+              </div>
+            </label>
+            
+            <label class="radio-option-large" style="display:flex;align-items:center;gap:16px;padding:20px;border:2px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:16px;transition:all 0.2s" onclick="selectShipping('cadete')">
+              <input type="radio" name="shipping_method" value="cadete" style="width:20px;height:20px;cursor:pointer" />
+              <div style="flex:1">
+                <div style="font-weight:600;margin-bottom:4px;font-size:16px">Cadete en Rosario</div>
+                <div style="font-size:14px;color:var(--color-muted)">$5.000 - Entrega el mismo día</div>
+              </div>
+            </label>
+            
+            <label class="radio-option-large" style="display:flex;align-items:center;gap:16px;padding:20px;border:2px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:16px;transition:all 0.2s" onclick="selectShipping('envio')">
+              <input type="radio" name="shipping_method" value="envio" style="width:20px;height:20px;cursor:pointer" />
+              <div style="flex:1">
+                <div style="font-weight:600;margin-bottom:4px;font-size:16px">Envío a domicilio</div>
+                <div style="font-size:14px;color:var(--color-muted)">Según provincia - 2 a 4 días hábiles</div>
+              </div>
+            </label>
+          </div>
+          
+          <!-- Campos de dirección (ocultos inicialmente) -->
+          <div id="shippingFields" style="display:none;margin-top:24px">
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label" for="postalCode" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Código Postal *</label>
+              <div style="display:flex;gap:8px">
+                <input class="form-input" id="postalCode" type="text" name="postal_code" placeholder="Ej: 1414" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+                <button type="button" style="background:#0076C7;color:#fff;border:none;border-radius:8px;padding:12px 20px;cursor:pointer;font-weight:600">→</button>
+              </div>
+              <a href="#" style="display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:13px;color:#0076C7;text-decoration:none">
+                <span>ℹ️</span>
+                <span>No sé mi código</span>
+              </a>
+            </div>
+            
+            <div id="envioFields" style="display:none">
+              <div class="form-group" style="margin-bottom:16px">
+                <label class="form-label" for="province" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Provincia *</label>
+                <select class="form-input" id="province" name="province" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+                  <option value="">Seleccioná provincia</option>
+                  {{range .Provinces}}<option value="{{.}}">{{.}}</option>{{end}}
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:16px">
+                <label class="form-label" for="locality" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Localidad *</label>
+                <input class="form-input" id="locality" type="text" name="locality" placeholder="Localidad" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+              </div>
+              <div class="form-group" style="margin-bottom:16px">
+                <label class="form-label" for="street" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Calle *</label>
+                <input class="form-input" id="street" type="text" name="street" placeholder="Calle" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+                <div class="form-group">
+                  <label class="form-label" for="streetNumber" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Altura *</label>
+                  <input class="form-input" id="streetNumber" type="text" name="street_number" placeholder="Altura" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+                </div>
+                <div style="display:flex;align-items:end;padding-bottom:8px">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                    <input type="checkbox" name="no_number" style="width:18px;height:18px;cursor:pointer" />
+                    <span style="font-size:14px">Sin número</span>
+                  </label>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+                <div class="form-group">
+                  <label class="form-label" for="floor" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Piso</label>
+                  <input class="form-input" id="floor" type="text" name="floor" placeholder="Piso" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="apartment" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Depto.</label>
+                  <input class="form-input" id="apartment" type="text" name="apartment" placeholder="Depto." style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:16px">
+                <label class="form-label" for="deliveryNotes" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Dejanos indicaciones adicionales sobre el domicilio de entrega</label>
+                <textarea class="form-input" id="deliveryNotes" name="delivery_notes" placeholder="Descripción de la fachada, puntos de referencia para encontrarla, ej. casa amarilla" rows="3" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px;resize:vertical"></textarea>
+              </div>
+            </div>
+            
+            <div id="cadeteFields" style="display:none">
+              <div class="form-group" style="margin-bottom:16px">
+                <label class="form-label" for="cadeteAddress" style="display:block;margin-bottom:8px;font-size:14px;font-weight:600">Dirección en Rosario *</label>
+                <input class="form-input" id="cadeteAddress" type="text" name="cadete_address" placeholder="Dirección completa" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:14px" />
+              </div>
+            </div>
+          </div>
+          
+          <div style="background:#fff7ed;border:1px solid #fbbf24;border-radius:12px;padding:16px;margin-top:24px">
+            <div style="display:flex;align-items:start;gap:12px">
+              <span style="font-size:20px">⚠️</span>
+              <p style="margin:0;font-size:14px;color:#92400e;line-height:1.6">
+                La entrega de la compra solo se realizará a la persona registrada en el paso anterior.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display:flex;gap:16px;margin-top:32px;padding-top:24px;border-top:2px solid var(--border)">
+          <button onclick="goToStep(2)" class="btn-secondary" style="flex:1;padding:16px;font-size:16px;font-weight:600;border-radius:12px;text-decoration:none;text-align:center">
+            Volver
+          </button>
+          <button onclick="validateAndGoToStep(3, 4)" class="btn-primary" style="flex:1;padding:16px;font-size:16px;font-weight:700;border-radius:12px">
+            Continuar
+          </button>
+        </div>
+      </div>
+
+      <!-- Paso 4: Método de pago -->
+      <div class="checkout-step" id="step4" data-step="4" style="display:none">
+        <h2 style="margin:0 0 8px;font-size:24px;font-weight:700">Método de pago</h2>
+        <p style="margin:0 0 24px;color:var(--color-muted);font-size:16px">¡Seleccioná la opción más conveniente!</p>
+        
+        <div style="margin-bottom:24px">
+          <a href="#" style="display:inline-block;margin-bottom:24px;color:#0076C7;text-decoration:none;font-size:14px;font-weight:600">
+            Conocer planes de financiación →
+          </a>
+          
+          <div class="payment-options" style="display:flex;flex-direction:column;gap:16px">
+            <label class="payment-option-card" style="display:flex;align-items:center;gap:16px;padding:20px;border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s" onclick="selectPayment('transferencia')">
+              <input type="radio" name="payment_method" value="transferencia" checked style="width:20px;height:20px;cursor:pointer" />
+              <div style="font-size:24px">🏦</div>
+              <div style="flex:1">
+                <div style="font-weight:600;margin-bottom:4px;font-size:16px">Transferencia bancaria</div>
+              </div>
+            </label>
+            
+            <label class="payment-option-card" style="display:flex;align-items:center;gap:16px;padding:20px;border:2px solid var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s" onclick="selectPayment('mercadopago')">
+              <input type="radio" name="payment_method" value="mercadopago" style="width:20px;height:20px;cursor:pointer" />
+              <div style="font-size:24px">💳</div>
+              <div style="flex:1">
+                <div style="font-weight:600;margin-bottom:4px;font-size:16px">Tarjeta de crédito o débito</div>
+                <div style="font-size:14px;color:var(--color-muted)">Pago con tarjeta</div>
+              </div>
+            </label>
+          </div>
+        </div>
+        
+        <div style="display:flex;gap:16px;margin-top:32px;padding-top:24px;border-top:2px solid var(--border)">
+          <button onclick="goToStep(3)" class="btn-secondary" style="flex:1;padding:16px;font-size:16px;font-weight:600;border-radius:12px;text-decoration:none;text-align:center">
+            Volver
+          </button>
+          <button onclick="finalizeCheckout()" class="btn-primary" style="flex:1;padding:16px;font-size:16px;font-weight:700;border-radius:12px">
+            Finalizar compra
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Columna derecha: Resumen del pedido -->
+    <div class="order-summary" style="position:sticky;top:20px;background:#e0f2fe;border-radius:16px;border:1px solid #bae6fd;padding:24px;height:fit-content">
+      <h3 style="margin:0 0 24px;font-size:18px;font-weight:700;color:#0369a1">Detalle del pedido</h3>
+      
+      <div class="summary-items" style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px">
+        {{range .Lines}}
+        <div style="display:flex;gap:12px">
+          {{if .Image}}
+          <img src="{{.Image}}" alt="{{.Name}}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);flex-shrink:0" />
+          {{end}}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;margin-bottom:4px;font-size:14px">{{.Name}}</div>
+            <div style="font-size:13px;color:var(--color-muted);margin-bottom:8px">Cantidad: {{.Qty}}</div>
+            <div style="font-weight:700;font-size:16px;color:#0369a1">${{printf "%.2f" .Subtotal}}</div>
+          </div>
+        </div>
+        {{end}}
+      </div>
+      
+      <div style="border-top:2px solid #bae6fd;padding-top:16px;margin-top:16px">
+        <div id="discountSummary" style="display:none;justify-content:space-between;margin-bottom:12px;font-size:14px;color:#10b981">
+          <span>Descuento</span>
+          <span id="discountAmount" style="font-weight:600">-$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:14px;color:var(--color-muted)">
+          <span>Envío</span>
+          <span id="shippingCostSummary" style="font-weight:600">Gratis</span>
+        </div>
+        <div style="border-top:2px solid #bae6fd;padding-top:16px;margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:18px;font-weight:700;color:#0369a1">Total</span>
+          <span id="totalSummary" style="font-size:24px;font-weight:700;color:#0369a1">$<span id="totalAmount">{{printf "%.2f" .Total}}</span></span>
+        </div>
+      </div>
+      
+      <div id="pcData" style="display:none">
+        {{range $k,$v := .ProvinceCosts}}<span data-prov="{{$k}}" data-cost="{{$v}}"></span>{{end}}
+      </div>
+      
+      <a href="/cart" style="display:inline-flex;align-items:center;gap:8px;margin-top:24px;color:#0076C7;text-decoration:none;font-size:14px;font-weight:600">
+        <span>←</span>
+        <span>Volver al Carrito</span>
+      </a>
+    </div>
+  </div>
 </div>
-<div class="cart-summary">
-  <div class="total">Subtotal: <strong id="subtotalVal">${{printf "%.2f" .Total}}</strong></div>
-  <form class="checkout-form" method="post" action="/cart/checkout" id="checkoutForm" novalidate>
-    <div class="form-group">
-      <label class="form-label" for="name">Nombre completo</label>
-      <input class="form-input" id="name" type="text" name="name" placeholder="Tu nombre" required />
+
+<!-- Sticky Action Bar Mobile -->
+<div class="cart-sticky-bar">
+  <div class="cart-sticky-content">
+    <div class="cart-sticky-info">
+      <div class="cart-sticky-label">Total</div>
+      <div class="cart-sticky-price" id="stickyTotal">$<span>{{printf "%.2f" .Total}}</span></div>
     </div>
-    <div class="form-group">
-      <label class="form-label" for="email">Email</label>
-      <input class="form-input" id="email" type="email" name="email" placeholder="Tu email" required />
-    </div>
-    <div class="form-group">
-      <label class="form-label" for="phone">Teléfono</label>
-      <input class="form-input" id="phone" type="text" name="phone" placeholder="Celular" />
-    </div>
-    <fieldset class="shipping-box">
-      <legend>Entrega</legend>
-      <div class="shipping-options">
-        <label class="radio-option">
-          <input type="radio" name="shipping" value="retiro" checked />
-          <span>Retiro en local <small>(sin costo)</small></span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="shipping" value="cadete" />
-          <span>Cadete en Rosario <small>($5000)</small></span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="shipping" value="envio" />
-          <span>Envío a domicilio <small>(según provincia)</small></span>
-        </label>
-      </div>
-      <div id="cadeteGroup" class="province-group" style="display:none">
-        <input type="text" name="address_cadete" placeholder="Dirección en Rosario" class="form-input" />
-      </div>
-      <div id="envioGroup" class="province-group" style="display:none">
-        <select name="province" id="provinceSelect" class="form-input">
-          <option value="">Seleccioná provincia</option>
-          {{range .Provinces}}<option value="{{.}}">{{.}}</option>{{end}}
-        </select>
-        <input type="text" name="address_envio" placeholder="Dirección completa" class="form-input" />
-        <input type="text" name="postal_code" placeholder="Código postal" class="form-input" />
-        <input type="text" name="dni" placeholder="DNI" class="form-input" />
-      </div>
-      <div class="cost-row">Costo envío: <span id="shipCost" class="mono">$0.00</span></div>
-      <div class="grand-row">Total final: <span id="grandTotal" class="grand-val">${{printf "%.2f" .Total}}</span></div>
-    </fieldset>
-    <div id="pcData" style="display:none">
-      {{range $k,$v := .ProvinceCosts}}<span data-prov="{{$k}}" data-cost="{{$v}}"></span>{{end}}
-    </div>
-    <button type="submit" class="btn-primary pay-btn">Pagar con MercadoPago</button>
-  </form>
+    <button type="button" id="stickyCheckoutBtn" class="btn-primary cart-sticky-btn">
+      Iniciar compra
+    </button>
+  </div>
 </div>
- 
+
+<style>
+/* ========== MOBILE CART OPTIMIZATIONS ========== */
+
+/* Sticky Cart Action Bar */
+.cart-sticky-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .cart-sticky-bar {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 70px !important; /* Above bottom-nav */
+    left: 0 !important;
+    right: 0 !important;
+    background: #FFFFFF !important;
+    border-top: 2px solid #e5e7eb !important;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
+    z-index: 9999 !important;
+    padding: 12px 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+.cart-sticky-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.cart-sticky-info {
+  flex-shrink: 0;
+}
+
+.cart-sticky-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cart-sticky-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0076C7;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.cart-sticky-btn {
+  flex: 1;
+  max-width: 200px;
+  min-height: 52px;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 0 24px;
+  border-radius: 12px;
+}
+
+/* Responsive Layout - Mobile First */
+@media (max-width: 1024px) {
+  .checkout-layout {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+  
+  .order-summary {
+    position: relative !important;
+    top: 0 !important;
+    order: -1; /* Move summary to top */
+  }
+}
+
+@media (max-width: 768px) {
+  .checkout-container {
+    padding: 0 12px !important;
+  }
+  
+  /* Compact Progress Bar */
+  .progress-bar {
+    margin-bottom: 24px !important;
+    padding: 0 20px;
+  }
+  
+  .progress-step {
+    gap: 6px !important;
+  }
+  
+  .step-circle {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+  }
+  
+  .step-label {
+    font-size: 10px !important;
+  }
+  
+  /* Hide labels on very small screens */
+  @media (max-width: 480px) {
+    .step-label {
+      display: none;
+    }
+    
+    .progress-bar {
+      padding: 0 40px;
+    }
+  }
+  
+  /* Compact Cart Cards */
+  .cart-item-card {
+    padding: 12px !important;
+    gap: 12px !important;
+  }
+  
+  .cart-item-card img {
+    width: 70px !important;
+    height: 70px !important;
+  }
+  
+  .cart-item-card > div:first-of-type {
+    font-size: 14px !important;
+  }
+  
+  .cart-item-card .color-dot {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  /* Larger Touch Targets for Quantity */
+  .cart-item-card button[name="op"] {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+    border-radius: 10px !important;
+  }
+  
+  .cart-item-card span[style*="min-width:50px"] {
+    min-width: 40px !important;
+    font-size: 18px !important;
+  }
+  
+  /* Price styling in cards */
+  .cart-item-card > div:last-child {
+    min-width: 90px !important;
+  }
+  
+  .cart-item-card > div:last-child > div:last-child {
+    font-size: 18px !important;
+  }
+  
+  /* Remove button touch friendly */
+  .cart-item-card button[type="submit"] {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+  
+  /* Checkout Steps Styling */
+  .checkout-steps {
+    padding: 20px 16px !important;
+    border-radius: 12px !important;
+  }
+  
+  .checkout-steps h2 {
+    font-size: 20px !important;
+    margin-bottom: 20px !important;
+  }
+  
+  /* Summary as Collapsible */
+  .order-summary {
+    background: #f0f9ff !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+    margin-bottom: 16px;
+  }
+  
+  .order-summary h3 {
+    font-size: 16px !important;
+    margin-bottom: 16px !important;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .order-summary h3::after {
+    content: '▼';
+    font-size: 12px;
+    transition: transform 0.3s;
+  }
+  
+  .order-summary.collapsed h3::after {
+    transform: rotate(-90deg);
+  }
+  
+  .order-summary.collapsed .summary-items,
+  .order-summary.collapsed .order-summary > div:first-of-type > div:last-child,
+  .order-summary.collapsed > a {
+    display: none !important;
+  }
+  
+  .summary-items img {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  
+  .summary-items > div > div {
+    font-size: 13px !important;
+  }
+  
+  .summary-items > div > div:last-child {
+    font-size: 15px !important;
+  }
+  
+  /* Bottom padding for sticky bar */
+  .checkout-container {
+    padding-bottom: 160px !important;
+  }
+  
+  /* Form inputs mobile friendly */
+  .form-input {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 14px !important;
+  }
+  
+  .form-label {
+    font-size: 14px !important;
+  }
+  
+  /* Radio options touch friendly */
+  .radio-option-large input,
+  .payment-option-card input {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  
+  .radio-option-large,
+  .payment-option-card {
+    padding: 16px !important;
+  }
+  
+  /* Buttons */
+  .checkout-steps button {
+    min-height: 52px !important;
+    font-size: 16px !important;
+    border-radius: 12px !important;
+  }
+  
+  .checkout-header h1 {
+    font-size: 20px !important;
+  }
+  
+  /* Info boxes more compact */
+  .checkout-steps > div > div > div[style*="background:#f0f9ff"],
+  .checkout-steps > div > div > div[style*="background:#fff7ed"] {
+    padding: 12px !important;
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .cart-sticky-price {
+    font-size: 20px;
+  }
+  
+  .cart-sticky-btn {
+    font-size: 14px;
+    padding: 0 16px;
+    min-height: 48px;
+  }
+  
+  .cart-item-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .cart-item-card > div:last-child {
+    width: 100%;
+    text-align: left !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+</style>
+
+<script src="/public/assets/cart-steps.js"></script>
+
+<script>
+// Mobile cart enhancements
+(function() {
+  // Sticky checkout button functionality
+  const stickyBtn = document.getElementById('stickyCheckoutBtn');
+  
+  if (stickyBtn) {
+    stickyBtn.addEventListener('click', function() {
+      // Check current step and trigger appropriate action
+      if (currentStep === 1) {
+        validateAndGoToStep(1, 2);
+      } else if (currentStep === 2) {
+        validateAndGoToStep(2, 3);
+      } else if (currentStep === 3) {
+        validateAndGoToStep(3, 4);
+      } else if (currentStep === 4) {
+        finalizeCheckout();
+      }
+      
+      // Scroll to top to see step content
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  
+  // Update sticky bar text based on step
+  function updateStickyButton() {
+    if (!stickyBtn) return;
+    
+    const buttonTexts = {
+      1: 'Iniciar compra',
+      2: 'Continuar',
+      3: 'Continuar',
+      4: 'Finalizar compra'
+    };
+    
+    stickyBtn.textContent = buttonTexts[currentStep] || 'Continuar';
+  }
+  
+  // Update sticky total when shipping changes
+  const originalUpdateTotalSummary = window.updateTotalSummary;
+  if (typeof originalUpdateTotalSummary === 'function') {
+    window.updateTotalSummary = function() {
+      originalUpdateTotalSummary();
+      
+      // Update sticky bar total
+      const totalAmount = document.getElementById('totalAmount');
+      const stickyTotal = document.querySelector('.cart-sticky-price span');
+      
+      if (totalAmount && stickyTotal) {
+        stickyTotal.textContent = totalAmount.textContent;
+      }
+    };
+  }
+  
+  // Collapsible summary on mobile
+  if (window.innerWidth <= 768) {
+    const summary = document.querySelector('.order-summary');
+    const summaryTitle = summary ? summary.querySelector('h3') : null;
+    
+    if (summary && summaryTitle) {
+      // Start collapsed on mobile
+      summary.classList.add('collapsed');
+      
+      summaryTitle.addEventListener('click', function() {
+        summary.classList.toggle('collapsed');
+      });
+    }
+  }
+  
+  // Listen for step changes
+  const originalGoToStep = window.goToStep;
+  if (typeof originalGoToStep === 'function') {
+    window.goToStep = function(step) {
+      originalGoToStep(step);
+      updateStickyButton();
+    };
+  }
+  
+  // Initialize
+  updateStickyButton();
+})();
+</script>
 {{end}}
 {{template "layout_end" .}}
 {{end}}

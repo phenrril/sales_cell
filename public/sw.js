@@ -1,4 +1,4 @@
-const CACHE_NAME = 'celusfera-v1';
+const CACHE_NAME = 'newmobile-v1';
 const urlsToCache = [
   '/',
   '/public/assets/styles.css',

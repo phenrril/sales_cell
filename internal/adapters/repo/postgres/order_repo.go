@@ -27,7 +27,26 @@ func (r *OrderRepo) Save(ctx context.Context, o *domain.Order) error {
 	}
 	if count == 0 {
 
-		core := domain.Order{ID: o.ID, Status: o.Status, Email: o.Email, Name: o.Name, Phone: o.Phone, DNI: o.DNI, Address: o.Address, PostalCode: o.PostalCode, Province: o.Province, MPPreferenceID: o.MPPreferenceID, MPStatus: o.MPStatus, Total: o.Total, ShippingMethod: o.ShippingMethod, ShippingCost: o.ShippingCost, Notified: o.Notified}
+		core := domain.Order{
+			ID:             o.ID,
+			Status:         o.Status,
+			Email:          o.Email,
+			Name:           o.Name,
+			Phone:          o.Phone,
+			DNI:            o.DNI,
+			Address:        o.Address,
+			PostalCode:     o.PostalCode,
+			Province:       o.Province,
+			MPPreferenceID: o.MPPreferenceID,
+			MPStatus:       o.MPStatus,
+			Total:          o.Total,
+			ShippingMethod: o.ShippingMethod,
+			ShippingCost:   o.ShippingCost,
+			PaymentMethod:  o.PaymentMethod,
+			DiscountAmount: o.DiscountAmount,
+			CustomerID:     o.CustomerID,
+			Notified:       o.Notified,
+		}
 		if err := r.db.WithContext(ctx).Create(&core).Error; err != nil {
 			return err
 		}
@@ -60,6 +79,9 @@ func (r *OrderRepo) Save(ctx context.Context, o *domain.Order) error {
 		"total":            o.Total,
 		"shipping_method":  o.ShippingMethod,
 		"shipping_cost":    o.ShippingCost,
+		"payment_method":  o.PaymentMethod,
+		"discount_amount":  o.DiscountAmount,
+		"customer_id":      o.CustomerID,
 		"notified":         o.Notified,
 	}).Error
 }

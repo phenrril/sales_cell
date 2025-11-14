@@ -66,6 +66,18 @@ func NewApp(db *gorm.DB) (*App, error) {
 			log.Info().Msg("APP_ENV no es production; usando token definido")
 		}
 	}
+	
+	// Validar que el token esté presente
+	if token == "" {
+		log.Error().Msg("MP_ACCESS_TOKEN no está configurado. Las preferencias de pago no funcionarán.")
+	} else {
+		// Log del prefijo del token para debugging (sin exponer el token completo)
+		tokenPrefix := token
+		if len(tokenPrefix) > 10 {
+			tokenPrefix = tokenPrefix[:10] + "..."
+		}
+		log.Info().Str("token_prefix", tokenPrefix).Msg("token de MercadoPago configurado")
+	}
 
 	payment := mercadopago.NewGateway(token)
 
@@ -195,10 +207,31 @@ func NewApp(db *gorm.DB) (*App, error) {
 			return fmt.Sprintf("%s?w=%d", base, w)
 		},
 	}
-	tmpl, err := template.New("layout").Funcs(funcMap).ParseFS(views.FS, "*.html", "admin/*.html")
-	if err != nil {
-		return nil, err
+	
+	// En desarrollo, cargar templates desde filesystem para hot reload
+	isDev := appEnv == "" || appEnv == "development" || appEnv == "dev"
+	
+	var tmpl *template.Template
+	var err error
+	
+	if isDev {
+		// Desarrollo: cargar desde filesystem para ver cambios sin rebuild
+		tmpl, err = template.New("layout").Funcs(funcMap).ParseGlob("internal/views/*.html")
+		if err != nil {
+			return nil, err
+		}
+		_, err = tmpl.ParseGlob("internal/views/admin/*.html")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Producción: usar archivos embebidos
+		tmpl, err = template.New("layout").Funcs(funcMap).ParseFS(views.FS, "*.html", "admin/*.html")
+		if err != nil {
+			return nil, err
+		}
 	}
+	
 	app.Tmpl = tmpl
 
 	return app, nil
@@ -214,6 +247,37 @@ func (a *App) MigrateAndSeed() error {
 	); err != nil {
 		return err
 	}
+
+	// Migraciones manuales para columnas que AutoMigrate puede no agregar si la tabla ya existe
+	// Tabla orders: agregar columnas para checkout multi-paso
+	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(30)").Error
+	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(12,2) DEFAULT 0").Error
+	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id UUID").Error
+	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_method VARCHAR(30)").Error
+	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost DECIMAL(12,2) DEFAULT 0").Error
+	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal_net DECIMAL(12,2) DEFAULT 0").Error
+	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS vat_amount DECIMAL(12,2) DEFAULT 0").Error
+	
+	// Índices para las nuevas columnas
+	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_orders_payment_method ON orders(payment_method)").Error
+	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id)").Error
+	
+	// Tabla order_items: agregar columnas para variantes e impuestos
+	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id UUID").Error
+	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS sku VARCHAR(120)").Error
+	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS ean VARCHAR(20)").Error
+	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price_net DECIMAL(12,2) DEFAULT 0").Error
+	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS vat_rate DECIMAL(5,2) DEFAULT 21.00").Error
+	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS vat_amount DECIMAL(12,2) DEFAULT 0").Error
+	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price_gross DECIMAL(12,2) DEFAULT 0").Error
+	
+	// Índices para order_items
+	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_order_items_variant_id ON order_items(variant_id)").Error
+	
+	// Tabla customers: agregar columnas para datos fiscales
+	_ = a.DB.Exec("ALTER TABLE customers ADD COLUMN IF NOT EXISTS tax_id VARCHAR(30)").Error
+	_ = a.DB.Exec("ALTER TABLE customers ADD COLUMN IF NOT EXISTS tax_condition VARCHAR(4)").Error
+	_ = a.DB.Exec("ALTER TABLE customers ADD COLUMN IF NOT EXISTS price_list VARCHAR(40)").Error
 
 	if err := backfillSlugs(a.DB); err != nil {
 		return err
@@ -286,7 +350,7 @@ func seedProducts(db *gorm.DB) {
 }
 
 func seedPages(db *gorm.DB) {
-	pages := []domain.Page{{Slug: "about", Title: "Sobre Celusfera", BodyMD: "Somos una tienda especializada en celulares y accesorios."}, {Slug: "contact", Title: "Contacto", BodyMD: "Escribinos a ventas@celusfera.com.ar"}}
+	pages := []domain.Page{{Slug: "about", Title: "Sobre NewMobile", BodyMD: "Somos una tienda especializada en celulares y accesorios."}, {Slug: "contact", Title: "Contacto", BodyMD: "Escribinos a ventas@newmobile.com.ar"}}
 	for _, p := range pages {
 		db.Create(&p)
 	}

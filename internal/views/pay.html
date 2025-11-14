@@ -2,14 +2,65 @@
 {{template "layout_start" .}}
 <section style="max-width:760px;margin:30px auto 0;display:flex;flex-direction:column;gap:18px">
   <h1 style="margin:0;font-size:28px">Estado del pago</h1>
-  {{if .StatusMsg}}<div style="padding:12px 14px;border-radius:12px;background:{{if .Success}}#064e3b{{else}}#3f1d1d{{end}};border:1px solid {{if .Success}}#10b981{{else}}#ef4444{{end}};color:#fff;font-weight:600">{{.StatusMsg}}</div>{{end}}
+  {{if .StatusMsg}}
+    {{if and (not .Success) (eq .Order.PaymentMethod "efectivo")}}
+      <div style="padding:12px 14px;border-radius:12px;background:#78350f;border:1px solid #f59e0b;color:#fff;font-weight:600;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:24px">⏳</span>
+          <strong>Pedido recibido</strong>
+        </div>
+        <p style="margin:0;font-size:14px;line-height:1.5">
+          {{.StatusMsg}}
+        </p>
+      </div>
+    {{else}}
+      <div style="padding:12px 14px;border-radius:12px;background:{{if .Success}}#064e3b{{else}}#1e3a8a{{end}};border:1px solid {{if .Success}}#10b981{{else}}#3b82f6{{end}};color:#fff;font-weight:600">{{.StatusMsg}}</div>
+    {{end}}
+  {{end}}
+  {{if .IsTransferenciaPending}}
+  <div style="background:linear-gradient(135deg, #1a2b3e 0%, #0f1b2d 100%);border:2px solid #10b981;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 4px 20px rgba(16,185,129,0.2)">
+    <h2 style="margin:0;font-size:24px;color:#fff">📋 Instrucciones para Transferencia</h2>
+    
+    <div style="padding:20px;background:#0f1b2d;border-radius:12px;border:2px solid #223140;text-align:center">
+      <div style="margin-bottom:16px;font-size:14px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px">Transfiere a este alias:</div>
+      <div style="font-family:'Courier New', monospace;font-size:32px;color:#10b981;font-weight:bold;letter-spacing:2px;padding:16px 20px;background:#0a1420;border-radius:8px;border:2px solid #10b981;display:inline-block;box-shadow:0 0 20px rgba(16,185,129,0.3)">
+        newmobile
+      </div>
+    </div>
+    
+    <div style="padding:16px;background:rgba(16,185,129,0.1);border-radius:10px;border:1px solid #10b981">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <span style="font-size:24px">💰</span>
+        <div style="flex:1">
+          <div style="font-size:12px;color:#94a3b8;text-transform:uppercase">Monto a transferir</div>
+          <div style="font-size:28px;color:#fff;font-weight:bold">${{printf "%.2f" .Order.Total}}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="padding:20px;background:rgba(16,185,129,0.1);border-radius:12px;border:2px solid #10b981">
+      <div style="margin-bottom:12px;font-size:18px;color:#fff;font-weight:600">
+        ⚠️ IMPORTANTE: Envía el comprobante
+      </div>
+      <p style="margin:0 0 16px;color:#cbd5e1;line-height:1.6;font-size:15px">
+        Una vez realizada la transferencia, envía el comprobante de pago por WhatsApp para que podamos confirmar la transferencia e iniciar el envío de tu pedido.
+      </p>
+      <a href="https://wa.me/5493416620117?text=Comprobante%20de%20transferencia%20para%20la%20orden%20{{.Order.ID}}" target="_blank" rel="noopener noreferrer" style="display:block;padding:16px 24px;background:#25D366;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;text-align:center;box-shadow:0 4px 12px rgba(37,211,102,0.3);transition:transform 0.2s">
+        📲 Enviar comprobante por WhatsApp
+      </a>
+    </div>
+  </div>
+  {{end}}
   <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px">
     <div><strong>Orden:</strong> {{.Order.ID}}</div>
     <div><strong>Nombre:</strong> {{.Order.Name}}</div>
     <div><strong>Email:</strong> {{.Order.Email}}</div>
     <div><strong>Teléfono:</strong> {{.Order.Phone}}</div>
     <div><strong>DNI:</strong> {{.Order.DNI}}</div>
-    <div><strong>Método:</strong> {{if eq .Order.ShippingMethod "envio"}}Envío{{else if eq .Order.ShippingMethod "cadete"}}Cadete (Rosario){{else}}Retiro{{end}}</div>
+    <div><strong>Método de entrega:</strong> {{if eq .Order.ShippingMethod "envio"}}Envío{{else if eq .Order.ShippingMethod "cadete"}}Cadete (Rosario){{else}}Retiro{{end}}</div>
+    {{if .Order.PaymentMethod}}
+    <div><strong>Método de pago:</strong> {{if eq .Order.PaymentMethod "efectivo"}}Efectivo{{else if eq .Order.PaymentMethod "transferencia"}}Transferencia{{else if eq .Order.PaymentMethod "mercadopago"}}Mercado Pago{{else}}{{.Order.PaymentMethod}}{{end}}</div>
+    {{end}}
     {{if or (eq .Order.ShippingMethod "envio") (eq .Order.ShippingMethod "cadete") }}
       <div><strong>Dirección:</strong> {{.Order.Address}} {{if .Order.PostalCode}}({{.Order.PostalCode}} – {{.Order.Province}}){{end}}</div>
       <div><strong>Costo envío:</strong> ${{printf "%.2f" .Order.ShippingCost}}</div>

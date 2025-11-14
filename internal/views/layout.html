@@ -3,7 +3,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<title>{{if .PageTitle}}{{.PageTitle}}{{else}}Celusfera — Celulares y accesorios{{end}}</title>
+<title>{{if .PageTitle}}{{.PageTitle}}{{else}}NewMobile — Celulares y accesorios{{end}}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,16 +14,16 @@
 <link rel="preload" as="image" href="/public/assets/img/img1.webp">
 <link rel="manifest" href="/public/manifest.json">
 <meta name="theme-color" content="#0076C7">
-<meta name="description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país y hasta 12x sin interés.{{end}}">
+<meta name="description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país.{{end}}">
 <link rel="canonical" href="{{.CanonicalURL}}">
 <meta property="og:type" content="website">
-<meta property="og:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}Celusfera — Celulares y accesorios{{end}}">
-<meta property="og:description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país y hasta 12x sin interés.{{end}}">
+<meta property="og:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}NewMobile — Celulares y accesorios{{end}}">
+<meta property="og:description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país.{{end}}">
 <meta property="og:url" content="{{.CanonicalURL}}">
 <meta property="og:image" content="{{.OGImage}}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}Celusfera — Celulares y accesorios{{end}}">
-<meta name="twitter:description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país y hasta 12x sin interés.{{end}}">
+<meta name="twitter:title" content="{{if .PageTitle}}{{.PageTitle}}{{else}}NewMobile — Celulares y accesorios{{end}}">
+<meta name="twitter:description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país.{{end}}">
 <meta name="twitter:image" content="{{.OGImage}}">
 {{with .SchemaJSON}}<script type="application/ld+json">{{.}}</script>{{end}}
 <!-- JS unificado de UI -->
@@ -31,49 +31,115 @@
 <script>document.addEventListener('DOMContentLoaded',function(){document.body.classList.remove('dark');try{localStorage.removeItem('theme');}catch(e){}});</script>
 </head>
 <body class="site">
+<div class="nav-backdrop"></div>
+
+<!-- Mobile Hamburger Menu -->
+<div class="mobile-menu" id="mobileMenu">
+  <div class="mobile-menu-header">
+    <h2>Menú</h2>
+    <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Cerrar menú">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+  <nav class="mobile-menu-nav">
+    <a href="/products?category=celulares">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+      Celulares
+    </a>
+    <a href="/products?q=Accesorios">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      Accesorios
+    </a>
+    <a href="/cart">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+      Carrito
+    </a>
+    <a href="https://wa.me/5493416620117?text=buen%20dia,%20te%20escribo%20para%20saber%20mas%20del%20celular.." target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      WhatsApp
+    </a>
+  </nav>
+</div>
+
+<!-- Mobile Search Modal -->
+<div class="search-modal" id="searchModal">
+  <div class="search-modal-header">
+    <button class="search-modal-back" id="searchModalBack" aria-label="Volver">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </button>
+    <form action="/products" method="get" style="flex:1">
+      <input type="search" name="q" id="mobileSearchInput" placeholder="Buscar productos..." aria-label="Buscar" value="" autocomplete="off" autofocus />
+    </form>
+  </div>
+  <div class="search-modal-results" id="mobileSearchResults"></div>
+</div>
+
 <header class="topbar">
   <div class="container row between center">
+    <!-- Hamburger button (mobile only) -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Abrir menú" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
     <a href="/" class="brand">
+      <img src="/public/assets/img/newmobile.svg" alt="NewMobile" class="brand-logo" />
       <span class="brand-text">
-        <span class="brand-title">Celusfera</span>
+        <span class="brand-title">NewMobile</span>
         <span class="brand-sub">Celulares y accesorios</span>
       </span>
     </a>
 
-    <form class="searchbar" action="/products" method="get" role="search">
-      <input type="search" name="q" placeholder="Buscar celulares o accesorios..." aria-label="Buscar" value="" />
-      <button type="submit" class="search-btn">🔍</button>
+    <!-- Desktop search bar -->
+    <form class="searchbar searchbar-desktop" action="/products" method="get" role="search">
+      <div class="searchbar-wrapper" style="position:relative;flex:1;min-width:200px;max-width:1200px">
+        <input type="search" name="q" id="headerSearch" placeholder="Buscar celulares o accesorios..." aria-label="Buscar" value="" autocomplete="off" />
+        <div id="searchResults" class="search-results" style="display:none"></div>
+      </div>
     </form>
-    <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+
+    <!-- Mobile search button -->
+    <button class="search-btn-mobile" id="searchBtnMobile" aria-label="Buscar">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+    </button>
+
     <nav class="mainnav">
+      <form class="searchbar searchbar--drawer" action="/products" method="get" role="search">
+        <div class="searchbar-wrapper" style="position:relative;width:100%">
+          <input type="search" name="q" id="drawerSearch" placeholder="Buscar celulares o accesorios..." aria-label="Buscar" value="" autocomplete="off" />
+          <div id="drawerSearchResults" class="search-results" style="display:none"></div>
+        </div>
+      </form>
       <a href="/products?category=celulares">Celulares</a>
       <a href="/products?q=Accesorios">Accesorios</a>
-      <a href="/products?sort=price_asc">Ofertas</a>
-      <a href="/products?q=Reacondicionado">Reacondicionados</a>
       <a href="/cart" class="cart-link">Carrito</a>
-      <a class="whatsapp" href="https://wa.me/5493416219815" target="_blank" rel="noopener" aria-label="WhatsApp">
+      <a class="whatsapp" href="https://wa.me/5493416620117?text=buen%20dia,%20te%20escribo%20para%20saber%20mas%20del%20celular.." target="_blank" rel="noopener" aria-label="WhatsApp">
         <img src="/public/assets/img/whats.svg" alt="" width="22" height="22" aria-hidden="true" />
         <span class="sr-only">WhatsApp</span>
       </a>
     </nav>
   </div>
-  <div class="promobar">
-    <div class="container promobar-row">
-      <span>Hasta <strong>12x sin interés</strong></span>
-      <span>Envíos a todo el país</span>
-      <span>Garantía oficial</span>
-    </div>
-  </div>
-  <div class="subnav brands-section">
+  <div class="subnav brands-section" id="brandsSection">
     <div class="container">
-      <div class="brands-grid">
-        <a href="/products?q=Samsung" class="brand-circle" title="Samsung">
+      <!-- Desktop brands grid -->
+      <div class="brands-grid brands-grid-desktop">
+        <a href="/products?q=Samsung&category=celulares" class="brand-circle" title="Samsung">
           <div class="brand-icon">
             <img src="/public/assets/logos/samsung.svg" alt="Samsung" />
           </div>
           <span class="brand-name">Samsung</span>
         </a>
-        <a href="/products?q=Apple" class="brand-circle" title="Apple">
+        <a href="/products?q=Apple&category=celulares" class="brand-circle" title="Apple">
           <div class="brand-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.38 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="#0076C7"/>
@@ -81,23 +147,17 @@
           </div>
           <span class="brand-name">Apple</span>
         </a>
-        <a href="/products?q=moto" class="brand-circle" title="Motorola">
+        <a href="/products?q=Motorola&category=celulares" class="brand-circle" title="Motorola">
           <div class="brand-icon">
             <img src="/public/assets/logos/motorola.png" alt="Motorola" />
           </div>
           <span class="brand-name">Motorola</span>
         </a>
-        <a href="/products?q=Xiaomi" class="brand-circle" title="Xiaomi">
+        <a href="/products?q=Xiaomi&category=celulares" class="brand-circle" title="Xiaomi">
           <div class="brand-icon">
             <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" />
           </div>
           <span class="brand-name">Xiaomi</span>
-        </a>
-        <a href="/products?q=TCL" class="brand-circle" title="TCL">
-          <div class="brand-icon">
-            <img src="/public/assets/logos/tcl.svg" alt="TCL" />
-          </div>
-          <span class="brand-name">TCL</span>
         </a>
         <a href="/products?category=celulares" class="brand-circle" title="Todos los celulares">
           <div class="brand-icon">
@@ -107,7 +167,7 @@
           </div>
           <span class="brand-name">Celulares</span>
         </a>
-        <a href="/products?sort=newest" class="brand-circle" title="Novedades">
+        <a href="/products?q=novedades&sort=newest" class="brand-circle" title="Novedades">
           <div class="brand-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#0076C7"/>
@@ -115,7 +175,7 @@
           </div>
           <span class="brand-name">Novedades</span>
         </a>
-        <a href="/products?sort=price_asc" class="brand-circle" title="Ofertas">
+        <a href="/products?q=ofertas&sort=price_asc" class="brand-circle" title="Ofertas">
           <div class="brand-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M7 13l3 3 7-7" stroke="#0076C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -124,12 +184,69 @@
           </div>
           <span class="brand-name">Ofertas</span>
         </a>
+        <a href="/products?q=auriculares" class="brand-circle" title="Auriculares">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 10v4c0 2.21 1.79 4 4 4h1v-2H7c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h1V6H7c-2.21 0-4 1.79-4 4z" fill="#0076C7"/>
+              <path d="M21 10v4c0 2.21-1.79 4-4 4h-1v-2h1c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2h-1V6h1c2.21 0 4 1.79 4 4z" fill="#0076C7"/>
+              <path d="M10 6v2h4V6h-4z" fill="#0076C7"/>
+            </svg>
+          </div>
+          <span class="brand-name">Auriculares</span>
+        </a>
+        <a href="/products?q=notebooks" class="brand-circle" title="Notebooks">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z" stroke="#0076C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M2 8h20" stroke="#0076C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+          <span class="brand-name">Notebooks</span>
+        </a>
+      </div>
+      
+      <!-- Mobile brands carousel -->
+      <div class="brands-carousel-mobile">
+        <div class="brands-carousel-track">
+          <a href="/products?q=Samsung&category=celulares" class="brand-chip">
+            <img src="/public/assets/logos/samsung.svg" alt="Samsung" />
+            <span>Samsung</span>
+          </a>
+          <a href="/products?q=Apple&category=celulares" class="brand-chip">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.38 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor"/></svg>
+            <span>Apple</span>
+          </a>
+          <a href="/products?q=Motorola&category=celulares" class="brand-chip">
+            <img src="/public/assets/logos/motorola.png" alt="Motorola" />
+            <span>Motorola</span>
+          </a>
+          <a href="/products?q=Xiaomi&category=celulares" class="brand-chip">
+            <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" />
+            <span>Xiaomi</span>
+          </a>
+          <a href="/products?category=celulares" class="brand-chip">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z" fill="currentColor"/></svg>
+            <span>Celulares</span>
+          </a>
+          <a href="/products?q=novedades&sort=newest" class="brand-chip">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>
+            <span>Novedades</span>
+          </a>
+          <a href="/products?q=ofertas&sort=price_asc" class="brand-chip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l3 3 7-7"/><circle cx="12" cy="12" r="10"/></svg>
+            <span>Ofertas</span>
+          </a>
+          <a href="/products?q=auriculares" class="brand-chip">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 10v4c0 2.21 1.79 4 4 4h1v-2H7c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h1V6H7c-2.21 0-4 1.79-4 4z" fill="currentColor"/><path d="M21 10v4c0 2.21-1.79 4-4 4h-1v-2h1c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2h-1V6h1c2.21 0 4 1.79 4 4z" fill="currentColor"/><path d="M10 6v2h4V6h-4z" fill="currentColor"/></svg>
+            <span>Auriculares</span>
+          </a>
+        </div>
       </div>
     </div>
   </div>
 </header>
 
-<div class="nav-backdrop"></div>
+<div class="page-wrapper">
 <main class="container content">
 {{end}}
 
@@ -147,12 +264,836 @@
       </ul>
     </div>
   </div>
-  <div class="copyright">© 2025 Celusfera — <a class="link" href="https://www.roxiumlabs.com/" target="_blank" rel="noopener">Dev by RoxiumLabs</a></div>
+  <div class="copyright">© 2025 NewMobile — <a class="link" href="https://www.roxiumlabs.com/" target="_blank" rel="noopener">Dev by RoxiumLabs</a></div>
 </footer>
+</div><!-- .page-wrapper -->
 
-<a href="https://wa.me/5493416219815" class="fab-whatsapp" aria-label="WhatsApp" target="_blank" rel="noopener" data-badge="1">
+<a href="https://wa.me/5493416620117?text=buen%20dia,%20te%20escribo%20para%20saber%20mas%20del%20celular.." class="fab-whatsapp" aria-label="WhatsApp" target="_blank" rel="noopener" data-badge="1">
   <img src="/public/assets/img/whats.svg" alt="" width="28" height="28" aria-hidden="true" />
 </a>
+
+<!-- Bottom Navigation (Mobile only) -->
+<nav class="bottom-nav">
+  <a href="/" class="bottom-nav-item" aria-label="Inicio">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+    <span>Inicio</span>
+  </a>
+  <button class="bottom-nav-item" id="bottomSearchBtn" aria-label="Buscar">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <path d="m21 21-4.35-4.35"></path>
+    </svg>
+    <span>Buscar</span>
+  </button>
+  <a href="/cart" class="bottom-nav-item" aria-label="Carrito">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="21" r="1"></circle>
+      <circle cx="20" cy="21" r="1"></circle>
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+    </svg>
+    <span>Carrito</span>
+  </a>
+  <a href="https://wa.me/5493416620117?text=buen%20dia,%20te%20escribo%20para%20saber%20mas%20del%20celular.." target="_blank" rel="noopener" class="bottom-nav-item" aria-label="WhatsApp">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+    <span>WhatsApp</span>
+  </a>
+</nav>
+
+<style>
+/* ========== MOBILE OPTIMIZATIONS ========== */
+
+/* Page wrapper (sin blur, solo overlay) */
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  z-index: 9998;
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  padding: 8px 4px;
+  text-decoration: none;
+  color: #6b7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+  font-weight: 500;
+  min-height: 60px;
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.95);
+  background: #f9fafb;
+}
+
+.bottom-nav-item svg {
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.bottom-nav-item.active,
+.bottom-nav-item:hover {
+  color: var(--color-brand);
+}
+
+.bottom-nav-item.active svg,
+.bottom-nav-item:hover svg {
+  stroke: var(--color-brand);
+  transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+  }
+  
+  /* Hide desktop WhatsApp FAB on mobile */
+  .fab-whatsapp {
+    display: none;
+  }
+  
+  /* Add bottom padding to content to prevent overlap */
+  .content {
+    padding-bottom: 80px;
+  }
+  
+  .footer {
+    margin-bottom: 80px;
+  }
+}
+
+/* Hamburger Button */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.hamburger-btn span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--color-text);
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.hamburger-btn.active span:nth-child(1) {
+  transform: rotate(45deg) translate(7px, 7px);
+}
+
+.hamburger-btn.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-btn.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Mobile Search Button */
+.search-btn-mobile {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.search-btn-mobile:hover {
+  background: var(--panel-alt);
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  left: -100%;
+  width: 80%;
+  max-width: 320px;
+  height: 100vh;
+  background: #FFFFFF;
+  box-shadow: 2px 0 20px rgba(0,0,0,0.15);
+  z-index: 10000;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.mobile-menu.active {
+  left: 0;
+}
+
+.mobile-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mobile-menu-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.mobile-menu-close {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.mobile-menu-close:hover {
+  background: #f3f4f6;
+}
+
+.mobile-menu-nav {
+  padding: 12px 0;
+}
+
+.mobile-menu-nav a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.mobile-menu-nav a:hover {
+  background: #f9fafb;
+}
+
+.mobile-menu-nav a svg {
+  flex-shrink: 0;
+  color: var(--color-brand);
+}
+
+.nav-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.nav-backdrop.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Mobile Search Modal */
+.search-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: #FFFFFF;
+  z-index: 10001;
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.search-modal.active {
+  transform: translateY(0);
+}
+
+.search-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #FFFFFF;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.search-modal-back {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-modal-header input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: var(--color-text);
+  padding: 12px 0;
+}
+
+.search-modal-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+/* Brands Carousel Mobile */
+.brands-carousel-mobile {
+  display: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 16px 0;
+}
+
+.brands-carousel-mobile::-webkit-scrollbar {
+  display: none;
+}
+
+.brands-carousel-track {
+  display: flex;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.brand-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.2s;
+  min-width: 90px;
+}
+
+.brand-chip:hover {
+  background: #f9fafb;
+  border-color: var(--color-brand);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.brand-chip img, .brand-chip svg {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  color: var(--color-brand);
+}
+
+/* Desktop search results */
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  margin-top: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+.search-results-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-text);
+  transition: background-color 0.2s;
+}
+.search-results-item:hover {
+  background-color: #f8f9fa;
+}
+.search-results-item:last-child {
+  border-bottom: none;
+}
+.search-results-item img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.search-results-item-content {
+  flex: 1;
+  min-width: 0;
+}
+.search-results-item-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-results-item-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+.search-results-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+/* ========== MEDIA QUERIES FOR MOBILE ========== */
+
+@media (max-width: 768px) {
+  /* Show mobile elements */
+  .hamburger-btn {
+    display: flex;
+  }
+  
+  .search-btn-mobile {
+    display: flex;
+  }
+  
+  /* Hide desktop elements */
+  .searchbar-desktop {
+    display: none !important;
+  }
+  
+  .mainnav {
+    display: none !important;
+  }
+  
+  .brands-grid-desktop {
+    display: none !important;
+  }
+  
+  .brands-carousel-mobile {
+    display: block;
+  }
+  
+  /* Adjust header */
+  .topbar .container {
+    gap: 12px;
+    padding: 8px 16px;
+  }
+  
+  .brand-logo {
+    height: 40px;
+  }
+  
+  .brand-title {
+    font-size: 18px;
+  }
+  
+  .brand-sub {
+    font-size: 11px;
+  }
+  
+  /* Card optimizations */
+  .card {
+    min-height: unset;
+  }
+  
+  .card-body {
+    padding: 12px;
+  }
+  
+  .card-title {
+    font-size: 14px;
+    line-height: 1.3;
+    min-height: 36px;
+  }
+  
+  .card-price {
+    font-size: 18px;
+  }
+  
+  /* Touch targets */
+  .btn-primary, .btn-secondary {
+    min-height: 48px;
+    font-size: 15px;
+    padding: 12px 20px;
+  }
+  
+  /* Container padding */
+  .container {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-logo {
+    height: 36px;
+  }
+  
+  .brand-title {
+    font-size: 16px;
+  }
+  
+  .brand-sub {
+    display: none;
+  }
+  
+  .topbar .container {
+    gap: 8px;
+  }
+  
+  .hamburger-btn, .search-btn-mobile {
+    padding: 4px;
+  }
+  
+  .mobile-menu {
+    width: 85%;
+  }
+  
+  .brand-chip {
+    min-width: 80px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  
+  .brand-chip img, .brand-chip svg {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Mobile search results styling */
+@media (max-width: 768px) {
+  .search-modal-results .search-results-item {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    border-radius: 0;
+  }
+  
+  .search-results-item img {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .search-results-item-name {
+    font-size: 15px;
+  }
+  
+  .search-results-item-price {
+    font-size: 17px;
+  }
+}
+</style>
+
+<script>
+(function() {
+  let searchTimeout = null;
+  
+  function initSearch(inputId, resultsId) {
+    const input = document.getElementById(inputId);
+    const results = document.getElementById(resultsId);
+    if (!input || !results) return;
+    
+    input.addEventListener('input', function(e) {
+      const query = e.target.value.trim();
+      
+      // Limpiar timeout anterior
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+      
+      // Si tiene menos de 3 caracteres, ocultar resultados
+      if (query.length < 3) {
+        results.style.display = 'none';
+        results.innerHTML = '';
+        return;
+      }
+      
+      // Debounce: esperar 300ms antes de buscar
+      searchTimeout = setTimeout(async () => {
+        try {
+          const response = await fetch('/api/products/search?q=' + encodeURIComponent(query));
+          const data = await response.json();
+          
+          if (data.products && data.products.length > 0) {
+            results.innerHTML = '';
+            data.products.forEach(product => {
+              const item = document.createElement('a');
+              item.href = '/product/' + product.slug;
+              item.className = 'search-results-item';
+              
+              const img = document.createElement('img');
+              img.src = product.image || '/public/assets/img/no imagen.jpg';
+              img.alt = product.name;
+              img.onerror = function() {
+                this.src = '/public/assets/img/no imagen.jpg';
+              };
+              
+              const content = document.createElement('div');
+              content.className = 'search-results-item-content';
+              
+              const name = document.createElement('div');
+              name.className = 'search-results-item-name';
+              name.textContent = product.name;
+              
+              const price = document.createElement('div');
+              price.className = 'search-results-item-price';
+              price.textContent = '$' + product.price.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+              
+              content.appendChild(name);
+              content.appendChild(price);
+              item.appendChild(img);
+              item.appendChild(content);
+              results.appendChild(item);
+            });
+            
+            results.style.display = 'block';
+          } else {
+            results.innerHTML = '<div class="search-results-empty">No se encontraron productos</div>';
+            results.style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Error buscando productos:', error);
+          results.style.display = 'none';
+        }
+      }, 300);
+    });
+    
+    // Ocultar resultados al hacer click fuera
+    document.addEventListener('click', function(e) {
+      if (!input.contains(e.target) && !results.contains(e.target)) {
+        results.style.display = 'none';
+      }
+    });
+    
+    // Ocultar resultados al presionar Escape
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        results.style.display = 'none';
+      }
+    });
+  }
+  
+  // Inicializar ambas barras de búsqueda
+  document.addEventListener('DOMContentLoaded', function() {
+    initSearch('headerSearch', 'searchResults');
+    initSearch('drawerSearch', 'drawerSearchResults');
+  });
+})();
+
+// ========== MOBILE FUNCTIONALITY ==========
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuClose = document.getElementById('mobileMenuClose');
+    const searchBtnMobile = document.getElementById('searchBtnMobile');
+    const searchModal = document.getElementById('searchModal');
+    const searchModalBack = document.getElementById('searchModalBack');
+    const mobileSearchInput = document.getElementById('mobileSearchInput');
+    const mobileSearchResults = document.getElementById('mobileSearchResults');
+    const navBackdrop = document.querySelector('.nav-backdrop');
+    
+    // Hamburger menu toggle
+    if (hamburgerBtn && mobileMenu && navBackdrop) {
+      hamburgerBtn.addEventListener('click', function() {
+        const isActive = mobileMenu.classList.contains('active');
+        if (isActive) {
+          closeMenu();
+        } else {
+          openMenu();
+        }
+      });
+      
+      function openMenu() {
+        mobileMenu.classList.add('active');
+        navBackdrop.classList.add('active');
+        hamburgerBtn.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+      
+      function closeMenu() {
+        mobileMenu.classList.remove('active');
+        navBackdrop.classList.remove('active');
+        hamburgerBtn.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      
+      if (mobileMenuClose) {
+        mobileMenuClose.addEventListener('click', closeMenu);
+      }
+      
+      navBackdrop.addEventListener('click', closeMenu);
+    }
+    
+    // Mobile search modal
+    const openSearchModal = function() {
+      searchModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => {
+        if (mobileSearchInput) mobileSearchInput.focus();
+      }, 300);
+    };
+    
+    const closeSearchModal = function() {
+      searchModal.classList.remove('active');
+      document.body.style.overflow = '';
+      mobileSearchResults.innerHTML = '';
+      mobileSearchInput.value = '';
+    };
+    
+    if (searchBtnMobile && searchModal) {
+      searchBtnMobile.addEventListener('click', openSearchModal);
+      
+      if (searchModalBack) {
+        searchModalBack.addEventListener('click', closeSearchModal);
+      }
+    }
+    
+    // Bottom nav search button
+    const bottomSearchBtn = document.getElementById('bottomSearchBtn');
+    if (bottomSearchBtn && searchModal) {
+      bottomSearchBtn.addEventListener('click', openSearchModal);
+    }
+    
+    // Mobile search with autocomplete
+    if (mobileSearchInput && mobileSearchResults) {
+      let mobileSearchTimeout = null;
+      
+      mobileSearchInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        
+        if (mobileSearchTimeout) {
+          clearTimeout(mobileSearchTimeout);
+        }
+        
+        if (query.length < 3) {
+          mobileSearchResults.innerHTML = '';
+          return;
+        }
+        
+        mobileSearchTimeout = setTimeout(async () => {
+          try {
+            const response = await fetch('/api/products/search?q=' + encodeURIComponent(query));
+            const data = await response.json();
+            
+            if (data.products && data.products.length > 0) {
+              mobileSearchResults.innerHTML = '';
+              data.products.forEach(product => {
+                const item = document.createElement('a');
+                item.href = '/product/' + product.slug;
+                item.className = 'search-results-item';
+                
+                const img = document.createElement('img');
+                img.src = product.image || '/public/assets/img/no imagen.jpg';
+                img.alt = product.name;
+                img.onerror = function() {
+                  this.src = '/public/assets/img/no imagen.jpg';
+                };
+                
+                const content = document.createElement('div');
+                content.className = 'search-results-item-content';
+                
+                const name = document.createElement('div');
+                name.className = 'search-results-item-name';
+                name.textContent = product.name;
+                
+                const price = document.createElement('div');
+                price.className = 'search-results-item-price';
+                price.textContent = '$' + product.price.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
+                content.appendChild(name);
+                content.appendChild(price);
+                item.appendChild(img);
+                item.appendChild(content);
+                mobileSearchResults.appendChild(item);
+              });
+            } else {
+              mobileSearchResults.innerHTML = '<div class="search-results-empty">No se encontraron productos</div>';
+            }
+          } catch (error) {
+            console.error('Error buscando productos:', error);
+          }
+        }, 300);
+      });
+    }
+    
+    // Prevent body scroll when modals are open
+    const closeAllModals = function() {
+      if (mobileMenu) mobileMenu.classList.remove('active');
+      if (searchModal) searchModal.classList.remove('active');
+      if (navBackdrop) navBackdrop.classList.remove('active');
+      if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+      document.body.style.overflow = '';
+    };
+    
+    // Close on escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeAllModals();
+      }
+    });
+  });
+})();
+</script>
+
 </body>
 </html>
 {{end}}
