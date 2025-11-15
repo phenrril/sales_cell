@@ -36,15 +36,15 @@ import (
 )
 
 type Server struct {
-	mux       *http.ServeMux
-	tmpl      *template.Template
-	products  *usecase.ProductUC
-	quotes    *usecase.QuoteUC
-	orders    *usecase.OrderUC
-	payments  *usecase.PaymentUC
-	models    domain.UploadedModelRepo
-	storage   domain.FileStorage
-	customers domain.CustomerRepo
+	mux          *http.ServeMux
+	tmpl         *template.Template
+	products     *usecase.ProductUC
+	quotes       *usecase.QuoteUC
+	orders       *usecase.OrderUC
+	payments     *usecase.PaymentUC
+	models       domain.UploadedModelRepo
+	storage      domain.FileStorage
+	customers    domain.CustomerRepo
 	oauthCfg     *oauth2.Config
 	scraper      *scraper.SpecsScraper
 	imageScraper *scraper.ImageScraper
@@ -117,7 +117,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/cart/update", s.handleCartUpdate)
 	s.mux.HandleFunc("/cart/remove", s.handleCartRemove)
 	s.mux.HandleFunc("/cart/checkout", s.handleCartCheckout)
-	
+
 	// API endpoints para checkout por pasos
 	s.mux.HandleFunc("/api/checkout/step", s.apiCheckoutStep)
 	s.mux.HandleFunc("/api/checkout/data", s.apiCheckoutData)
@@ -447,11 +447,11 @@ func (s *Server) apiProductsSearch(w http.ResponseWriter, r *http.Request) {
 			imageURL = p.Images[0].URL
 		}
 		results = append(results, map[string]any{
-			"slug":      p.Slug,
-			"name":      p.Name,
-			"price":     p.BasePrice,
-			"image":     imageURL,
-			"category":  p.Category,
+			"slug":     p.Slug,
+			"name":     p.Name,
+			"price":    p.BasePrice,
+			"image":    imageURL,
+			"category": p.Category,
 		})
 	}
 	writeJSON(w, 200, map[string]any{"products": results, "total": total})
@@ -503,16 +503,16 @@ func (s *Server) apiProductByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var req struct {
-			Name        *string           `json:"name"`
-			Category    *string           `json:"category"`
-			ShortDesc   *string           `json:"short_desc"`
-			BasePrice   *float64          `json:"base_price"`
-			GrossPrice  *float64          `json:"gross_price"`
-			MarginPct   *float64          `json:"margin_pct"`
-			ReadyToShip *bool             `json:"ready_to_ship"`
-			WidthMM     *float64          `json:"width_mm"`
-			HeightMM    *float64          `json:"height_mm"`
-			DepthMM     *float64          `json:"depth_mm"`
+			Name           *string           `json:"name"`
+			Category       *string           `json:"category"`
+			ShortDesc      *string           `json:"short_desc"`
+			BasePrice      *float64          `json:"base_price"`
+			GrossPrice     *float64          `json:"gross_price"`
+			MarginPct      *float64          `json:"margin_pct"`
+			ReadyToShip    *bool             `json:"ready_to_ship"`
+			WidthMM        *float64          `json:"width_mm"`
+			HeightMM       *float64          `json:"height_mm"`
+			DepthMM        *float64          `json:"depth_mm"`
 			Brand          *string           `json:"brand"`
 			Model          *string           `json:"model"`
 			Attributes     map[string]string `json:"attributes"`
@@ -763,18 +763,18 @@ func (s *Server) apiProductSearchSpecs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	
+
 	rest := strings.TrimPrefix(r.URL.Path, "/api/products/")
 	slugEnc := strings.TrimSuffix(rest, "/search-specs")
 	slugEnc = strings.TrimSuffix(slugEnc, "/")
 	slug, _ := url.PathUnescape(slugEnc)
-	
+
 	p, err := s.products.GetBySlug(r.Context(), slug)
 	if err != nil || p == nil {
 		writeJSON(w, 404, map[string]any{"status": "error", "message": "producto no encontrado"})
 		return
 	}
-	
+
 	// Buscar especificaciones
 	specs, err := s.scraper.SearchSpecs(r.Context(), p.Name, p.Brand, p.Model)
 	if err != nil {
@@ -782,12 +782,12 @@ func (s *Server) apiProductSearchSpecs(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 500, map[string]any{"status": "error", "message": "error buscando especificaciones: " + err.Error()})
 		return
 	}
-	
+
 	if len(specs) == 0 {
 		writeJSON(w, 404, map[string]any{"status": "not_found", "message": "no se encontraron especificaciones"})
 		return
 	}
-	
+
 	writeJSON(w, 200, map[string]any{
 		"status":         "ok",
 		"specifications": specs,
@@ -1514,7 +1514,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method", 405)
 		return
 	}
-	
+
 	// Manejar panics
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -1526,11 +1526,11 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
-	
+
 	// Intentar leer como JSON primero (nuevo flujo por pasos)
 	var step2Data, step3Data, step4Data map[string]interface{}
 	var isJSON bool
-	
+
 	contentType := r.Header.Get("Content-Type")
 	if strings.Contains(contentType, "application/json") {
 		isJSON = true
@@ -1560,7 +1560,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	
+
 	// Extraer datos del paso 2 (datos personales)
 	var email, firstName, lastName, dni, areaCode, phoneNumber string
 	if isJSON {
@@ -1590,7 +1590,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		phoneNumber = r.FormValue("phone")
 		dni = r.FormValue("dni")
 	}
-	
+
 	if email == "" || firstName == "" {
 		if isJSON {
 			writeJSON(w, 400, map[string]string{"error": "email y nombre son obligatorios"})
@@ -1599,19 +1599,19 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
+
 	name := firstName
 	if lastName != "" {
 		name = firstName + " " + lastName
 	}
-	
+
 	phone := ""
 	if areaCode != "" && phoneNumber != "" {
 		phone = areaCode + " " + phoneNumber
 	} else if phoneNumber != "" {
 		phone = phoneNumber
 	}
-	
+
 	// Extraer datos del paso 3 (método de entrega)
 	var shippingMethod, province, postal, address string
 	if isJSON {
@@ -1660,11 +1660,11 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			address = r.FormValue("address")
 		}
 	}
-	
+
 	if shippingMethod == "" {
 		shippingMethod = "retiro"
 	}
-	
+
 	// Extraer datos del paso 4 (método de pago)
 	var paymentMethod string
 	if isJSON {
@@ -1679,7 +1679,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	if paymentMethod == "" {
 		paymentMethod = "mercadopago"
 	}
-	
+
 	// Validar que el método de pago sea válido
 	validPaymentMethods := map[string]bool{
 		"mercadopago":   true,
@@ -1689,7 +1689,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		log.Warn().Str("payment_method", paymentMethod).Msg("método de pago inválido, usando mercadopago")
 		paymentMethod = "mercadopago"
 	}
-	
+
 	// Validaciones
 	if shippingMethod == "envio" {
 		if province == "" || address == "" || postal == "" || dni == "" {
@@ -1723,7 +1723,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			province = "Santa Fe"
 		}
 	}
-	
+
 	// Obtener productos del carrito
 	cp := readCart(r)
 	if len(cp.Items) == 0 {
@@ -1743,7 +1743,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
+
 	// Crear o actualizar cliente
 	var customerID *uuid.UUID
 	if s.customers != nil {
@@ -1774,7 +1774,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			log.Warn().Err(err).Str("email", email).Msg("error buscando cliente, continuando sin customer_id")
 		}
 	}
-	
+
 	// Crear orden
 	o := &domain.Order{
 		ID:             uuid.New(),
@@ -1792,7 +1792,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		Total:          0.0, // Se calculará después
 		Notified:       false,
 	}
-	
+
 	log.Debug().
 		Str("email", email).
 		Str("name", name).
@@ -1800,7 +1800,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		Str("shipping_method", shippingMethod).
 		Int("items_count", len(lines)).
 		Msg("creando orden")
-	
+
 	itemsTotal := 0.0
 	for _, l := range lines {
 		p, _ := s.products.GetBySlug(r.Context(), l.Slug)
@@ -1822,7 +1822,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		})
 		itemsTotal += l.UnitPrice * float64(l.Qty)
 	}
-	
+
 	if len(o.Items) == 0 {
 		if isJSON {
 			writeJSON(w, 400, map[string]string{"error": "no hay items en la orden"})
@@ -1831,7 +1831,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
+
 	shippingCost := 0.0
 	if shippingMethod == "envio" {
 		shippingCost = shippingCostFor(province)
@@ -1853,11 +1853,11 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	}
 	o.ShippingCost = shippingCost
 	subtotal := itemsTotal + shippingCost
-	
+
 	// Sin descuentos - el cliente paga el precio total
 	o.DiscountAmount = 0.0
 	o.Total = subtotal
-	
+
 	log.Debug().
 		Str("order_id", o.ID.String()).
 		Float64("items_total", itemsTotal).
@@ -1866,7 +1866,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		Float64("total", o.Total).
 		Int("items_count", len(o.Items)).
 		Msg("orden calculada, guardando")
-	
+
 	if err := s.orders.Orders.Save(r.Context(), o); err != nil {
 		log.Error().Err(err).Str("order_id", o.ID.String()).Msg("error guardando orden")
 		if isJSON {
@@ -1876,12 +1876,12 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
+
 	log.Info().Str("order_id", o.ID.String()).Str("payment_method", paymentMethod).Msg("orden guardada exitosamente")
-	
+
 	// Limpiar datos del checkout
 	writeCheckoutData(w, checkoutDataPayload{})
-	
+
 	// Manejar según método de pago
 	switch paymentMethod {
 	case "transferencia":
@@ -1893,8 +1893,8 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		writeCart(w, cartPayload{})
 		if isJSON {
 			writeJSON(w, 200, map[string]interface{}{
-				"success":   true,
-				"order_id":  o.ID.String(),
+				"success":      true,
+				"order_id":     o.ID.String(),
 				"redirect_url": "/pay/" + o.ID.String() + "?status=pending",
 			})
 		} else {
@@ -2020,9 +2020,9 @@ func (s *Server) handlePaySimulated(w http.ResponseWriter, r *http.Request) {
 		msg = "Pedido recibido. Por favor realiza la transferencia y envía el comprobante."
 	}
 	data := map[string]any{
-		"Order":              o,
-		"StatusMsg":          msg,
-		"Success":            success,
+		"Order":                  o,
+		"StatusMsg":              msg,
+		"Success":                success,
 		"IsTransferenciaPending": o.PaymentMethod == "transferencia" && (status == "pending" || o.MPStatus == "transferencia_pending"),
 	}
 	if u := readUserSession(w, r); u != nil {
@@ -2037,22 +2037,22 @@ func (s *Server) apiCheckoutStep(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", 405)
 		return
 	}
-	
+
 	var req struct {
 		Step int                    `json:"step"`
 		Data map[string]interface{} `json:"data"`
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid json", 400)
 		return
 	}
-	
+
 	if req.Step < 1 || req.Step > 4 {
 		http.Error(w, "invalid step", 400)
 		return
 	}
-	
+
 	checkoutData := readCheckoutData(r)
 	switch req.Step {
 	case 1:
@@ -2064,7 +2064,7 @@ func (s *Server) apiCheckoutStep(w http.ResponseWriter, r *http.Request) {
 	case 4:
 		checkoutData.Step4 = req.Data
 	}
-	
+
 	writeCheckoutData(w, checkoutData)
 	writeJSON(w, 200, map[string]interface{}{"success": true})
 }
@@ -2074,7 +2074,7 @@ func (s *Server) apiCheckoutData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", 405)
 		return
 	}
-	
+
 	checkoutData := readCheckoutData(r)
 	writeJSON(w, 200, checkoutData)
 }
@@ -2322,7 +2322,7 @@ func (s *Server) handleAdminProducts(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/auth", 302)
 		return
 	}
-	list, total, _ := s.products.List(r.Context(), domain.ProductFilter{Page: 1, PageSize: 200})
+	list, total, _ := s.products.List(r.Context(), domain.ProductFilter{Page: 1, PageSize: 10000})
 
 	tok := s.readAdminToken(r)
 	data := map[string]any{"Products": list, "Total": total, "AdminToken": tok}
@@ -3060,7 +3060,7 @@ func (s *Server) handleAdminImportCSV(w http.ResponseWriter, r *http.Request) {
 		// Método tradicional
 		priceMap := parseUSDPrices(pricesText)
 		createdP, updatedP, createdV, updatedV, unmatched = s.importFromXLSXCombined(r, data, priceMap, pricesText, fxRate, defaultMargin)
-		
+
 		// También importar productos de texto.txt que NO estén en el Excel (ej: notebooks sin colores)
 		cp, up, cv, uv := s.importFromPricesTextOnly(r, priceMap, pricesText, fxRate, defaultMargin, data)
 		createdP += cp
@@ -3341,11 +3341,11 @@ func (s *Server) importFromPricesTextOnly(r *http.Request, priceUSD map[string]f
 		price := gross * (1.0 + margin/100.0)
 
 		brand, model := inferBrandModel(baseKey)
-		
+
 		// Inferir categoría del nombre basándose en texto.txt
 		category := ""
 		baseLower := strings.ToLower(baseKey)
-		
+
 		// Detectar categoría basándose en secciones de texto.txt
 		// Buscar en qué sección del texto está el producto
 		lines := strings.Split(pricesText, "\n")
@@ -3366,7 +3366,7 @@ func (s *Server) importFromPricesTextOnly(r *http.Request, priceUSD map[string]f
 				break
 			}
 		}
-		
+
 		// Fallback: inferir por nombre si no se encontró en el texto
 		if category == "" {
 			if strings.Contains(baseLower, "macbook") || strings.Contains(baseLower, "notebook") || strings.Contains(baseLower, "nb ") {
