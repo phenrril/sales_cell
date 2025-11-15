@@ -51,7 +51,7 @@
   </ul>
 </div>
 
-<div class="cards cards--products">
+<div class="cards cards--products" data-initial-page="{{.Page}}" data-total-pages="{{.Pages}}" data-total-count="{{.Total}}">
   {{range $idx, $p := .Products}}
   <div class="card">
     <div class="card-media ar-1-1">
