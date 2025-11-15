@@ -132,12 +132,13 @@
 
   // Scroll infinito
   const cards=document.querySelector('.cards');
+  const scrollSentinel=document.getElementById('scrollSentinel');
   const loadingIndicator=document.getElementById('loadingIndicator');
   const endMessage=document.getElementById('endMessage');
   const loadedCountEl=document.getElementById('loadedCount');
   const totalCountEl=document.getElementById('totalCount');
   
-  if(cards && loadingIndicator){
+  if(cards && scrollSentinel && loadingIndicator){
     // Leer datos iniciales del servidor
     const initialPage=parseInt(cards.getAttribute('data-initial-page')||'1');
     const totalPages=parseInt(cards.getAttribute('data-total-pages')||'1');
@@ -150,9 +151,10 @@
     
     console.log('Scroll infinito inicializado:',{currentPage,totalPages,hasMorePages,loadedCount,totalCount});
     
-    // Si no hay más páginas desde el inicio, mostrar mensaje
+    // Si no hay más páginas desde el inicio, mostrar mensaje y ocultar sentinel
     if(!hasMorePages){
       endMessage.style.display='block';
+      scrollSentinel.style.display='none';
     }
     
     // Actualizar contador inicial
@@ -285,11 +287,13 @@
           if(!hasMorePages){
             console.log('No hay más páginas, mostrando mensaje de fin');
             endMessage.style.display='block';
+            scrollSentinel.style.display='none'; // Ocultar sentinel para dejar de observar
           }
         } else {
           console.log('No se recibieron productos');
           hasMorePages=false;
           endMessage.style.display='block';
+          scrollSentinel.style.display='none'; // Ocultar sentinel para dejar de observar
         }
       } catch(err){
         console.error('Error loading products:',err);
@@ -314,13 +318,15 @@
       threshold:0
     });
     
-    // Observar el indicador de carga
-    if(loadingIndicator){
-      console.log('Observando elemento:',loadingIndicator);
-      observer.observe(loadingIndicator);
+    // Observar el elemento centinela (siempre visible)
+    if(scrollSentinel){
+      console.log('✅ Observando scrollSentinel para scroll infinito');
+      observer.observe(scrollSentinel);
     } else {
-      console.error('No se encontró loadingIndicator');
+      console.error('❌ No se encontró scrollSentinel');
     }
+  } else {
+    console.error('❌ Faltan elementos para scroll infinito:',{cards:!!cards,scrollSentinel:!!scrollSentinel,loadingIndicator:!!loadingIndicator});
   }
 })();
 
