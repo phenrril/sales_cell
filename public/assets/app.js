@@ -130,18 +130,170 @@
     });
   });
 
-  const loadBtn=document.getElementById('loadMore');
+  // Scroll infinito
   const cards=document.querySelector('.cards');
-  const statusEl=document.getElementById('loadMoreStatus');
-  function announce(msg){if(statusEl){statusEl.textContent=msg;}}
-  if(loadBtn && cards){
-    loadBtn.addEventListener('click',async()=>{
-      const next=loadBtn.getAttribute('data-next');
-      if(!next){loadBtn.disabled=true;return}
-      const oldText=loadBtn.textContent; loadBtn.disabled=true; loadBtn.textContent='Cargando...'; announce('Cargando más productos');
-      try{const res=await fetch(next,{credentials:'same-origin'}); if(!res.ok) throw new Error('HTTP '+res.status); const html=await res.text(); const parser=new DOMParser(); const doc=parser.parseFromString(html,'text/html'); const newCards=doc.querySelectorAll('.cards > .card'); newCards.forEach(n=>cards.appendChild(n)); const newBtn=doc.getElementById('loadMore'); const newNext=newBtn?newBtn.getAttribute('data-next'):''; if(newNext){loadBtn.setAttribute('data-next',newNext);loadBtn.disabled=false;loadBtn.textContent=oldText;announce('Se cargaron más productos');} else {loadBtn.setAttribute('data-next','');loadBtn.disabled=true;loadBtn.textContent='No hay más';announce('No hay más productos');}}
-      catch(err){loadBtn.disabled=false; loadBtn.textContent=oldText; announce('Error al cargar');}
+  const loadingIndicator=document.getElementById('loadingIndicator');
+  const endMessage=document.getElementById('endMessage');
+  const loadedCountEl=document.getElementById('loadedCount');
+  const totalCountEl=document.getElementById('totalCount');
+  
+  if(cards && loadingIndicator){
+    let currentPage=1;
+    let isLoading=false;
+    let hasMorePages=true;
+    let loadedCount=cards.querySelectorAll('.card').length;
+    
+    // Actualizar contador inicial
+    function updateCounter(){
+      if(loadedCountEl){
+        loadedCountEl.textContent=loadedCount;
+      }
+    }
+    
+    // Obtener los filtros actuales de la URL
+    function getCurrentFilters(){
+      const params=new URLSearchParams(window.location.search);
+      return {
+        q: params.get('q')||'',
+        category: params.get('category')||'',
+        sort: params.get('sort')||''
+      };
+    }
+    
+    // Escapar HTML para prevenir XSS
+    function escapeHtml(text){
+      const map={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};
+      return String(text).replace(/[&<>"']/g,m=>map[m]);
+    }
+    
+    // Normalizar URL de imagen (equivalente a la función 'img' del template)
+    function normalizeImgUrl(u){
+      const s=u.trim();
+      if(!s) return s;
+      if(!s.startsWith('http://') && !s.startsWith('https://') && !s.startsWith('/')){
+        return '/'+s.replace(/ /g,'%20');
+      }
+      return s.replace(/ /g,'%20');
+    }
+    
+    // Formatear precio como ARS
+    function formatARS(v){
+      const s=Math.round(v).toString();
+      const n=s.length;
+      if(n<=3) return 'ARS '+s;
+      const rem=n%3||3;
+      let out=s.substring(0,rem);
+      for(let i=rem;i<n;i+=3){
+        out+='.'+s.substring(i,i+3);
+      }
+      return 'ARS '+out;
+    }
+    
+    // Crear una tarjeta de producto desde el objeto JSON
+    function createProductCard(p,idx){
+      const card=document.createElement('div');
+      card.className='card';
+      const hasImages=p.Images && p.Images.length>0;
+      const firstImage=hasImages?p.Images[0]:null;
+      const imgSrc=firstImage?escapeHtml(normalizeImgUrl(firstImage.URL)):'';
+      const imgAlt=escapeHtml(firstImage&&firstImage.Alt?firstImage.Alt:p.Name);
+      const imgSrc480=imgSrc+'?w=480';
+      const imgSrc640=imgSrc+'?w=640';
+      const slug=escapeHtml(p.Slug);
+      const name=escapeHtml(p.Name);
+      const category=escapeHtml(p.Category||'');
+      
+      card.innerHTML=`
+        <div class="card-media ar-1-1">
+          ${hasImages?`<img src="${imgSrc}" alt="${imgAlt}" loading="lazy" decoding="async" 
+               srcset="${imgSrc} 300w, ${imgSrc480} 480w, ${imgSrc640} 640w" 
+               sizes="(max-width:480px) 92vw, (max-width:768px) 44vw, 300px" class="card-img" />`
+               :'<div class="placeholder">IMG</div>'}
+        </div>
+        <div class="card-body">
+          <div class="badges">
+            <span class="badge green">En stock</span>
+            <span class="badge gray">Envío en el día</span>
+          </div>
+          <h3 class="card-title"><a href="/product/${slug}">${name}</a></h3>
+          <div class="card-meta">${category}</div>
+          <div class="price-row">
+            <span class="price">${formatARS(p.BasePrice)}</span>
+          </div>
+          <div class="actions">
+            <a href="/product/${slug}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a>
+          </div>
+        </div>
+      `;
+      return card;
+    }
+    
+    // Cargar más productos
+    async function loadMore(){
+      if(isLoading || !hasMorePages) return;
+      
+      isLoading=true;
+      loadingIndicator.style.display='block';
+      
+      const filters=getCurrentFilters();
+      const nextPage=currentPage+1;
+      const url=`/products?page=${nextPage}&q=${encodeURIComponent(filters.q)}&category=${encodeURIComponent(filters.category)}&sort=${encodeURIComponent(filters.sort)}`;
+      
+      try{
+        const res=await fetch(url,{
+          headers:{'Accept':'application/json'},
+          credentials:'same-origin'
+        });
+        
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        
+        const data=await res.json();
+        
+        if(data.products && data.products.length>0){
+          data.products.forEach((p,idx)=>{
+            const card=createProductCard(p,idx);
+            cards.appendChild(card);
+          });
+          
+          // Actualizar contador
+          loadedCount+=data.products.length;
+          updateCounter();
+          
+          currentPage=data.page;
+          hasMorePages=data.hasMore;
+          
+          if(!hasMorePages){
+            endMessage.style.display='block';
+          }
+        } else {
+          hasMorePages=false;
+          endMessage.style.display='block';
+        }
+      } catch(err){
+        console.error('Error loading products:',err);
+      } finally {
+        isLoading=false;
+        loadingIndicator.style.display='none';
+      }
+    }
+    
+    // Intersection Observer para detectar cuando el usuario llega cerca del final
+    const observer=new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting && hasMorePages && !isLoading){
+          loadMore();
+        }
+      });
+    },{
+      root:null,
+      rootMargin:'400px',  // Comenzar a cargar 400px antes del final
+      threshold:0
     });
+    
+    // Observar el indicador de carga
+    if(loadingIndicator){
+      observer.observe(loadingIndicator);
+    }
   }
 })();
 
