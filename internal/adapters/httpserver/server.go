@@ -191,6 +191,18 @@ func (s *Server) handleProducts(w http.ResponseWriter, r *http.Request) {
 	if pages == 0 {
 		pages = 1
 	}
+
+	// Si es una petición AJAX (para scroll infinito), devolver JSON
+	if r.Header.Get("X-Requested-With") == "XMLHttpRequest" || r.Header.Get("Accept") == "application/json" {
+		hasMore := page < pages
+		writeJSON(w, 200, map[string]any{
+			"products": list,
+			"page":     page,
+			"hasMore":  hasMore,
+		})
+		return
+	}
+
 	cats, _ := s.products.Categories(r.Context())
 	base := s.canonicalBase(r)
 	data := map[string]any{
