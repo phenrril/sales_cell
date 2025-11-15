@@ -138,10 +138,22 @@
   const totalCountEl=document.getElementById('totalCount');
   
   if(cards && loadingIndicator){
-    let currentPage=1;
+    // Leer datos iniciales del servidor
+    const initialPage=parseInt(cards.getAttribute('data-initial-page')||'1');
+    const totalPages=parseInt(cards.getAttribute('data-total-pages')||'1');
+    const totalCount=parseInt(cards.getAttribute('data-total-count')||'0');
+    
+    let currentPage=initialPage;
     let isLoading=false;
-    let hasMorePages=true;
+    let hasMorePages=(currentPage<totalPages);
     let loadedCount=cards.querySelectorAll('.card').length;
+    
+    console.log('Scroll infinito inicializado:',{currentPage,totalPages,hasMorePages,loadedCount,totalCount});
+    
+    // Si no hay más páginas desde el inicio, mostrar mensaje
+    if(!hasMorePages){
+      endMessage.style.display='block';
+    }
     
     // Actualizar contador inicial
     function updateCounter(){
@@ -230,8 +242,12 @@
     
     // Cargar más productos
     async function loadMore(){
-      if(isLoading || !hasMorePages) return;
+      if(isLoading || !hasMorePages){
+        console.log('No se puede cargar más:',{isLoading,hasMorePages});
+        return;
+      }
       
+      console.log('Cargando página:',currentPage+1);
       isLoading=true;
       loadingIndicator.style.display='block';
       
@@ -239,6 +255,7 @@
       const nextPage=currentPage+1;
       const url=`/products?page=${nextPage}&q=${encodeURIComponent(filters.q)}&category=${encodeURIComponent(filters.category)}&sort=${encodeURIComponent(filters.sort)}`;
       
+      console.log('Fetching:',url);
       try{
         const res=await fetch(url,{
           headers:{'Accept':'application/json'},
@@ -248,6 +265,7 @@
         if(!res.ok) throw new Error('HTTP '+res.status);
         
         const data=await res.json();
+        console.log('Respuesta recibida:',data);
         
         if(data.products && data.products.length>0){
           data.products.forEach((p,idx)=>{
@@ -262,10 +280,14 @@
           currentPage=data.page;
           hasMorePages=data.hasMore;
           
+          console.log('Productos cargados. Nuevo estado:',{currentPage,hasMorePages,loadedCount});
+          
           if(!hasMorePages){
+            console.log('No hay más páginas, mostrando mensaje de fin');
             endMessage.style.display='block';
           }
         } else {
+          console.log('No se recibieron productos');
           hasMorePages=false;
           endMessage.style.display='block';
         }
@@ -280,7 +302,9 @@
     // Intersection Observer para detectar cuando el usuario llega cerca del final
     const observer=new IntersectionObserver((entries)=>{
       entries.forEach(entry=>{
+        console.log('IntersectionObserver:',{isIntersecting:entry.isIntersecting,hasMorePages,isLoading});
         if(entry.isIntersecting && hasMorePages && !isLoading){
+          console.log('🚀 Activando carga automática');
           loadMore();
         }
       });
@@ -292,7 +316,10 @@
     
     // Observar el indicador de carga
     if(loadingIndicator){
+      console.log('Observando elemento:',loadingIndicator);
       observer.observe(loadingIndicator);
+    } else {
+      console.error('No se encontró loadingIndicator');
     }
   }
 })();
