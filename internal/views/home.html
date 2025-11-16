@@ -46,7 +46,7 @@
         <h3 class="card-title"><a href="/product/{{.Slug}}">{{.Name}}</a></h3>
         <div class="card-meta">{{.Category}}</div>
         <div class="price-row">
-          <span class="price">${{printf "%.0f" .BasePrice}}</span>
+          <span class="price">{{replace (ars .BasePrice) "ARS " "$"}}</span>
         </div>
         <div class="actions"><a href="/product/{{.Slug}}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a></div>
       </div>
