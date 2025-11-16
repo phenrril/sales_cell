@@ -74,7 +74,7 @@
       </svg>
     </button>
     <form action="/products" method="get" style="flex:1">
-      <input type="search" name="q" id="mobileSearchInput" placeholder="Buscar productos..." aria-label="Buscar" value="" autocomplete="off" autofocus />
+      <input type="search" name="q" id="mobileSearchInput" placeholder="Buscar productos..." aria-label="Buscar" value="" autocomplete="off" />
     </form>
   </div>
   <div class="search-modal-results" id="mobileSearchResults"></div>
@@ -1051,6 +1051,7 @@
       document.body.style.overflow = '';
       mobileSearchResults.innerHTML = '';
       mobileSearchInput.value = '';
+      if (mobileSearchInput) mobileSearchInput.blur();
     };
     
     if (searchBtnMobile && searchModal) {
@@ -1135,6 +1136,7 @@
       if (searchModal) searchModal.classList.remove('active');
       if (navBackdrop) navBackdrop.classList.remove('active');
       if (hamburgerBtn) hamburgerBtn.classList.remove('active');
+      if (mobileSearchInput) mobileSearchInput.blur();
       document.body.style.overflow = '';
     };
     
@@ -1144,6 +1146,16 @@
         closeAllModals();
       }
     });
+    
+    // Prevent focus on search input when modal is not active
+    if (mobileSearchInput) {
+      mobileSearchInput.addEventListener('focus', function(e) {
+        if (!searchModal.classList.contains('active')) {
+          e.preventDefault();
+          this.blur();
+        }
+      });
+    }
   });
 })();
 </script>
