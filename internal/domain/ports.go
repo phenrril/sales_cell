@@ -32,12 +32,13 @@ type CustomerRepo interface {
 }
 
 type ProductFilter struct {
-	Category    string
-	ReadyToShip *bool
-	Sort        string
-	Page        int
-	PageSize    int
-	Query       string
+	Category        string
+	ReadyToShip     *bool
+	IncludeInactive *bool
+	Sort            string
+	Page            int
+	PageSize        int
+	Query           string
 }
 
 type OrderRepo interface {

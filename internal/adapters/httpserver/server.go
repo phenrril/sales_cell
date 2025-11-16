@@ -3085,10 +3085,13 @@ func (s *Server) handleAdminImportCSV(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]any{"created_products": createdP, "updated_products": updatedP, "created_variants": createdV, "updated_variants": updatedV, "unmatched": unmatched}
 	if s.lastImport != nil {
 		resp["report"] = map[string]any{
-			"timestamp":       s.lastImport.Timestamp.Format(time.RFC3339),
-			"unmatched_items": s.lastImport.UnmatchedItems,
-			"errors":          s.lastImport.Errors,
+			"timestamp":          s.lastImport.Timestamp.Format(time.RFC3339),
+			"unmatched_items":    s.lastImport.UnmatchedItems,
+			"deprecated_count":   s.lastImport.DeprecatedProducts,
+			"deprecated_slugs":   s.lastImport.DeprecatedSlugs,
+			"errors":             s.lastImport.Errors,
 		}
+		resp["deprecated_products"] = s.lastImport.DeprecatedProducts
 	}
 	writeJSON(w, 200, resp)
 }
@@ -3119,6 +3122,10 @@ func parseUSDPrices(text string) map[string]float64 {
 			key := normalizeBaseKey(name)
 			if key != "" && usd > 0 {
 				res[key] = usd
+				// Log para debug de Macbooks
+				if strings.Contains(strings.ToLower(key), "macbook") || strings.Contains(strings.ToLower(key), "ipad") {
+					log.Debug().Str("original", name).Str("normalized", key).Float64("usd", usd).Msg("producto con comillas parseado")
+				}
 			}
 		}
 	}
@@ -3132,13 +3139,15 @@ type ImportReport struct {
 	CreatedVariants     int
 	UpdatedVariants     int
 	UnmatchedPrices     int
+	DeprecatedProducts  int               // Productos marcados como inactivos
 	UnmatchedItems      map[string]int    // baseKey -> cantidad de veces sin precio (agrupado)
 	UnmatchedReasons    map[string]string // baseKey -> razón (sin_stock, no_encontrado, etc)
 	Errors              []string
 	Timestamp           time.Time
 	CreatedProductSlugs []string
 	UpdatedProductSlugs []string
-	CreatedVariantKeys  []string // slug:color
+	DeprecatedSlugs     []string          // Productos deprecados (active=false)
+	CreatedVariantKeys  []string          // slug:color
 	UpdatedVariantKeys  []string
 }
 
@@ -3149,6 +3158,11 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 	}
 	defer f.Close()
 
+	// PASO 1: Marcar todos los productos existentes como inactivos al inicio
+	if repo, ok := s.products.Products.(interface{ MarkAllInactive(context.Context) error }); ok {
+		_ = repo.MarkAllInactive(r.Context())
+	}
+
 	createdP, updatedP := 0, 0
 	createdV, updatedV := 0, 0
 	unmatched := 0
@@ -3157,6 +3171,11 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 		UnmatchedItems:   make(map[string]int),    // mapa para agrupar duplicados
 		UnmatchedReasons: make(map[string]string), // razón de cada uno
 	}
+
+	// Mapa para trackear productos activados durante esta importación
+	activatedSlugs := make(map[string]bool)
+	// Mapa para trackear variantes procesadas por producto: productID -> map[color]bool
+	processedVariants := make(map[uuid.UUID]map[string]bool)
 
 	sheets := f.GetSheetList()
 	for _, sh := range sheets {
@@ -3231,30 +3250,39 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			margin := defaultMargin
 			price := gross * (1.0 + margin/100.0)
 
-			brand, model := inferBrandModel(baseKey)
-			p, _ := s.products.GetBySlug(r.Context(), slugify(baseKey))
-			if p == nil {
-				p = &domain.Product{Name: baseKey, Category: category, Brand: brand, Model: model, GrossPrice: gross, MarginPct: margin, BasePrice: price}
-				_ = s.products.Create(r.Context(), p)
-				createdP++
-				if p.Slug != "" {
-					rep.CreatedProductSlugs = append(rep.CreatedProductSlugs, p.Slug)
-				}
-			} else {
-				p.GrossPrice = gross
-				p.MarginPct = margin
-				p.BasePrice = price
-				_ = s.products.Create(r.Context(), p)
-				updatedP++
-				if p.Slug != "" {
-					rep.UpdatedProductSlugs = append(rep.UpdatedProductSlugs, p.Slug)
-				}
+		brand, model := inferBrandModel(baseKey)
+		p, _ := s.products.GetBySlug(r.Context(), slugify(baseKey))
+		if p == nil {
+			p = &domain.Product{Name: baseKey, Category: category, Brand: brand, Model: model, GrossPrice: gross, MarginPct: margin, BasePrice: price, Active: true}
+			_ = s.products.Create(r.Context(), p)
+			createdP++
+			if p.Slug != "" {
+				rep.CreatedProductSlugs = append(rep.CreatedProductSlugs, p.Slug)
+				activatedSlugs[p.Slug] = true
 			}
+		} else {
+			p.GrossPrice = gross
+			p.MarginPct = margin
+			p.BasePrice = price
+			p.Active = true // Marcar como activo
+			_ = s.products.Create(r.Context(), p)
+			updatedP++
+			if p.Slug != "" {
+				rep.UpdatedProductSlugs = append(rep.UpdatedProductSlugs, p.Slug)
+				activatedSlugs[p.Slug] = true
+			}
+		}
 
 			// Variante/color
 			// buscar variante existente por color
 			var existing *domain.Variant
 			if p != nil {
+				// Trackear variantes procesadas para este producto
+				if processedVariants[p.ID] == nil {
+					processedVariants[p.ID] = make(map[string]bool)
+				}
+				processedVariants[p.ID][strings.ToLower(strings.TrimSpace(color))] = true
+				
 				vs, _ := s.products.ListVariants(r.Context(), p.ID)
 				for i := range vs {
 					if strings.EqualFold(strings.TrimSpace(vs[i].Color), strings.TrimSpace(color)) {
@@ -3283,11 +3311,36 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			}
 		}
 	}
+	
+	// PASO 1.5: Poner stock=0 a las variantes que no fueron procesadas en esta importación
+	for productID, processedColors := range processedVariants {
+		allVariants, _ := s.products.ListVariants(r.Context(), productID)
+		for _, v := range allVariants {
+			colorKey := strings.ToLower(strings.TrimSpace(v.Color))
+			if !processedColors[colorKey] {
+				// Esta variante no fue procesada, poner stock=0
+				v.Stock = 0
+				_ = s.products.UpdateVariant(r.Context(), &v)
+				log.Debug().Str("variant_id", v.ID.String()).Str("color", v.Color).Msg("variante no en XLSX, stock=0")
+			}
+		}
+	}
+	
+	// PASO 2: Contar productos deprecados (los que quedaron con active=false)
+	deprecatedCount := 0
+	if repo, ok := s.products.Products.(interface{ GetInactiveSlugs(context.Context) ([]string, error) }); ok {
+		if inactiveSlugs, err := repo.GetInactiveSlugs(r.Context()); err == nil {
+			rep.DeprecatedSlugs = inactiveSlugs
+			deprecatedCount = len(inactiveSlugs)
+		}
+	}
+
 	rep.CreatedProducts = createdP
 	rep.UpdatedProducts = updatedP
 	rep.CreatedVariants = createdV
 	rep.UpdatedVariants = updatedV
 	rep.UnmatchedPrices = unmatched
+	rep.DeprecatedProducts = deprecatedCount
 	s.lastImport = rep
 
 	// Log resumen
@@ -3297,6 +3350,7 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 		log.Info().
 			Int("creados", createdP).
 			Int("actualizados", updatedP).
+			Int("deprecados", deprecatedCount).
 			Int("sin_precio", unmatched).
 			Float64("tasa_match", matchRate).
 			Msg("importación tradicional completada")
@@ -3415,6 +3469,7 @@ func (s *Server) importFromPricesTextOnly(r *http.Request, priceUSD map[string]f
 				GrossPrice: gross,
 				MarginPct:  margin,
 				BasePrice:  price,
+				Active:     true,
 			}
 			_ = s.products.Create(r.Context(), p)
 			createdP++
@@ -3423,6 +3478,7 @@ func (s *Server) importFromPricesTextOnly(r *http.Request, priceUSD map[string]f
 			p.GrossPrice = gross
 			p.MarginPct = margin
 			p.BasePrice = price
+			p.Active = true // Marcar como activo
 			if p.Category == "" && category != "" {
 				p.Category = category
 			}
@@ -3525,9 +3581,14 @@ func normalizeBaseKey(s string) string {
 	// Limpiar espacios múltiples
 	s = strings.Join(strings.Fields(s), " ")
 
-	// Normalizar pulgadas: "13.3"" -> "13""", "13"" -> "13"""
-	reInch := regexp.MustCompile(`(\d+)\.\d+\s*"`)
-	s = reInch.ReplaceAllString(s, "$1\"")
+	// Normalizar pulgadas: "13.3"" -> "13"", "13"" -> "13""
+	// Primero manejar decimales: 13.3" -> 13"
+	reInchDecimal := regexp.MustCompile(`(\d+)\.\d+\s*"`)
+	s = reInchDecimal.ReplaceAllString(s, "$1\"")
+	
+	// Normalizar múltiples espacios alrededor de comillas: 13 " -> 13"
+	reInchSpace := regexp.MustCompile(`(\d+)\s+"`)
+	s = reInchSpace.ReplaceAllString(s, "$1\"")
 
 	// normalizar capacidades individuales sin espacio (ej: 256GB → 256 GB)
 	re := regexp.MustCompile(`(\d+)(GB|TB|MHz|mm)`)
@@ -3962,6 +4023,7 @@ func (s *Server) importFromNormalizedData(r *http.Request, normalized map[string
 				GrossPrice: gross,
 				MarginPct:  margin,
 				BasePrice:  price,
+				Active:     true,
 			}
 			_ = s.products.Create(r.Context(), p)
 			createdP++
@@ -3973,6 +4035,7 @@ func (s *Server) importFromNormalizedData(r *http.Request, normalized map[string
 			p.GrossPrice = gross
 			p.MarginPct = margin
 			p.BasePrice = price
+			p.Active = true
 			_ = s.products.Create(r.Context(), p)
 			updatedP++
 			if p.Slug != "" {
