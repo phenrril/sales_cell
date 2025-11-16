@@ -83,7 +83,7 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
   .bc-dots .dot{width:10px;height:10px}
 }
 @media (max-width:768px){
-  .banner{margin:0 0 20px}
+  .banner{display:none}
   .banner-carousel{height:40vh;min-height:280px;max-height:400px}
   .bc-slide{object-fit:cover;object-position:center}
   .bc-dots{bottom:12px;gap:7px}

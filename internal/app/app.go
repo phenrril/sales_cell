@@ -206,6 +206,10 @@ func NewApp(db *gorm.DB) (*App, error) {
 			base = strings.ReplaceAll(base, " ", "%20")
 			return fmt.Sprintf("%s?w=%d", base, w)
 		},
+		// replace: reemplaza todas las ocurrencias de old por new en s
+		"replace": func(s, old, new string) string {
+			return strings.ReplaceAll(s, old, new)
+		},
 	}
 	
 	// En desarrollo, cargar templates desde filesystem para hot reload

@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="/public/assets/img/chroma-logo.png" />
-<link rel="apple-touch-icon" href="/public/assets/img/chroma-logo.png" />
+<link rel="icon" type="image/svg+xml" href="/public/assets/img/cel.svg" />
+<link rel="apple-touch-icon" href="/public/assets/img/cel.svg" />
 <link rel="stylesheet" href="/public/assets/styles.css?v=personal9" />
 <link rel="preload" as="image" href="/public/assets/img/img1.webp">
 <link rel="manifest" href="/public/manifest.json">
@@ -130,6 +130,14 @@
     </nav>
   </div>
   <div class="subnav brands-section" id="brandsSection">
+    <!-- Mobile business description -->
+    <div class="mobile-business-info">
+      <div class="mobile-business-content">
+        <h2 class="mobile-business-title">🔥 Los mejores celulares al mejor precio</h2>
+        <p class="mobile-business-text">Encontrá tu smartphone ideal entre las marcas más reconocidas. <strong>Envío gratis</strong> a todo el país y <strong>garantía oficial</strong>.</p>
+      </div>
+    </div>
+    
     <div class="container">
       <!-- Desktop brands grid -->
       <div class="brands-grid brands-grid-desktop">
@@ -587,6 +595,41 @@
   padding: 8px;
 }
 
+/* Mobile Business Info */
+.mobile-business-info {
+  display: none;
+  padding: 20px 16px 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-bottom: 1px solid #e0e7ff;
+  margin-bottom: 0;
+}
+
+.mobile-business-content {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.mobile-business-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.mobile-business-text {
+  font-size: 14px;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mobile-business-text strong {
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
 /* Brands Carousel Mobile */
 .brands-carousel-mobile {
   display: none;
@@ -595,6 +638,7 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding: 16px 0;
+  margin: 0;
 }
 
 .brands-carousel-mobile::-webkit-scrollbar {
@@ -605,6 +649,7 @@
   display: flex;
   gap: 12px;
   padding: 0 16px;
+  flex-wrap: nowrap;
 }
 
 .brand-chip {
@@ -623,6 +668,7 @@
   white-space: nowrap;
   transition: all 0.2s;
   min-width: 90px;
+  flex-shrink: 0;
 }
 
 .brand-chip:hover {
@@ -729,6 +775,14 @@
   
   .brands-carousel-mobile {
     display: block;
+    width: 100%;
+    clear: both;
+  }
+  
+  .mobile-business-info {
+    display: block;
+    width: 100%;
+    clear: both;
   }
   
   /* Adjust header */
