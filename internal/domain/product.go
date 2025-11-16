@@ -16,6 +16,7 @@ type Product struct {
 	Category       string            `gorm:"size:100"`
 	ShortDesc      string            `gorm:"type:text"`
 	ReadyToShip    bool              `gorm:"default:true"`
+	Active         bool              `gorm:"default:true;index"`
 	WidthMM        float64           `gorm:"type:decimal(8,2);default:0"`
 	HeightMM       float64           `gorm:"type:decimal(8,2);default:0"`
 	DepthMM        float64           `gorm:"type:decimal(8,2);default:0"`

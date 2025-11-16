@@ -51,6 +51,12 @@ func (r *ProductRepo) FindBySlug(ctx context.Context, slug string) (*domain.Prod
 func (r *ProductRepo) List(ctx context.Context, f domain.ProductFilter) ([]domain.Product, int64, error) {
 	var list []domain.Product
 	q := r.db.WithContext(ctx).Model(&domain.Product{})
+	
+	// Por defecto, solo mostrar productos activos (a menos que se especifique lo contrario)
+	if f.IncludeInactive == nil || !*f.IncludeInactive {
+		q = q.Where("active = ?", true)
+	}
+	
 	if f.Category != "" {
 		// Si category=celulares, buscar productos de marcas de celulares
 		if f.Category == "celulares" {
@@ -266,4 +272,18 @@ func (r *ProductRepo) ClearImages(ctx context.Context, productID uuid.UUID) ([]s
 		return nil, err
 	}
 	return paths, nil
+}
+
+// MarkAllInactive marca todos los productos como inactivos (para proceso de importación)
+func (r *ProductRepo) MarkAllInactive(ctx context.Context) error {
+	return r.db.WithContext(ctx).Model(&domain.Product{}).Update("active", false).Error
+}
+
+// GetInactiveSlugs obtiene los slugs de todos los productos inactivos
+func (r *ProductRepo) GetInactiveSlugs(ctx context.Context) ([]string, error) {
+	var slugs []string
+	err := r.db.WithContext(ctx).Model(&domain.Product{}).
+		Where("active = ?", false).
+		Pluck("slug", &slugs).Error
+	return slugs, err
 }
