@@ -287,6 +287,11 @@ func (a *App) MigrateAndSeed() error {
 		return err
 	}
 
+	// Tabla products: agregar columna active con valor por defecto
+	_ = a.DB.Exec("ALTER TABLE products ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true").Error
+	_ = a.DB.Exec("UPDATE products SET active = true WHERE active IS NULL").Error
+	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_products_active ON products(active)").Error
+	
 	// Índices adicionales y constraints sugeridos
 	_ = a.DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_variants_sku_unique ON variants (sku) WHERE sku IS NOT NULL AND sku <> ''").Error
 	_ = a.DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_variants_ean_unique ON variants (ean) WHERE ean IS NOT NULL AND ean <> ''").Error
