@@ -3085,11 +3085,11 @@ func (s *Server) handleAdminImportCSV(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]any{"created_products": createdP, "updated_products": updatedP, "created_variants": createdV, "updated_variants": updatedV, "unmatched": unmatched}
 	if s.lastImport != nil {
 		resp["report"] = map[string]any{
-			"timestamp":          s.lastImport.Timestamp.Format(time.RFC3339),
-			"unmatched_items":    s.lastImport.UnmatchedItems,
-			"deprecated_count":   s.lastImport.DeprecatedProducts,
-			"deprecated_slugs":   s.lastImport.DeprecatedSlugs,
-			"errors":             s.lastImport.Errors,
+			"timestamp":        s.lastImport.Timestamp.Format(time.RFC3339),
+			"unmatched_items":  s.lastImport.UnmatchedItems,
+			"deprecated_count": s.lastImport.DeprecatedProducts,
+			"deprecated_slugs": s.lastImport.DeprecatedSlugs,
+			"errors":           s.lastImport.Errors,
 		}
 		resp["deprecated_products"] = s.lastImport.DeprecatedProducts
 	}
@@ -3146,8 +3146,8 @@ type ImportReport struct {
 	Timestamp           time.Time
 	CreatedProductSlugs []string
 	UpdatedProductSlugs []string
-	DeprecatedSlugs     []string          // Productos deprecados (active=false)
-	CreatedVariantKeys  []string          // slug:color
+	DeprecatedSlugs     []string // Productos deprecados (active=false)
+	CreatedVariantKeys  []string // slug:color
 	UpdatedVariantKeys  []string
 }
 
@@ -3159,8 +3159,10 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 	defer f.Close()
 
 	// PASO 1: Marcar todos los productos existentes como inactivos al inicio
-	if repo, ok := s.products.Products.(interface{ MarkAllInactive(context.Context) error }); ok {
-		_ = repo.MarkAllInactive(r.Context())
+	if err := s.products.Products.MarkAllInactive(r.Context()); err != nil {
+		log.Error().Err(err).Msg("error marcando productos como inactivos")
+	} else {
+		log.Info().Msg("todos los productos marcados como inactivos")
 	}
 
 	createdP, updatedP := 0, 0
@@ -3188,7 +3190,7 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			if len(row) == 0 {
 				continue
 			}
-			// Columnas esperadas según muestra: B = nombre, C = color (a veces), D/E = stock
+			// Columnas esperadas: B=nombre, C=color, E=stock (D suele estar vacía)
 			name := ""
 			color := ""
 			stockStr := ""
@@ -3198,8 +3200,12 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			if len(row) > 2 {
 				color = strings.TrimSpace(row[2])
 			}
+			// Buscar stock en columna D o E (la primera que no esté vacía después del color)
 			if len(row) > 3 {
 				stockStr = strings.TrimSpace(row[3])
+			}
+			if stockStr == "" && len(row) > 4 {
+				stockStr = strings.TrimSpace(row[4])
 			}
 
 			if isSectionTitle(name) {
@@ -3219,6 +3225,11 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 				color = inferColorFromName(name)
 			}
 			stock := mapStock(stockStr)
+
+			// Log para debug de matching
+			if strings.Contains(strings.ToLower(baseKey), "iphone 15 128") {
+				log.Debug().Str("nombre_original", name).Str("baseKey", baseKey).Str("color", color).Str("stockStr", stockStr).Int("stock", stock).Msg("procesando iphone 15")
+			}
 
 			usd := priceUSD[baseKey]
 			matchMethod := "exacto"
@@ -3250,28 +3261,28 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			margin := defaultMargin
 			price := gross * (1.0 + margin/100.0)
 
-		brand, model := inferBrandModel(baseKey)
-		p, _ := s.products.GetBySlug(r.Context(), slugify(baseKey))
-		if p == nil {
-			p = &domain.Product{Name: baseKey, Category: category, Brand: brand, Model: model, GrossPrice: gross, MarginPct: margin, BasePrice: price, Active: true}
-			_ = s.products.Create(r.Context(), p)
-			createdP++
-			if p.Slug != "" {
-				rep.CreatedProductSlugs = append(rep.CreatedProductSlugs, p.Slug)
-				activatedSlugs[p.Slug] = true
+			brand, model := inferBrandModel(baseKey)
+			p, _ := s.products.GetBySlug(r.Context(), slugify(baseKey))
+			if p == nil {
+				p = &domain.Product{Name: baseKey, Category: category, Brand: brand, Model: model, GrossPrice: gross, MarginPct: margin, BasePrice: price, Active: true}
+				_ = s.products.Create(r.Context(), p)
+				createdP++
+				if p.Slug != "" {
+					rep.CreatedProductSlugs = append(rep.CreatedProductSlugs, p.Slug)
+					activatedSlugs[p.Slug] = true
+				}
+			} else {
+				p.GrossPrice = gross
+				p.MarginPct = margin
+				p.BasePrice = price
+				p.Active = true // Marcar como activo
+				_ = s.products.Create(r.Context(), p)
+				updatedP++
+				if p.Slug != "" {
+					rep.UpdatedProductSlugs = append(rep.UpdatedProductSlugs, p.Slug)
+					activatedSlugs[p.Slug] = true
+				}
 			}
-		} else {
-			p.GrossPrice = gross
-			p.MarginPct = margin
-			p.BasePrice = price
-			p.Active = true // Marcar como activo
-			_ = s.products.Create(r.Context(), p)
-			updatedP++
-			if p.Slug != "" {
-				rep.UpdatedProductSlugs = append(rep.UpdatedProductSlugs, p.Slug)
-				activatedSlugs[p.Slug] = true
-			}
-		}
 
 			// Variante/color
 			// buscar variante existente por color
@@ -3282,7 +3293,7 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 					processedVariants[p.ID] = make(map[string]bool)
 				}
 				processedVariants[p.ID][strings.ToLower(strings.TrimSpace(color))] = true
-				
+
 				vs, _ := s.products.ListVariants(r.Context(), p.ID)
 				for i := range vs {
 					if strings.EqualFold(strings.TrimSpace(vs[i].Color), strings.TrimSpace(color)) {
@@ -3311,7 +3322,7 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			}
 		}
 	}
-	
+
 	// PASO 1.5: Poner stock=0 a las variantes que no fueron procesadas en esta importación
 	for productID, processedColors := range processedVariants {
 		allVariants, _ := s.products.ListVariants(r.Context(), productID)
@@ -3325,14 +3336,12 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			}
 		}
 	}
-	
+
 	// PASO 2: Contar productos deprecados (los que quedaron con active=false)
 	deprecatedCount := 0
-	if repo, ok := s.products.Products.(interface{ GetInactiveSlugs(context.Context) ([]string, error) }); ok {
-		if inactiveSlugs, err := repo.GetInactiveSlugs(r.Context()); err == nil {
-			rep.DeprecatedSlugs = inactiveSlugs
-			deprecatedCount = len(inactiveSlugs)
-		}
+	if inactiveSlugs, err := s.products.Products.GetInactiveSlugs(r.Context()); err == nil {
+		rep.DeprecatedSlugs = inactiveSlugs
+		deprecatedCount = len(inactiveSlugs)
 	}
 
 	rep.CreatedProducts = createdP
@@ -3575,20 +3584,25 @@ func normalizeBaseKey(s string) string {
 	s = strings.TrimSpace(s)
 	s = strings.ReplaceAll(s, "\t", " ")
 
-	// Quitar colores agrupados entre paréntesis (ej: "(Negro,Blanco,Azul...)")
+	// PRIMERO: Normalizar comillas de pulgadas ANTES de quitar paréntesis
+	// Esto evita problemas con Macbooks que tienen: Macbook Air M4 13" 16/256 GB (skyblue)
+
+	// Normalizar pulgadas con decimales: 13.3" -> 13", 15.6" -> 15"
+	reInchDecimal := regexp.MustCompile(`(\d+)\.\d+\s*"`)
+	s = reInchDecimal.ReplaceAllString(s, `$1"`)
+
+	// Normalizar espacios alrededor de comillas: 13 " -> 13"
+	reInchSpace := regexp.MustCompile(`(\d+)\s+"`)
+	s = reInchSpace.ReplaceAllString(s, `$1"`)
+
+	// Normalizar comillas simples a dobles: Macbook Air M4 13' -> Macbook Air M4 13"
+	s = strings.ReplaceAll(s, `'`, `"`)
+
+	// SEGUNDO: Quitar colores agrupados entre paréntesis (ej: "(Negro,Blanco,Azul...)", "(skyblue)", "(otros colores)")
 	s = regexp.MustCompile(`\s*\([^)]*\)\s*`).ReplaceAllString(s, " ")
 
 	// Limpiar espacios múltiples
 	s = strings.Join(strings.Fields(s), " ")
-
-	// Normalizar pulgadas: "13.3"" -> "13"", "13"" -> "13""
-	// Primero manejar decimales: 13.3" -> 13"
-	reInchDecimal := regexp.MustCompile(`(\d+)\.\d+\s*"`)
-	s = reInchDecimal.ReplaceAllString(s, "$1\"")
-	
-	// Normalizar múltiples espacios alrededor de comillas: 13 " -> 13"
-	reInchSpace := regexp.MustCompile(`(\d+)\s+"`)
-	s = reInchSpace.ReplaceAllString(s, "$1\"")
 
 	// normalizar capacidades individuales sin espacio (ej: 256GB → 256 GB)
 	re := regexp.MustCompile(`(\d+)(GB|TB|MHz|mm)`)

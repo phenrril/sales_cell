@@ -1013,6 +1013,7 @@
     alert('✅ Importación OK!\n\n' +
       'Productos creados: '+(out.created_products||0)+'\n' +
       'Productos actualizados: '+(out.updated_products||0)+'\n' +
+      (out.deprecated_products ? '🗑️ Productos deprecados: '+out.deprecated_products+'\n' : '') +
       'Variantes creadas: '+(out.created_variants||0)+'\n' +
       'Variantes actualizadas: '+(out.updated_variants||0)+
       (out.unmatched ? '\n\n⚠️ Sin precio: '+out.unmatched : ''));

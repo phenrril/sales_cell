@@ -22,6 +22,9 @@ type ProductRepo interface {
 	DeleteVariant(ctx context.Context, variantID uuid.UUID) error
 	// Imágenes
 	ClearImages(ctx context.Context, productID uuid.UUID) ([]string, error)
+	// Gestión de productos activos/inactivos
+	MarkAllInactive(ctx context.Context) error
+	GetInactiveSlugs(ctx context.Context) ([]string, error)
 }
 
 type CustomerRepo interface {
