@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/rs/zerolog/log"
 )
 
 type SpecsScraper struct {
@@ -37,20 +36,17 @@ func (s *SpecsScraper) SearchSpecs(ctx context.Context, productName, brand, mode
 	// 1. GSMArena
 	if gsmSpecs, err := s.searchGSMArena(ctx, query); err == nil && len(gsmSpecs) > 0 {
 		specs = mergeSpecs(specs, gsmSpecs)
-		log.Info().Str("source", "gsmarena").Int("count", len(gsmSpecs)).Msg("Especificaciones encontradas")
 	}
 
 	// 2. PhoneArena
 	if phoneSpecs, err := s.searchPhoneArena(ctx, query); err == nil && len(phoneSpecs) > 0 {
 		specs = mergeSpecs(specs, phoneSpecs)
-		log.Info().Str("source", "phonearena").Int("count", len(phoneSpecs)).Msg("Especificaciones encontradas")
 	}
 
 	// 3. Búsqueda genérica con Google
 	if len(specs) == 0 {
 		if googleSpecs, err := s.searchGoogle(ctx, query); err == nil && len(googleSpecs) > 0 {
 			specs = mergeSpecs(specs, googleSpecs)
-			log.Info().Str("source", "google").Int("count", len(googleSpecs)).Msg("Especificaciones encontradas")
 		}
 	}
 

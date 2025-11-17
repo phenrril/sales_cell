@@ -24,7 +24,6 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 	"github.com/sashabaranov/go-openai"
 	"golang.org/x/oauth2"
 
@@ -790,7 +789,6 @@ func (s *Server) apiProductSearchSpecs(w http.ResponseWriter, r *http.Request) {
 	// Buscar especificaciones
 	specs, err := s.scraper.SearchSpecs(r.Context(), p.Name, p.Brand, p.Model)
 	if err != nil {
-		log.Warn().Err(err).Str("product", p.Name).Msg("Error buscando especificaciones")
 		writeJSON(w, 500, map[string]any{"status": "error", "message": "error buscando especificaciones: " + err.Error()})
 		return
 	}
@@ -839,7 +837,6 @@ func (s *Server) apiProductSearchImages(w http.ResponseWriter, r *http.Request) 
 	// Buscar imágenes
 	images, err := s.imageScraper.SearchImages(r.Context(), p.Name, p.Brand, p.Model, maxToAdd)
 	if err != nil {
-		log.Warn().Err(err).Str("product", p.Name).Msg("Error buscando imágenes")
 		writeJSON(w, 500, map[string]any{"status": "error", "message": "error buscando imágenes: " + err.Error()})
 		return
 	}
@@ -1157,19 +1154,16 @@ func (s *Server) webhookMP(w http.ResponseWriter, r *http.Request) {
 		payID = r.URL.Query().Get("id")
 	}
 	if payID == "" {
-		log.Warn().Msg("webhook sin payment id")
 		w.WriteHeader(200)
 		return
 	}
 	status, extRef, err := s.payments.Gateway.PaymentInfo(r.Context(), payID)
 	if err != nil {
-		log.Error().Err(err).Str("payment_id", payID).Msg("payment info")
 		w.WriteHeader(200)
 		return
 	}
 	orderID, ok := mercadopago.VerifyExternalRef(extRef)
 	if !ok {
-		log.Warn().Str("ext", extRef).Msg("external ref inválido")
 		w.WriteHeader(200)
 		return
 	}
@@ -1180,7 +1174,6 @@ func (s *Server) webhookMP(w http.ResponseWriter, r *http.Request) {
 	}
 	o, err := s.orders.Orders.FindByID(r.Context(), uid)
 	if err != nil || o == nil {
-		log.Error().Err(err).Str("order_id", orderID).Msg("orden no encontrada para webhook")
 		w.WriteHeader(200)
 		return
 	}
@@ -1207,7 +1200,6 @@ func (s *Server) webhookMP(w http.ResponseWriter, r *http.Request) {
 		notify = true
 	}
 	if err := s.orders.Orders.Save(r.Context(), o); err != nil {
-		log.Error().Err(err).Msg("guardar orden webhook")
 	}
 	if notify {
 		go sendOrderNotify(o, true)
@@ -1530,7 +1522,6 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	// Manejar panics
 	defer func() {
 		if rec := recover(); rec != nil {
-			log.Error().Interface("panic", rec).Msg("panic en handleCartCheckout")
 			if isJSON := r.Header.Get("Content-Type"); strings.Contains(isJSON, "application/json") {
 				writeJSON(w, 500, map[string]string{"error": "error interno del servidor"})
 			} else {
@@ -1555,13 +1546,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			step2Data = req.Step2
 			step3Data = req.Step3
 			step4Data = req.Step4
-			log.Debug().
-				Interface("step2", step2Data).
-				Interface("step3", step3Data).
-				Interface("step4", step4Data).
-				Msg("datos recibidos en checkout")
 		} else {
-			log.Error().Err(err).Msg("error decodificando JSON en checkout")
 			writeJSON(w, 400, map[string]string{"error": "invalid json: " + err.Error()})
 			return
 		}
@@ -1698,7 +1683,6 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		"transferencia": true,
 	}
 	if !validPaymentMethods[paymentMethod] {
-		log.Warn().Str("payment_method", paymentMethod).Msg("método de pago inválido, usando mercadopago")
 		paymentMethod = "mercadopago"
 	}
 
@@ -1770,8 +1754,6 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			}
 			if err := s.customers.Save(r.Context(), newCust); err == nil {
 				customerID = &newCust.ID
-			} else {
-				log.Warn().Err(err).Str("email", email).Msg("error creando cliente, continuando sin customer_id")
 			}
 		} else if err == nil && cust != nil {
 			// Actualizar cliente existente
@@ -1779,11 +1761,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			cust.Phone = phone
 			if err := s.customers.Save(r.Context(), cust); err == nil {
 				customerID = &cust.ID
-			} else {
-				log.Warn().Err(err).Str("email", email).Msg("error actualizando cliente, continuando sin customer_id")
 			}
-		} else {
-			log.Warn().Err(err).Str("email", email).Msg("error buscando cliente, continuando sin customer_id")
 		}
 	}
 
@@ -1804,14 +1782,6 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		Total:          0.0, // Se calculará después
 		Notified:       false,
 	}
-
-	log.Debug().
-		Str("email", email).
-		Str("name", name).
-		Str("payment_method", paymentMethod).
-		Str("shipping_method", shippingMethod).
-		Int("items_count", len(lines)).
-		Msg("creando orden")
 
 	itemsTotal := 0.0
 	for _, l := range lines {
@@ -1870,17 +1840,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	o.DiscountAmount = 0.0
 	o.Total = subtotal
 
-	log.Debug().
-		Str("order_id", o.ID.String()).
-		Float64("items_total", itemsTotal).
-		Float64("shipping_cost", shippingCost).
-		Float64("discount_amount", o.DiscountAmount).
-		Float64("total", o.Total).
-		Int("items_count", len(o.Items)).
-		Msg("orden calculada, guardando")
-
 	if err := s.orders.Orders.Save(r.Context(), o); err != nil {
-		log.Error().Err(err).Str("order_id", o.ID.String()).Msg("error guardando orden")
 		if isJSON {
 			writeJSON(w, 500, map[string]string{"error": "error creando orden: " + err.Error()})
 		} else {
@@ -1888,8 +1848,6 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
-	log.Info().Str("order_id", o.ID.String()).Str("payment_method", paymentMethod).Msg("orden guardada exitosamente")
 
 	// Limpiar datos del checkout
 	writeCheckoutData(w, checkoutDataPayload{})
@@ -1915,7 +1873,6 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	case "mercadopago":
 		// Validar que el servicio de pagos esté disponible
 		if s.payments == nil {
-			log.Error().Str("order_id", o.ID.String()).Msg("servicio de pagos no disponible")
 			if isJSON {
 				writeJSON(w, 500, map[string]string{"error": "Servicio de pagos no disponible"})
 			} else {
@@ -1924,10 +1881,8 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Redirigir a Mercado Pago
-		log.Info().Str("order_id", o.ID.String()).Msg("creando preferencia de MercadoPago")
 		redirURL, err := s.payments.CreatePreference(r.Context(), o)
 		if err != nil {
-			log.Error().Err(err).Str("order_id", o.ID.String()).Msg("error creando preferencia MP")
 			if isJSON {
 				writeJSON(w, 500, map[string]string{"error": "Error al crear la preferencia de pago: " + err.Error()})
 			} else {
@@ -1936,7 +1891,6 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if redirURL == "" {
-			log.Error().Str("order_id", o.ID.String()).Msg("URL de redirección vacía de MercadoPago")
 			if isJSON {
 				writeJSON(w, 500, map[string]string{"error": "Error: URL de pago vacía"})
 			} else {
@@ -1946,10 +1900,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		}
 		// Guardar la orden con el MPPreferenceID actualizado
 		if err := s.orders.Orders.Save(r.Context(), o); err != nil {
-			log.Error().Err(err).Str("order_id", o.ID.String()).Msg("error guardando orden después de MP")
-			// Continuar de todas formas ya que la preferencia se creó
 		}
-		log.Info().Str("order_id", o.ID.String()).Str("redirect_url", redirURL).Msg("preferencia MP creada, redirigiendo")
 		writeCart(w, cartPayload{})
 		if isJSON {
 			writeJSON(w, 200, map[string]interface{}{
@@ -2111,7 +2062,6 @@ func (s *Server) render(w http.ResponseWriter, name string, data any) {
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := s.tmpl.ExecuteTemplate(w, name, data); err != nil {
-		log.Error().Err(err).Str("tpl", name).Msg("render")
 		http.Error(w, "tpl", 500)
 	}
 }
@@ -2262,7 +2212,6 @@ func (s *Server) apiProductUpload(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if err := s.products.Create(r.Context(), p); err != nil {
-			log.Error().Err(err).Msg("crear producto")
 			http.Error(w, "crear", 500)
 			return
 		}
@@ -2310,7 +2259,6 @@ func (s *Server) apiProductUpload(w http.ResponseWriter, r *http.Request) {
 		}
 		storedPath, err := s.storage.SaveImage(r.Context(), fh.Filename, data)
 		if err != nil {
-			log.Warn().Err(err).Str("file", fh.Filename).Msg("no se pudo guardar imagen")
 			continue
 		}
 		if !strings.HasPrefix(storedPath, "/") {
@@ -2320,7 +2268,6 @@ func (s *Server) apiProductUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(imgs) > 0 {
 		if err := s.products.AddImages(r.Context(), p.ID, imgs); err != nil {
-			log.Error().Err(err).Msg("add images")
 		}
 		if rp, err := s.products.GetBySlug(r.Context(), p.Slug); err == nil {
 			p = rp
@@ -2652,7 +2599,6 @@ func sendOrderEmail(o *domain.Order, success bool) error {
 		to = "ventas@newmobile.com.ar"
 	}
 	if host == "" || port == "" || user == "" || pass == "" {
-		log.Warn().Msg("SMTP no configurado, se omite envío de email")
 		return nil
 	}
 	addr := host + ":" + port
@@ -2685,7 +2631,6 @@ func sendOrderEmail(o *domain.Order, success bool) error {
 	_, _ = fmt.Fprintf(&buf, "Total: $%.2f (Envío: $%.2f)\n", o.Total, o.ShippingCost)
 	auth := smtp.PlainAuth("", user, pass, host)
 	if err := smtp.SendMail(addr, auth, user, []string{to}, buf.Bytes()); err != nil {
-		log.Error().Err(err).Msg("email send")
 		return err
 	}
 	return nil
@@ -2763,7 +2708,6 @@ func sendOrderTelegram(o *domain.Order, success bool) error {
 
 func sendOrderNotify(o *domain.Order, success bool) {
 	if err := sendOrderTelegram(o, success); err != nil {
-		log.Warn().Err(err).Msg("telegram notif fallo")
 		if os.Getenv("SMTP_HOST") != "" {
 			_ = sendOrderEmail(o, success)
 		}
@@ -2844,14 +2788,12 @@ func (s *Server) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	tok, err := s.oauthCfg.Exchange(r.Context(), code)
 	if err != nil {
-		log.Error().Err(err).Msg("exchange oauth")
 		http.Error(w, "oauth", 400)
 		return
 	}
 	client := s.oauthCfg.Client(r.Context(), tok)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil || resp.StatusCode != 200 {
-		log.Error().Err(err).Msg("userinfo")
 		http.Error(w, "userinfo", 400)
 		return
 	}
@@ -2889,7 +2831,6 @@ func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	cfgKey := os.Getenv("ADMIN_API_KEY")
 	if cfgKey == "" {
-		log.Error().Msg("ADMIN_API_KEY faltante")
 		http.Error(w, "config", 500)
 		return
 	}
@@ -3060,7 +3001,6 @@ func (s *Server) handleAdminImportCSV(w http.ResponseWriter, r *http.Request) {
 
 		normalized, err := s.normalizeWithOpenAI(ctx, data, pricesText)
 		if err != nil {
-			log.Error().Err(err).Msg("error usando OpenAI")
 			writeJSON(w, 500, map[string]any{
 				"error":   "openai_error",
 				"message": err.Error(),
@@ -3123,9 +3063,6 @@ func parseUSDPrices(text string) map[string]float64 {
 			if key != "" && usd > 0 {
 				res[key] = usd
 				// Log para debug de Macbooks
-				if strings.Contains(strings.ToLower(key), "macbook") || strings.Contains(strings.ToLower(key), "ipad") {
-					log.Debug().Str("original", name).Str("normalized", key).Float64("usd", usd).Msg("producto con comillas parseado")
-				}
 			}
 		}
 	}
@@ -3160,9 +3097,6 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 
 	// PASO 1: Marcar todos los productos existentes como inactivos al inicio
 	if err := s.products.Products.MarkAllInactive(r.Context()); err != nil {
-		log.Error().Err(err).Msg("error marcando productos como inactivos")
-	} else {
-		log.Info().Msg("todos los productos marcados como inactivos")
 	}
 
 	createdP, updatedP := 0, 0
@@ -3227,9 +3161,6 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			stock := mapStock(stockStr)
 
 			// Log para debug de matching
-			if strings.Contains(strings.ToLower(baseKey), "iphone 15 128") {
-				log.Debug().Str("nombre_original", name).Str("baseKey", baseKey).Str("color", color).Str("stockStr", stockStr).Int("stock", stock).Msg("procesando iphone 15")
-			}
 
 			usd := priceUSD[baseKey]
 			matchMethod := "exacto"
@@ -3249,14 +3180,10 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 					rep.UnmatchedReasons[baseKey] = reason
 				}
 
-				log.Debug().Str("producto", baseKey).Str("razon", reason).Str("nombre_original", name).Msg("sin precio")
 				continue
 			}
 
 			// Log exitoso con método de match
-			if matchMethod == "fuzzy" {
-				log.Debug().Str("producto", baseKey).Str("metodo", matchMethod).Float64("usd", usd).Msg("match encontrado")
-			}
 			gross := usd * fxRate
 			margin := defaultMargin
 			price := gross * (1.0 + margin/100.0)
@@ -3332,7 +3259,6 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 				// Esta variante no fue procesada, poner stock=0
 				v.Stock = 0
 				_ = s.products.UpdateVariant(r.Context(), &v)
-				log.Debug().Str("variant_id", v.ID.String()).Str("color", v.Color).Msg("variante no en XLSX, stock=0")
 			}
 		}
 	}
@@ -3355,14 +3281,6 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 	// Log resumen
 	total := createdP + updatedP
 	if total > 0 {
-		matchRate := float64(total) / float64(total+unmatched) * 100
-		log.Info().
-			Int("creados", createdP).
-			Int("actualizados", updatedP).
-			Int("deprecados", deprecatedCount).
-			Int("sin_precio", unmatched).
-			Float64("tasa_match", matchRate).
-			Msg("importación tradicional completada")
 	}
 
 	return createdP, updatedP, createdV, updatedV, unmatched
@@ -3878,8 +3796,6 @@ func (s *Server) normalizeWithOpenAI(ctx context.Context, xlsxData []byte, price
 	const batchSize = 50
 	totalBatches := (len(xlsxProducts) + batchSize - 1) / batchSize
 
-	log.Info().Int("total_productos", len(xlsxProducts)).Int("lotes", totalBatches).Msg("procesando con OpenAI en lotes")
-
 	allProducts := make(map[string]NormalizedProduct)
 	client := openai.NewClient(apiKey)
 
@@ -3891,7 +3807,6 @@ func (s *Server) normalizeWithOpenAI(ctx context.Context, xlsxData []byte, price
 		}
 
 		batchProducts := xlsxProducts[start:end]
-		log.Info().Int("lote", batchNum+1).Int("total", totalBatches).Int("productos", len(batchProducts)).Msg("procesando lote")
 
 		// Mostrar primeros 3 productos del lote para debug
 		if len(batchProducts) > 0 {
@@ -3899,7 +3814,6 @@ func (s *Server) normalizeWithOpenAI(ctx context.Context, xlsxData []byte, price
 			if len(batchProducts) < sampleSize {
 				sampleSize = len(batchProducts)
 			}
-			log.Info().Strs("muestra", batchProducts[:sampleSize]).Msg("productos enviados (muestra)")
 		}
 
 		// Construir prompt optimizado pero claro
@@ -3959,7 +3873,6 @@ Importante:
 			Productos []NormalizedProduct `json:"productos"`
 		}
 		if err := json.Unmarshal([]byte(content), &result); err != nil {
-			log.Error().Str("content", content).Err(err).Int("lote", batchNum+1).Msg("error parseando respuesta de OpenAI")
 			return nil, fmt.Errorf("error parseando JSON de OpenAI en lote %d/%d: %w", batchNum+1, totalBatches, err)
 		}
 
@@ -3969,19 +3882,8 @@ Importante:
 		}
 
 		// Warning si se procesaron menos productos de los esperados
-		if len(result.Productos) < len(batchProducts) {
-			log.Warn().
-				Int("lote", batchNum+1).
-				Int("enviados", len(batchProducts)).
-				Int("procesados", len(result.Productos)).
-				Int("faltantes", len(batchProducts)-len(result.Productos)).
-				Msg("algunos productos no fueron matcheados por OpenAI")
-		} else {
-			log.Info().Int("lote", batchNum+1).Int("productos_procesados", len(result.Productos)).Msg("lote completado")
-		}
 	}
 
-	log.Info().Int("total_productos_normalizados", len(allProducts)).Msg("normalización completada")
 	return allProducts, nil
 }
 

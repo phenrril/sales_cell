@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/rs/zerolog/log"
 )
 
 type ImageScraper struct {
@@ -42,16 +41,12 @@ func (s *ImageScraper) SearchImages(ctx context.Context, productName, brand, mod
 	// Intentar DuckDuckGo Images primero (más confiable)
 	images, err := s.searchDuckDuckGo(ctx, query, maxResults)
 	if err == nil && len(images) > 0 {
-		log.Info().Str("query", query).Int("found", len(images)).Msg("Imágenes encontradas en DuckDuckGo")
 		return images, nil
 	}
-
-	log.Warn().Err(err).Msg("Error en DuckDuckGo, intentando Google Images")
 
 	// Fallback a Google Images
 	images, err = s.searchGoogleImages(ctx, query, maxResults)
 	if err == nil && len(images) > 0 {
-		log.Info().Str("query", query).Int("found", len(images)).Msg("Imágenes encontradas en Google")
 		return images, nil
 	}
 
@@ -279,4 +274,3 @@ func (s *ImageScraper) searchGoogleImages(ctx context.Context, query string, max
 
 	return uniqueImages, nil
 }
-
