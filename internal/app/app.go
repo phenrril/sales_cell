@@ -66,7 +66,7 @@ func NewApp(db *gorm.DB) (*App, error) {
 			log.Info().Msg("APP_ENV no es production; usando token definido")
 		}
 	}
-	
+
 	// Validar que el token esté presente
 	if token == "" {
 		log.Error().Msg("MP_ACCESS_TOKEN no está configurado. Las preferencias de pago no funcionarán.")
@@ -77,6 +77,28 @@ func NewApp(db *gorm.DB) (*App, error) {
 			tokenPrefix = tokenPrefix[:10] + "..."
 		}
 		log.Info().Str("token_prefix", tokenPrefix).Msg("token de MercadoPago configurado")
+	}
+
+	// Validar claves secretas
+	sessionKey := os.Getenv("SESSION_KEY")
+	secretKey := os.Getenv("SECRET_KEY")
+	if sessionKey == "" {
+		if appEnv == "production" || appEnv == "prod" {
+			log.Error().Msg("SESSION_KEY no está configurada. Es requerida en producción para firmar cookies del carrito y checkout.")
+		} else {
+			log.Warn().Msg("SESSION_KEY no está configurada. Usando valor por defecto inseguro (solo para desarrollo).")
+		}
+	} else {
+		log.Info().Msg("SESSION_KEY configurada (para firmar cookies del carrito y checkout)")
+	}
+	if secretKey == "" {
+		if appEnv == "production" || appEnv == "prod" {
+			log.Error().Msg("SECRET_KEY no está configurada. Es requerida en producción para firmar external_reference de MercadoPago.")
+		} else {
+			log.Warn().Msg("SECRET_KEY no está configurada. Usando valor por defecto inseguro (solo para desarrollo).")
+		}
+	} else {
+		log.Info().Msg("SECRET_KEY configurada (para firmar external_reference de MercadoPago)")
 	}
 
 	payment := mercadopago.NewGateway(token)
@@ -211,13 +233,13 @@ func NewApp(db *gorm.DB) (*App, error) {
 			return strings.ReplaceAll(s, old, new)
 		},
 	}
-	
+
 	// En desarrollo, cargar templates desde filesystem para hot reload
 	isDev := appEnv == "" || appEnv == "development" || appEnv == "dev"
-	
+
 	var tmpl *template.Template
 	var err error
-	
+
 	if isDev {
 		// Desarrollo: cargar desde filesystem para ver cambios sin rebuild
 		tmpl, err = template.New("layout").Funcs(funcMap).ParseGlob("internal/views/*.html")
@@ -235,7 +257,7 @@ func NewApp(db *gorm.DB) (*App, error) {
 			return nil, err
 		}
 	}
-	
+
 	app.Tmpl = tmpl
 
 	return app, nil
@@ -261,11 +283,11 @@ func (a *App) MigrateAndSeed() error {
 	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost DECIMAL(12,2) DEFAULT 0").Error
 	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal_net DECIMAL(12,2) DEFAULT 0").Error
 	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS vat_amount DECIMAL(12,2) DEFAULT 0").Error
-	
+
 	// Índices para las nuevas columnas
 	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_orders_payment_method ON orders(payment_method)").Error
 	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id)").Error
-	
+
 	// Tabla order_items: agregar columnas para variantes e impuestos
 	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS variant_id UUID").Error
 	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS sku VARCHAR(120)").Error
@@ -274,10 +296,10 @@ func (a *App) MigrateAndSeed() error {
 	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS vat_rate DECIMAL(5,2) DEFAULT 21.00").Error
 	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS vat_amount DECIMAL(12,2) DEFAULT 0").Error
 	_ = a.DB.Exec("ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit_price_gross DECIMAL(12,2) DEFAULT 0").Error
-	
+
 	// Índices para order_items
 	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_order_items_variant_id ON order_items(variant_id)").Error
-	
+
 	// Tabla customers: agregar columnas para datos fiscales
 	_ = a.DB.Exec("ALTER TABLE customers ADD COLUMN IF NOT EXISTS tax_id VARCHAR(30)").Error
 	_ = a.DB.Exec("ALTER TABLE customers ADD COLUMN IF NOT EXISTS tax_condition VARCHAR(4)").Error
@@ -291,7 +313,7 @@ func (a *App) MigrateAndSeed() error {
 	_ = a.DB.Exec("ALTER TABLE products ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true").Error
 	_ = a.DB.Exec("UPDATE products SET active = true WHERE active IS NULL").Error
 	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_products_active ON products(active)").Error
-	
+
 	// Índices adicionales y constraints sugeridos
 	_ = a.DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_variants_sku_unique ON variants (sku) WHERE sku IS NOT NULL AND sku <> ''").Error
 	_ = a.DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_variants_ean_unique ON variants (ean) WHERE ean IS NOT NULL AND ean <> ''").Error
