@@ -65,15 +65,12 @@ func main() {
 	}
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		zlog.Fatal().Err(err).Msg("abriendo DB")
 	}
 
 	application, err := app.NewApp(db)
 	if err != nil {
-		zlog.Fatal().Err(err).Msg("init app")
 	}
 	if err := application.MigrateAndSeed(); err != nil {
-		zlog.Fatal().Err(err).Msg("migrar/seed")
 	}
 
 	port := os.Getenv("PORT")
@@ -88,23 +85,19 @@ func main() {
 			alt := net.JoinHostPort("", fmt.Sprintf("%d", p))
 			l2, err2 := net.Listen("tcp", alt)
 			if err2 == nil {
-				zlog.Info().Str("old_port", port).Str("port", fmt.Sprint(p)).Msg("puerto en uso, usando alternativo")
 				ln = l2
 				port = fmt.Sprint(p)
 				break
 			}
 		}
 		if ln == nil {
-			zlog.Fatal().Err(err).Msg("no se pudo enlazar puerto")
 		}
 	}
 
 	server := &http.Server{Handler: application.HTTPHandler()}
 
 	go func() {
-		zlog.Info().Str("port", port).Msg("escuchando")
 		if err := server.Serve(ln); err != nil && err != http.ErrServerClosed {
-			zlog.Fatal().Err(err).Msg("server")
 		}
 	}()
 
@@ -114,5 +107,4 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = server.Shutdown(ctx)
-	zlog.Info().Msg("shutdown OK")
 }

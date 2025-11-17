@@ -1,8 +1,6 @@
-// Checkout por pasos - Navegación y validación
 let currentStep = 1;
 const totalSteps = 4;
 
-// Datos del checkout guardados en sesión
 let checkoutData = {
   step1: {},
   step2: {},
@@ -10,7 +8,6 @@ let checkoutData = {
   step4: {}
 };
 
-// Costos de envío por provincia
 const provinceCosts = {};
 (function() {
   const pcData = document.getElementById('pcData');
@@ -25,7 +22,6 @@ const provinceCosts = {};
   }
 })();
 
-// Cargar datos guardados al iniciar
 (function() {
   loadCheckoutData();
   updateProgressBar();
@@ -35,7 +31,6 @@ const provinceCosts = {};
 function goToStep(step) {
   if (step < 1 || step > totalSteps) return;
   
-  // Validar paso actual antes de avanzar
   if (step > currentStep) {
     if (!validateCurrentStep()) {
       return;
@@ -61,7 +56,6 @@ function validateCurrentStep() {
   
   switch(currentStep) {
     case 1:
-      // Paso 1 no requiere validación adicional (solo productos)
       return true;
       
     case 2:
@@ -88,7 +82,6 @@ function validateStep2() {
   
   let isValid = true;
   
-  // Validar nombre
   if (!firstName.value.trim()) {
     showError(firstName, 'El nombre es obligatorio');
     isValid = false;
@@ -96,7 +89,6 @@ function validateStep2() {
     clearError(firstName);
   }
   
-  // Validar apellido
   if (!lastName.value.trim()) {
     showError(lastName, 'El apellido es obligatorio');
     isValid = false;
@@ -104,7 +96,6 @@ function validateStep2() {
     clearError(lastName);
   }
   
-  // Validar DNI (numérico, 7-8 dígitos)
   const dniValue = dni.value.trim();
   if (!dniValue) {
     showError(dni, 'El DNI es obligatorio');
@@ -116,7 +107,6 @@ function validateStep2() {
     clearError(dni);
   }
   
-  // Validar email
   const emailValue = email.value.trim();
   if (!emailValue) {
     showError(email, 'El email es obligatorio');
@@ -128,7 +118,6 @@ function validateStep2() {
     clearError(email);
   }
   
-  // Validar código de área
   if (!areaCode.value.trim()) {
     showError(areaCode, 'El código de área es obligatorio');
     isValid = false;
@@ -136,7 +125,6 @@ function validateStep2() {
     clearError(areaCode);
   }
   
-  // Validar número de teléfono
   if (!phoneNumber.value.trim()) {
     showError(phoneNumber, 'El número de teléfono es obligatorio');
     isValid = false;
@@ -145,7 +133,6 @@ function validateStep2() {
   }
   
   if (isValid) {
-    // Guardar datos del paso 2
     checkoutData.step2 = {
       firstName: firstName.value.trim(),
       lastName: lastName.value.trim(),
@@ -172,7 +159,6 @@ function validateStep3() {
   let isValid = true;
   
   if (method === 'retiro') {
-    // Retiro no requiere campos adicionales
     checkoutData.step3 = { shipping_method: 'retiro' };
     saveStepData(3, checkoutData.step3);
     return true;
@@ -277,12 +263,10 @@ function selectShipping(method) {
   const envioFields = document.getElementById('envioFields');
   const cadeteFields = document.getElementById('cadeteFields');
   
-  // Actualizar radio buttons
   document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
     radio.checked = radio.value === method;
   });
   
-  // Mostrar/ocultar campos según método
   if (method === 'retiro') {
     shippingFields.style.display = 'none';
   } else {
@@ -296,7 +280,6 @@ function selectShipping(method) {
     }
   }
   
-  // Actualizar resumen de envío y total
   updateShippingSummary();
   updateTotalSummary();
 }
@@ -317,7 +300,6 @@ function updateStepDisplay() {
     }
   }
   
-  // Mostrar/ocultar botón de volver
   const btnBack = document.getElementById('btnBack');
   if (btnBack) {
     btnBack.style.display = currentStep > 1 ? 'flex' : 'none';
@@ -331,26 +313,22 @@ function updateProgressBar() {
     progressLine.style.width = progress + '%';
   }
   
-  // Actualizar círculos de pasos
   for (let i = 1; i <= totalSteps; i++) {
     const circle = document.getElementById(`stepCircle${i}`);
     const label = document.querySelector(`.progress-step[data-step="${i}"] .step-label`);
     
     if (circle && label) {
       if (i < currentStep) {
-        // Paso completado
         circle.style.background = '#10b981';
         circle.style.color = '#fff';
         circle.innerHTML = '✓';
         label.style.color = '#10b981';
       } else if (i === currentStep) {
-        // Paso actual
         circle.style.background = '#0076C7';
         circle.style.color = '#fff';
         circle.innerHTML = i;
         label.style.color = '#0076C7';
       } else {
-        // Paso pendiente
         circle.style.background = '#e5e7eb';
         circle.style.color = '#6b7280';
         circle.innerHTML = i;
@@ -422,7 +400,6 @@ function updatePaymentSummary() {
   
   if (!paymentMethod) return;
   
-  // Sin descuentos - siempre ocultar el descuento
   if (discountSummary) {
     discountSummary.style.display = 'none';
   }
@@ -431,13 +408,11 @@ function updatePaymentSummary() {
 }
 
 function updateTotalSummary() {
-  // Obtener subtotal base
   const totalEl = document.getElementById('totalAmount');
   if (!totalEl) return;
   
   const baseTotal = parseFloat(totalEl.textContent.replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
   
-  // Obtener costo de envío
   let shippingCost = 0;
   const shippingMethod = document.querySelector('input[name="shipping_method"]:checked');
   if (shippingMethod) {
@@ -451,25 +426,20 @@ function updateTotalSummary() {
     }
   }
   
-  // Sin descuentos - el cliente paga el precio total
   const discount = 0;
   
-  // Calcular total (sin descuentos)
   const total = baseTotal + shippingCost;
   
-  // Actualizar display
   if (totalEl) {
     totalEl.textContent = total.toFixed(2).replace('.', ',');
   }
   
-  // Ocultar descuento siempre
   const discountSummary = document.getElementById('discountSummary');
   if (discountSummary) {
     discountSummary.style.display = 'none';
   }
 }
 
-// Guardar datos en sesión
 async function saveStepData(step, data) {
   try {
     const response = await fetch('/api/checkout/step', {
@@ -484,14 +454,11 @@ async function saveStepData(step, data) {
     });
     
     if (!response.ok) {
-      console.error('Error guardando datos del paso', step);
     }
   } catch (error) {
-    console.error('Error guardando datos:', error);
   }
 }
 
-// Cargar datos guardados
 async function loadCheckoutData() {
   try {
     const response = await fetch('/api/checkout/data');
@@ -503,18 +470,13 @@ async function loadCheckoutData() {
       }
     }
   } catch (error) {
-    console.error('Error cargando datos:', error);
   }
 }
 
-// Guardar todos los datos del checkout
 function saveCheckoutData() {
-  // Los datos se guardan automáticamente al validar cada paso
 }
 
-// Poblar campos del formulario con datos guardados
 function populateFormFields() {
-  // Paso 2
   if (checkoutData.step2) {
     const data = checkoutData.step2;
     if (data.firstName) document.getElementById('firstName').value = data.firstName;
@@ -526,7 +488,6 @@ function populateFormFields() {
     if (data.phoneNumber) document.getElementById('phoneNumber').value = data.phoneNumber;
   }
   
-  // Paso 3
   if (checkoutData.step3) {
     const data = checkoutData.step3;
     if (data.shipping_method) {
@@ -546,7 +507,6 @@ function populateFormFields() {
     }
   }
   
-  // Paso 4
   if (checkoutData.step4) {
     const data = checkoutData.step4;
     if (data.payment_method) {
@@ -555,19 +515,16 @@ function populateFormFields() {
   }
 }
 
-// Finalizar checkout
 async function finalizeCheckout() {
   if (!validateStep4()) {
     return;
   }
   
-  // Mostrar loading
   const btn = event.target;
   const originalText = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Procesando...';
   
-  // Validar que todos los datos necesarios estén presentes
   if (!checkoutData.step2 || !checkoutData.step3 || !checkoutData.step4) {
     alert('Por favor completá todos los pasos antes de finalizar');
     btn.disabled = false;
@@ -576,7 +533,6 @@ async function finalizeCheckout() {
   }
   
   try {
-    // Enviar todos los datos al backend
     const response = await fetch('/cart/checkout', {
       method: 'POST',
       headers: {
@@ -594,18 +550,13 @@ async function finalizeCheckout() {
       try {
         const error = await response.json();
         errorMessage = error.error || error.message || errorMessage;
-        console.error('Error del servidor:', error);
-        
-        // Mensajes más específicos para errores comunes
         if (errorMessage.includes('credenciales de MercadoPago') || errorMessage.includes('MP_ACCESS_TOKEN')) {
           errorMessage = 'Error de configuración: Las credenciales de MercadoPago no son válidas. Por favor contactá al administrador.';
         } else if (errorMessage.includes('403') || errorMessage.includes('UNAUTHORIZED')) {
           errorMessage = 'Error de autenticación con MercadoPago. Por favor contactá al administrador.';
         }
       } catch (e) {
-        // Si no se puede parsear el JSON, usar el mensaje por defecto
         errorMessage = `Error ${response.status}: ${response.statusText}`;
-        console.error('Error parseando respuesta:', e);
       }
       alert(errorMessage);
       btn.disabled = false;
@@ -614,23 +565,17 @@ async function finalizeCheckout() {
     }
     
     const result = await response.json();
-    console.log('Respuesta del servidor:', result);
     
     if (result.success) {
       if (result.redirect_url) {
-        // Verificar si es una URL de MercadoPago o una ruta local
         if (result.redirect_url.startsWith('http://') || result.redirect_url.startsWith('https://')) {
-          // Es una URL de MercadoPago, redirigir directamente
           window.location.href = result.redirect_url;
         } else {
-          // Es una ruta local, redirigir también
           window.location.href = result.redirect_url;
         }
       } else if (result.order_id) {
-        // Orden creada, redirigir a página de confirmación
         window.location.href = `/pay/${result.order_id}`;
       } else {
-        // Fallback: redirigir al carrito con mensaje de éxito
         window.location.href = '/cart?success=1';
       }
     } else {
@@ -639,30 +584,25 @@ async function finalizeCheckout() {
       btn.textContent = originalText;
     }
   } catch (error) {
-    console.error('Error finalizando checkout:', error);
     alert('Error de conexión. Por favor verificá tu conexión e intentá nuevamente.');
     btn.disabled = false;
     btn.textContent = originalText;
   }
 }
 
-// Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-  // Listener para cambios en método de envío
   document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
     radio.addEventListener('change', function() {
       selectShipping(this.value);
     });
   });
   
-  // Listener para cambios en método de pago
   document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
     radio.addEventListener('change', function() {
       selectPayment(this.value);
     });
   });
   
-  // Listener para cambios en provincia (actualizar costo de envío)
   const provinceSelect = document.getElementById('province');
   if (provinceSelect) {
     provinceSelect.addEventListener('change', function() {
@@ -671,7 +611,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Inicializar resumen
   updateShippingSummary();
   updatePaymentSummary();
   updateTotalSummary();

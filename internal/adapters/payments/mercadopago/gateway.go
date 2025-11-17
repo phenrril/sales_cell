@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/phenrril/tienda3d/internal/domain"
-	"github.com/rs/zerolog/log"
 )
 
 type Gateway struct {
@@ -118,7 +117,6 @@ func (g *Gateway) CreatePreference(ctx context.Context, o *domain.Order) (string
 	} else {
 		o.Total = calcTotal
 	}
-	log.Debug().Str("order", o.ID.String()).Float64("subtotal", subtotal).Float64("shipping", o.ShippingCost).Float64("discount", o.DiscountAmount).Float64("total", o.Total).Int("items", len(items)).Msg("MP preference build")
 	baseURL := os.Getenv("PUBLIC_BASE_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8080"
@@ -130,7 +128,6 @@ func (g *Gateway) CreatePreference(ctx context.Context, o *domain.Order) (string
 	useAutoReturn := true
 	if !strings.HasPrefix(g.token, "TEST-") && strings.Contains(baseURL, "localhost") {
 		useAutoReturn = false
-		log.Warn().Str("base_url", baseURL).Msg("token de producción con localhost detectado - deshabilitando auto_return")
 	}
 
 	autoReturnValue := ""
@@ -177,7 +174,6 @@ func (g *Gateway) CreatePreference(ctx context.Context, o *domain.Order) (string
 		return "", fmt.Errorf("error serializando payload MP: %w", err)
 	}
 	if os.Getenv("MP_DEBUG") == "1" {
-		log.Info().RawJSON("mp_pref_payload", buf).Msg("MP preference payload (DEBUG)")
 	}
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.mercadopago.com/checkout/preferences", bytes.NewReader(buf))
 	if err != nil {
@@ -201,12 +197,6 @@ func (g *Gateway) CreatePreference(ctx context.Context, o *domain.Order) (string
 			Error   string `json:"error"`
 		}
 		if err := json.Unmarshal(body, &mpError); err == nil && mpError.Message != "" {
-			log.Error().
-				Int("status", res.StatusCode).
-				Str("code", mpError.Code).
-				Str("message", mpError.Message).
-				Str("token_prefix", g.token[:min(10, len(g.token))]).
-				Msg("error creando preferencia MP")
 
 			// Mensajes más específicos según el código de error
 			if res.StatusCode == 401 || res.StatusCode == 403 {
@@ -214,12 +204,6 @@ func (g *Gateway) CreatePreference(ctx context.Context, o *domain.Order) (string
 			}
 			return "", fmt.Errorf("error de MercadoPago (status %d): %s", res.StatusCode, mpError.Message)
 		}
-
-		log.Error().
-			Int("status", res.StatusCode).
-			Str("body", string(body)).
-			Str("token_prefix", g.token[:min(10, len(g.token))]).
-			Msg("error creando preferencia MP (sin parsear)")
 
 		if res.StatusCode == 401 || res.StatusCode == 403 {
 			return "", fmt.Errorf("credenciales de MercadoPago inválidas o sin permisos (status %d). Verificá que MP_ACCESS_TOKEN sea válido", res.StatusCode)
@@ -237,9 +221,7 @@ func (g *Gateway) CreatePreference(ctx context.Context, o *domain.Order) (string
 	appEnv := strings.ToLower(os.Getenv("APP_ENV"))
 	if strings.HasPrefix(g.token, "TEST-") && appEnv != "production" && appEnv != "prod" && pref.SandboxInitPoint != "" {
 		initPoint = pref.SandboxInitPoint
-		log.Debug().Str("pref_id", pref.ID).Str("url", initPoint).Msg("MP preference sandbox")
 	} else {
-		log.Info().Str("pref_id", pref.ID).Str("url", initPoint).Msg("MP preference prod")
 	}
 	o.MPPreferenceID = pref.ID
 	return initPoint, nil

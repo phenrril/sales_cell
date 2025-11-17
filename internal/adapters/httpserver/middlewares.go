@@ -13,8 +13,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 type key int
@@ -40,7 +38,6 @@ func Logging(next http.Handler) http.Handler {
 		start := time.Now()
 		rw := &respWriter{ResponseWriter: w, status: 200}
 		next.ServeHTTP(rw, r)
-		log.Info().Str("id", GetReqID(r.Context())).Str("method", r.Method).Str("path", r.URL.Path).Int("status", rw.status).Dur("dur", time.Since(start)).Msg("req")
 	})
 }
 
@@ -55,7 +52,6 @@ func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				log.Error().Interface("err", rec).Str("id", GetReqID(r.Context())).Msg("panic")
 				http.Error(w, "internal error", 500)
 			}
 		}()
@@ -110,10 +106,10 @@ func SecurityAndStaticCache(next http.Handler) http.Handler {
 			// En desarrollo, deshabilitar completamente el caché para ver cambios inmediatos
 			appEnv := os.Getenv("APP_ENV")
 			isDev := appEnv == "" || appEnv == "development" || appEnv == "dev"
-			
+
 			// Si tiene parámetro de versión en query string (ej: ?v=123), no cachear agresivamente
 			hasVersion := r.URL.Query().Get("v") != ""
-			
+
 			if isDev || hasVersion {
 				// En desarrollo: deshabilitar completamente el caché
 				w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
@@ -122,7 +118,7 @@ func SecurityAndStaticCache(next http.Handler) http.Handler {
 			} else {
 				// En producción: caché fuerte
 				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-				
+
 				// ETag/Last-Modified basado en FS local (solo en producción)
 				rel := strings.TrimPrefix(r.URL.Path, "/")
 				rel = filepath.Clean(rel)
