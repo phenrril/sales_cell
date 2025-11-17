@@ -55,20 +55,34 @@ Flujo:
 Endpoints protegidos actuales: creación/listado/detalle/borrado de productos, upload multipart, borrado masivo y listado de órdenes `/admin/orders`.
 
 ## Variables de entorno (completas)
-Obligatorias mínimas para entorno local:
+
+### Generación de claves secretas
+**IMPORTANTE**: Antes de configurar la aplicación, generá las claves secretas usando el script:
+```powershell
+.\generate-keys.ps1
+```
+Este script genera:
+- `SESSION_KEY`: 32 bytes aleatorios en Base64 (para firmar cookies del carrito y checkout con HMAC-SHA256)
+- `SECRET_KEY`: 64 caracteres alfanuméricos (para firmar external_reference de MercadoPago con HMAC-SHA256)
+- `ADMIN_API_KEY`: 64 caracteres alfanuméricos (para autenticación admin)
+- `JWT_ADMIN_SECRET`: 64 caracteres alfanuméricos (opcional, para firmar tokens JWT admin)
+
+**No uses valores por defecto en producción**. Las claves deben ser únicas y aleatorias.
+
+### Obligatorias mínimas para entorno local:
 - `DB_DSN` cadena Postgres (si usás docker compose se arma con variables POSTGRES_*)
-- `SESSION_KEY` clave aleatoria segura (firmar cookies)
+- `SESSION_KEY` clave aleatoria segura (32 bytes Base64) - **firmar cookies del carrito y checkout (HMAC-SHA256)**
+- `SECRET_KEY` clave aleatoria segura (64 caracteres) - **firmar external_reference de MercadoPago (HMAC-SHA256)**
 - `MP_ACCESS_TOKEN` token MercadoPago (TEST-... o prod)
 - `ADMIN_API_KEY` (para login admin)
 - `ADMIN_ALLOWED_EMAILS` (al menos un email, p.ej. tu correo)
 
-Recomendadas / adicionales:
+### Recomendadas / adicionales:
 - `PORT` (default 8080)
-- `APP_ENV` (`dev` | `production`) controla selección de token MP y logs
+- `APP_ENV` (`dev` | `production`) controla selección de token MP, validación de claves y logs
 - `PROD_ACCESS_TOKEN` token MP producción (si querés separar del TEST)
 - `PUBLIC_BASE_URL` URL pública (para back_urls y webhooks de MP)
 - `BASE_URL` (usado también para OAuth Google)
-- `SECRET_KEY` firma del external_reference MP (fallback "dev")
 - `JWT_ADMIN_SECRET` secreto dedicado para firmar JWT admin (si no, usa `SECRET_KEY`)
 - `STORAGE_DIR` carpeta para archivos subidos (default `uploads`)
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `ORDER_NOTIFY_EMAIL` (notificación email)
@@ -82,6 +96,8 @@ MercadoPago alterno:
 - `PROD_ACCESS_TOKEN` (solo si querés tener sandbox + prod separados)
 
 ### Ejemplo `.env.example`
+**Nota**: Ejecutá `.\generate-keys.ps1` para generar valores seguros para `SESSION_KEY`, `SECRET_KEY`, `ADMIN_API_KEY` y `JWT_ADMIN_SECRET`.
+
 ```
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=change_me
@@ -89,16 +105,19 @@ POSTGRES_DB=tienda3d
 DB_PORT=5432
 APP_PORT=8080
 DB_DSN=postgres://postgres:change_me@db:5432/tienda3d?sslmode=disable
-SESSION_KEY=generate_secure_key
+
+# Claves secretas (generar con .\generate-keys.ps1)
+SESSION_KEY=                    # 32 bytes Base64 - firmar cookies carrito/checkout (HMAC-SHA256)
+SECRET_KEY=                     # 64 caracteres - firmar external_reference MP (HMAC-SHA256)
+ADMIN_API_KEY=                  # 64 caracteres - autenticación admin
+JWT_ADMIN_SECRET=               # 64 caracteres - firmar JWT admin (opcional)
+
 MP_ACCESS_TOKEN=TEST-xxxxxxxxxxxxxxxxxxxx
 APP_ENV=dev
 PUBLIC_BASE_URL=http://localhost:8080
 BASE_URL=http://localhost:8080
 STORAGE_DIR=uploads
-SECRET_KEY=sign_ref_key
-ADMIN_API_KEY=super_admin_key
 ADMIN_ALLOWED_EMAILS=tuemail@example.com
-JWT_ADMIN_SECRET=jwt_admin_secret
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
