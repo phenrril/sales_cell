@@ -4,9 +4,12 @@
 <nav class="admin-nav"><a href="/admin/products" class="active">Productos</a> | <a href="/admin/orders">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/uncharged">Sin precio</a> | <a href="/admin/logout">Salir</a></nav>
 <section class="grid" style="margin-top:1rem;grid-template-columns:420px minmax(0,1fr);gap:2rem;align-items:start">
   <div class="admin-card" style="padding:18px 20px 24px">
-    <div class="row between center" style="margin-bottom:6px">
+    <div class="row between center" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <h2 style="margin:0;font-size:18px">Gestión de producto</h2>
-      <span id="formMode" class="mode-badge create">Creación</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span id="formMode" class="mode-badge create" style="font-size:14px;padding:6px 14px;font-weight:600;border-radius:6px">✨ Creación</span>
+        <span id="editingProduct" style="font-size:11px;color:var(--muted);max-width:200px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none"></span>
+      </div>
     </div>
     <form id="prodForm" class="form-card" autocomplete="off">
       <input type="hidden" name="slug" id="pfSlug" />
@@ -30,13 +33,23 @@
       <small id="pfGainInfo" style="display:block;margin:-6px 0 8px;color:var(--muted)">Ganancia estimada: $0.00</small>
       <label class="row center" style="gap:.5rem"><input type="checkbox" name="ready_to_ship" id="pfReady" checked /> Listo para envío</label>
       <label>Atributos (JSON opcional)<textarea name="attributes" id="pfAttrs" placeholder='{"color":"Negro","capacidad":"128GB"}'></textarea></label>
+      <!-- Galería de imágenes actuales (solo visible al editar) -->
+      <div id="currentImagesBlock" style="display:none;margin-bottom:12px">
+        <label style="display:block;font-size:12px;font-weight:600;letter-spacing:.6px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">🖼️ Imágenes actuales</label>
+        <div id="currentImagesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:8px"></div>
+      </div>
+      
       <div class="uploader-block">
-        <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;letter-spacing:.6px;color:var(--muted);text-transform:uppercase">Imágenes (opcional / arrastrar)
-          <div id="dropZone" class="dropzone small" style="padding:18px 14px">
-            <input type="file" multiple accept="image/*" id="pfImages" />
-            <span class="dz-hint">Soltá aquí o hacé click para seleccionar</span>
-            <small class="dz-count" style="display:block;margin-top:4px;color:var(--muted)">0 archivos</small>
-            <div id="preview" class="dz-preview"></div>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;letter-spacing:.6px;color:var(--muted);text-transform:uppercase">
+          <span id="imagesLabel">📤 Nuevas imágenes (opcional)</span>
+          <div id="dropZone" class="dropzone" style="padding:24px;min-height:120px;border:2px dashed var(--color-border);border-radius:8px;background:var(--panel-alt);transition:all .2s;cursor:pointer">
+            <input type="file" multiple accept="image/*" id="pfImages" style="display:none" />
+            <div style="text-align:center">
+              <div style="font-size:32px;margin-bottom:8px">📁</div>
+              <span class="dz-hint" style="display:block;font-size:14px;color:var(--color-text);margin-bottom:4px">Arrastrá imágenes aquí o hacé click para seleccionar</span>
+              <small class="dz-count" style="display:block;color:var(--muted);font-size:12px">0 archivos seleccionados</small>
+            </div>
+            <div id="preview" class="dz-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;justify-content:center"></div>
           </div>
         </label>
       </div>
@@ -54,28 +67,53 @@
       <input type="text" id="prodSearch" placeholder="Buscar productos por nombre, slug, marca o modelo..." aria-label="Buscar productos" style="width:100%;max-width:500px;background:#FFFFFF;border:1px solid var(--color-border);color:var(--color-text);font:inherit;padding:11px 14px;border-radius:14px;font-size:14px;line-height:1.3;transition:border-color .18s,background .18s,box-shadow .18s" />
     </div>
     <div style="overflow-x:auto;overflow-y:visible;max-width:100%">
-      <div class="row between center" style="margin-bottom:6px;gap:.5rem;align-items:flex-start">
-        <div class="row" style="gap:.5rem;align-items:flex-start">
+      <div class="import-section" style="background:var(--panel-alt);padding:16px;border-radius:8px;margin-bottom:12px">
+        <h3 style="margin:0 0 12px;font-size:15px;font-weight:600">📦 Importación masiva</h3>
+        
+        <div class="import-grid" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:start">
+          <!-- Columna 1: Archivo XLSX -->
           <div style="display:flex;flex-direction:column;gap:6px">
-            <div class="inline-btns" style="gap:.5rem;align-items:center">
-              <label class="btn-secondary" for="bulkXlsx" style="cursor:pointer">📄 XLSX Colores</label>
-              <button class="btn-primary" type="button" id="bulkRun" title="Importar XLSX + precios">⬆️ Importar</button>
-            </div>
-            <input type="file" id="bulkXlsx" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" style="display:none" />
-            <div class="row" style="gap:.5rem">
-              <label>TC USD→ARS<input type="number" id="bulkFx" step="0.01" min="0" placeholder="Ej: 1100" style="width:140px" /></label>
-              <label>Margen %<input type="number" id="bulkMargin" step="0.01" min="0" placeholder="Ej: 20" style="width:120px" /></label>
-            </div>
-            <label class="row center" style="gap:.5rem;margin-top:4px">
-              <input type="checkbox" id="bulkUseOpenAI" />
-              <span style="font-size:12px">🤖 OpenAI (experimental, lento, requiere API key)</span>
+            <label class="btn-secondary" for="bulkXlsx" style="cursor:pointer;text-align:center;margin:0">
+              <span id="xlsxLabel">📄 Seleccionar XLSX</span>
             </label>
-            <small style="color:var(--muted);font-size:10px;margin-top:-4px">Por defecto usa método tradicional (instantáneo, 90%+ match)</small>
+            <input type="file" id="bulkXlsx" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" style="display:none" />
+            <small id="xlsxFileName" style="color:var(--muted);font-size:11px;min-height:16px;text-align:center"></small>
           </div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-            <label class="btn-secondary" for="bulkPrices" style="cursor:pointer;text-align:center">📄 Archivo de precios USD (.txt)</label>
+          
+          <!-- Columna 2: Archivo de precios -->
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label class="btn-secondary" for="bulkPrices" style="cursor:pointer;text-align:center;margin:0">
+              <span id="pricesLabel">💵 Seleccionar Precios (.txt)</span>
+            </label>
             <input type="file" id="bulkPrices" accept=".txt,text/plain" style="display:none" />
-            <div id="pricesFileName" style="font-size:11px;color:var(--muted);margin-top:4px;min-height:16px"></div>
+            <small id="pricesFileName" style="color:var(--muted);font-size:11px;min-height:16px;text-align:center"></small>
+          </div>
+          
+          <!-- Columna 3: Botón Importar -->
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn-primary" type="button" id="bulkRun" style="min-width:140px;height:44px;font-size:15px;font-weight:600">
+              ⬆️ Importar
+            </button>
+            <small style="color:var(--muted);font-size:11px;text-align:center;min-height:16px;visibility:hidden">-</small>
+          </div>
+        </div>
+        
+        <!-- Parámetros en fila debajo -->
+        <div class="import-params" style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <label style="margin:0">
+            <span style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--muted)">💱 TC USD→ARS</span>
+            <input type="number" id="bulkFx" step="0.01" min="0" placeholder="Ej: 1100" style="width:100%" />
+          </label>
+          <label style="margin:0">
+            <span style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--muted)">📈 Margen %</span>
+            <input type="number" id="bulkMargin" step="0.01" min="0" placeholder="Ej: 20" style="width:100%" />
+          </label>
+          <div style="display:flex;flex-direction:column;gap:4px;justify-content:center">
+            <label class="row center" style="gap:.5rem;margin:0">
+              <input type="checkbox" id="bulkUseOpenAI" />
+              <span style="font-size:12px">🤖 OpenAI (experimental, lento)</span>
+            </label>
+            <small style="color:var(--muted);font-size:10px">Por defecto: método tradicional (instantáneo, 90%+ match)</small>
           </div>
         </div>
       </div>
@@ -109,12 +147,10 @@
             <td>{{len .Images}}</td>
             <td style="text-align:right">
               <div class="table-actions">
-                <button class="icon-btn action-edit" data-act="edit" title="Editar">✏️</button>
-                <button class="icon-btn action-search" data-act="search" title="Buscar imagen">🔎</button>
-                <button class="icon-btn action-workflow" data-act="workflow" title="Workflow: buscar y agregar imágenes automáticamente">🔄</button>
+                <button class="icon-btn action-workflow" data-act="workflow" title="Buscar imágenes automáticamente">🖼️</button>
+                <button class="icon-btn action-edit" data-act="edit" title="Editar producto">✏️</button>
                 <button class="icon-btn action-specs" data-act="specs" title="Buscar especificaciones">📋</button>
-                <button class="icon-btn danger action-clearimg" data-act="clearimg" title="Borrar imágenes">🗑️ Img</button>
-                <button class="icon-btn danger action-del" data-act="del" title="Eliminar">🗑️</button>
+                <button class="icon-btn danger action-del" data-act="del" title="Eliminar producto">🗑️</button>
               </div>
             </td>
           </tr>
@@ -213,6 +249,78 @@
   background: #FFFFFF;
   box-shadow: 0 0 0 2px rgba(0,118,199,.2);
 }
+
+/* Estilos mejorados para el badge de modo */
+.mode-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.mode-badge.create {
+  background: var(--color-brand);
+  color: #fff;
+}
+.mode-badge.edit {
+  background: #FFA726;
+  color: #fff;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 2px 4px rgba(255,167,38,0.3); }
+  50% { box-shadow: 0 2px 12px rgba(255,167,38,0.6); }
+}
+
+/* Estilos para la sección de importación */
+.import-section {
+  background: color-mix(in srgb, var(--color-brand) 3%, var(--panel-alt));
+  border: 1px solid color-mix(in srgb, var(--color-brand) 10%, transparent);
+}
+
+/* Estilos para dropzone mejorado */
+.dropzone {
+  transition: all 0.2s ease;
+}
+.dropzone:hover {
+  border-color: var(--color-brand);
+  transform: translateY(-1px);
+}
+
+/* Estilos para botones de acción en tabla */
+.table-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.icon-btn {
+  padding: 6px 10px;
+  font-size: 16px;
+  border: 1px solid var(--color-border);
+  background: var(--panel);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.icon-btn:hover {
+  background: var(--color-brand);
+  color: #fff;
+  border-color: var(--color-brand);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,118,199,0.3);
+}
+.icon-btn.danger:hover {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  box-shadow: 0 2px 6px rgba(211,47,47,0.3);
+}
+
 .modal {
   position: fixed !important;
   top: 0 !important;
@@ -287,6 +395,14 @@
   const preview=document.getElementById('preview');
   const dzCount=document.querySelector('.dz-count');
   const gainInfo=document.getElementById('pfGainInfo');
+  const editingProductEl=document.getElementById('editingProduct');
+  const currentImagesBlock=document.getElementById('currentImagesBlock');
+  const currentImagesGrid=document.getElementById('currentImagesGrid');
+  const imagesLabel=document.getElementById('imagesLabel');
+  
+  let currentProduct = null; // Producto actual en edición
+  let currentImages = []; // Imágenes actuales del producto
+  let autoSaveTimer = null; // Timer para auto-guardado
 
   function recomputePrice(){
     const gross=parseFloat(fGross.value||'0');
@@ -301,21 +417,157 @@
 
   function setModeEdit(edit){
     if(edit){
-      modeBadge.textContent='Edición';
+      modeBadge.textContent='✏️ Edición';
       modeBadge.classList.remove('create');
       modeBadge.classList.add('edit');
-      btnSubmit.textContent='Actualizar';
+      modeBadge.style.background='#FFA726';
+      modeBadge.style.color='#fff';
+      btnSubmit.textContent='💾 Actualizar';
+      if(editingProductEl && currentProduct){
+        editingProductEl.textContent='Editando: ' + currentProduct.Name;
+        editingProductEl.style.display='block';
+      }
     } else {
-      modeBadge.textContent='Creación';
+      modeBadge.textContent='✨ Creación';
       modeBadge.classList.remove('edit');
       modeBadge.classList.add('create');
-      btnSubmit.textContent='Crear';
+      modeBadge.style.background='var(--color-brand)';
+      modeBadge.style.color='#fff';
+      btnSubmit.textContent='✨ Crear';
+      if(editingProductEl){
+        editingProductEl.style.display='none';
+      }
     }
   }
-  function fill(p){
-    fSlug.value=p.Slug; fName.value=p.Name; fCat.value=p.Category||''; fBrand.value=p.Brand||''; fModel.value=p.Model||''; fDesc.value=p.ShortDesc||''; fGross.value=(p.GrossPrice||0); fMargin.value=(p.MarginPct||0); fPrice.value=p.BasePrice; fReady.checked=(p.ReadyToShip!==false); fWidth.value=p.WidthMM||0; fHeight.value=p.HeightMM||0; fDepth.value=p.DepthMM||0; fAttrs.value=p.Attributes?JSON.stringify(p.Attributes):''; btnDel.style.display=''; setModeEdit(true); recomputePrice();
+  
+  function showCurrentImages(images){
+    if(!currentImagesGrid || !currentImagesBlock) return;
+    currentImages = images || [];
+    
+    if(currentImages.length === 0){
+      currentImagesBlock.style.display='none';
+      return;
+    }
+    
+    currentImagesBlock.style.display='block';
+    currentImagesGrid.innerHTML='';
+    
+    currentImages.forEach((img, idx) => {
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText='position:relative;border-radius:6px;overflow:hidden;aspect-ratio:1;border:2px solid var(--border);background:var(--panel-alt)';
+      
+      // Loader mientras carga
+      const loader = document.createElement('div');
+      loader.className = 'img-loader';
+      loader.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted);background:var(--panel-alt)';
+      loader.textContent='⏳';
+      wrapper.appendChild(loader);
+      
+      const imgEl = document.createElement('img');
+      // Normalizar URL: asegurar que comience con /
+      let imgUrl = img.URL || '';
+      if(imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('/')){
+        imgUrl = '/' + imgUrl;
+      }
+      imgEl.src = imgUrl;
+      imgEl.alt = img.Alt || 'Imagen';
+      imgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 0.3s';
+      
+      // Cuando carga exitosamente
+      imgEl.onload = function(){
+        loader.style.display='none';
+        this.style.opacity='1';
+      };
+      
+      // Manejo de error de carga de imagen
+      imgEl.onerror = function(){
+        loader.style.display='none';
+        this.style.display='none';
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#c33;text-align:center;padding:4px;background:#fee';
+        errorDiv.innerHTML='<div><div style="font-size:20px;margin-bottom:4px">❌</div>Error de carga<br><small style="font-size:9px;color:#999">'+imgUrl+'</small></div>';
+        wrapper.appendChild(errorDiv);
+      };
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type='button';
+      deleteBtn.innerHTML='🗑️';
+      deleteBtn.style.cssText='position:absolute;top:4px;right:4px;background:rgba(211,47,47,0.9);color:#fff;border:none;border-radius:4px;padding:4px 6px;cursor:pointer;font-size:14px;transition:all .2s;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,0.3)';
+      deleteBtn.title='Eliminar imagen (funciona incluso si hay error)';
+      deleteBtn.onclick=async ()=>{
+        if(confirm('⚠️ ¿Eliminar esta imagen AHORA?\n\nEsta acción es inmediata y no se puede deshacer.')){
+          deleteBtn.disabled=true;
+          deleteBtn.textContent='⏳';
+          
+          try{
+            console.log('🗑️ Eliminando imagen índice:', idx, 'de producto:', currentProduct.Slug);
+            
+            const deleteRes = await fetch('/api/products/' + encodeURIComponent(currentProduct.Slug) + '/delete-image', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({ image_index: idx })
+            });
+            
+            const deleteData = await deleteRes.json();
+            console.log('Respuesta del servidor:', deleteData);
+            
+            if(deleteRes.ok){
+              console.log('✅ Imagen eliminada exitosamente');
+              
+              // Animar la eliminación
+              wrapper.style.transition='all 0.3s ease';
+              wrapper.style.transform='scale(0)';
+              wrapper.style.opacity='0';
+              
+              setTimeout(() => {
+                wrapper.remove();
+                // Actualizar array de imágenes locales
+                currentImages.splice(idx, 1);
+                
+                // Mostrar mensaje de éxito
+                alert('✅ Imagen eliminada exitosamente\n\nAhora puedes agregar nuevas imágenes.');
+                
+                // Refrescar la galería
+                showCurrentImages(currentImages);
+              }, 300);
+            } else {
+              console.error('❌ Error del servidor:', deleteData);
+              alert('❌ Error eliminando imagen: ' + (deleteData.message || 'Error desconocido'));
+              deleteBtn.disabled=false;
+              deleteBtn.textContent='🗑️';
+            }
+          } catch(err){
+            console.error('❌ Error de red:', err);
+            alert('❌ Error de red: ' + err.message);
+            deleteBtn.disabled=false;
+            deleteBtn.textContent='🗑️';
+          }
+        }
+      };
+      
+      wrapper.appendChild(imgEl);
+      wrapper.appendChild(deleteBtn);
+      currentImagesGrid.appendChild(wrapper);
+    });
   }
-  function clear(){ form.reset(); fSlug.value=''; btnDel.style.display='none'; fReady.checked=true; fWidth.value=fHeight.value=fDepth.value=''; fAttrs.value=''; fGross.value=''; fMargin.value=''; if(gainInfo) gainInfo.textContent='Ganancia estimada: $0.00'; imagesInput.value=''; preview.innerHTML=''; dzCount.textContent='0 archivos'; setModeEdit(false); }
+  
+  function fill(p){
+    currentProduct = p;
+    fSlug.value=p.Slug; fName.value=p.Name; fCat.value=p.Category||''; fBrand.value=p.Brand||''; fModel.value=p.Model||''; fDesc.value=p.ShortDesc||''; fGross.value=(p.GrossPrice||0); fMargin.value=(p.MarginPct||0); fPrice.value=p.BasePrice; fReady.checked=(p.ReadyToShip!==false); fWidth.value=p.WidthMM||0; fHeight.value=p.HeightMM||0; fDepth.value=p.DepthMM||0; fAttrs.value=p.Attributes?JSON.stringify(p.Attributes):''; btnDel.style.display=''; setModeEdit(true); recomputePrice();
+    showCurrentImages(p.Images);
+    if(imagesLabel) imagesLabel.textContent='📤 Agregar más imágenes (opcional)';
+  }
+  
+  function clear(){ 
+    currentProduct = null;
+    currentImages = [];
+    form.reset(); fSlug.value=''; btnDel.style.display='none'; fReady.checked=true; fWidth.value=fHeight.value=fDepth.value=''; fAttrs.value=''; fGross.value=''; fMargin.value=''; if(gainInfo) gainInfo.textContent='Ganancia estimada: $0.00'; imagesInput.value=''; preview.innerHTML=''; dzCount.textContent='0 archivos seleccionados'; setModeEdit(false); 
+    if(currentImagesBlock) currentImagesBlock.style.display='none';
+    if(imagesLabel) imagesLabel.textContent='📤 Nuevas imágenes (opcional)';
+  }
 
   // Row actions
   if(tbl){
@@ -329,22 +581,16 @@
         const res=await fetch('/api/products/'+slug,{headers:{Authorization:'Bearer '+token}}); if(res.ok){ const p=await res.json(); fill(p);} return;
       }
       if(btn.dataset.act==='del'){
-        if(!confirm('Eliminar producto y todos sus datos?')) return;
-        const res=await fetch('/api/products/'+slug,{method:'DELETE',headers:{Authorization:'Bearer '+token}}); if(res.ok){ location.reload(); } else { alert('Error eliminando'); }
-        return;
-      }
-      if(btn.dataset.act==='search'){
-        searchImageSimple(slug);
-        return;
-      }
-      if(btn.dataset.act==='clearimg'){
-        if(!confirm('Borrar TODAS las imágenes de este producto?')) return;
+        if(!confirm('⚠️ ¿Eliminar producto y todos sus datos?\n\nEsta acción no se puede deshacer.')) return;
         const prev=btn.textContent; btn.disabled=true; btn.textContent='⏳';
         try{
-          const res=await fetch('/api/products/clear-images/'+encodeURIComponent(slug),{method:'POST',headers:{Authorization:'Bearer '+token}});
-          const txt=await res.text(); let out=null; try{ out=JSON.parse(txt);}catch{}
-          if(!res.ok){ alert((out&&out.message)||'Error borrando imágenes'); return; }
-          alert('Imágenes borradas'); location.reload();
+          const res=await fetch('/api/products/'+slug,{method:'DELETE',headers:{Authorization:'Bearer '+token}}); 
+          if(res.ok){ 
+            alert('✅ Producto eliminado exitosamente');
+            location.reload(); 
+          } else { 
+            alert('❌ Error eliminando producto'); 
+          }
         } finally { btn.disabled=false; btn.textContent=prev; }
         return;
       }
@@ -912,49 +1158,188 @@
     }
   }
 
+  // Auto-guardado de borradores
+  function scheduleDraftSave(){
+    if(autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(()=>{
+      saveDraft();
+    }, 3000); // Auto-guardar cada 3 segundos de inactividad
+  }
+  
+  function saveDraft(){
+    const draft = {
+      name: fName.value.trim(),
+      category: fCat.value.trim(),
+      brand: fBrand.value.trim(),
+      model: fModel.value.trim(),
+      short_desc: fDesc.value,
+      gross_price: fGross.value,
+      margin_pct: fMargin.value,
+      base_price: fPrice.value,
+      ready_to_ship: fReady.checked,
+      width_mm: fWidth.value,
+      height_mm: fHeight.value,
+      depth_mm: fDepth.value,
+      attributes: fAttrs.value,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('productDraft', JSON.stringify(draft));
+    console.log('💾 Borrador guardado automáticamente');
+  }
+  
+  function loadDraft(){
+    const draftStr = localStorage.getItem('productDraft');
+    if(!draftStr) return false;
+    try{
+      const draft = JSON.parse(draftStr);
+      // Si el borrador tiene menos de 1 hora, restaurarlo
+      if(Date.now() - draft.timestamp < 3600000){
+        if(confirm('📋 Se encontró un borrador guardado. ¿Deseas restaurarlo?')){
+          if(fName) fName.value = draft.name || '';
+          if(fCat) fCat.value = draft.category || '';
+          if(fBrand) fBrand.value = draft.brand || '';
+          if(fModel) fModel.value = draft.model || '';
+          if(fDesc) fDesc.value = draft.short_desc || '';
+          if(fGross) fGross.value = draft.gross_price || '';
+          if(fMargin) fMargin.value = draft.margin_pct || '';
+          if(fPrice) fPrice.value = draft.base_price || '';
+          if(fReady) fReady.checked = draft.ready_to_ship !== false;
+          if(fWidth) fWidth.value = draft.width_mm || '';
+          if(fHeight) fHeight.value = draft.height_mm || '';
+          if(fDepth) fDepth.value = draft.depth_mm || '';
+          if(fAttrs) fAttrs.value = draft.attributes || '';
+          recomputePrice();
+          return true;
+        }
+      }
+      localStorage.removeItem('productDraft');
+    }catch(e){
+      localStorage.removeItem('productDraft');
+    }
+    return false;
+  }
+  
+  // Detectar cambios en el formulario para auto-guardar
+  [fName, fCat, fBrand, fModel, fDesc, fGross, fMargin, fPrice, fAttrs, fWidth, fHeight, fDepth].forEach(el => {
+    if(el){
+      el.addEventListener('input', scheduleDraftSave);
+    }
+  });
+  if(fReady) fReady.addEventListener('change', scheduleDraftSave);
+  
+  // Intentar cargar borrador al inicio
+  setTimeout(()=>{ loadDraft(); }, 500);
+
   // Submit create/update + optional images
   form.addEventListener('submit', async e=>{
     e.preventDefault();
+    
+    // Deshabilitar botón de submit durante el proceso
+    const origText = btnSubmit.textContent;
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = '⏳ Guardando...';
+    
     const slug=fSlug.value.trim();
-    let attrs=null; try{ attrs=fAttrs.value.trim()?JSON.parse(fAttrs.value):null; }catch{ alert('Atributos JSON inválido'); return; }
+    let attrs=null; try{ attrs=fAttrs.value.trim()?JSON.parse(fAttrs.value):null; }catch{ alert('❌ Atributos JSON inválido'); btnSubmit.disabled=false; btnSubmit.textContent=origText; return; }
     const payload={ name:fName.value.trim(), category:fCat.value.trim(), brand:fBrand.value.trim(), model:fModel.value.trim(), short_desc:fDesc.value, gross_price:parseFloat(fGross.value||'0'), margin_pct:parseFloat(fMargin.value||'0'), base_price:parseFloat(fPrice.value||'0'), ready_to_ship:fReady.checked, width_mm:parseFloat(fWidth.value||'0'), height_mm:parseFloat(fHeight.value||'0'), depth_mm:parseFloat(fDepth.value||'0'), attributes:attrs };
-    if(!payload.name){ alert('Nombre requerido'); return; }
-    if(payload.base_price<0){ alert('Precio inválido'); return; }
-    let method='POST', url='/api/products';
-    if(slug){ method='PUT'; url='/api/products/'+slug; }
-    const res=await fetch(url,{method, headers:{'Content-Type':'application/json', Authorization:'Bearer '+token}, body:JSON.stringify(payload)});
-    if(!res.ok){ alert('Error guardando'); return; }
-    const prod=await res.json();
-    const finalSlug=prod.Slug || slug;
-    // Images?
-    if(imagesInput.files && imagesInput.files.length>0){
-      const fd=new FormData();
-      fd.append('existing_slug', finalSlug);
-      fd.append('brand', fBrand.value.trim());
-      fd.append('model', fModel.value.trim());
-      if(attrs){ fd.append('attributes', JSON.stringify(attrs)); }
-      for(const f of imagesInput.files){ fd.append('images', f); }
-      const upRes=await fetch('/api/products/upload',{method:'POST', headers:{Authorization:'Bearer '+token}, body:fd});
-      if(!upRes.ok){ alert('Producto guardado, pero error subiendo imágenes'); location.reload(); return; }
+    if(!payload.name){ alert('❌ Nombre requerido'); btnSubmit.disabled=false; btnSubmit.textContent=origText; return; }
+    if(payload.base_price<0){ alert('❌ Precio inválido'); btnSubmit.disabled=false; btnSubmit.textContent=origText; return; }
+    
+    try{
+      // Actualizar datos del producto
+      btnSubmit.textContent = '⏳ Guardando...';
+      let method='POST', url='/api/products';
+      if(slug){ method='PUT'; url='/api/products/'+slug; }
+      
+      const res=await fetch(url,{method, headers:{'Content-Type':'application/json', Authorization:'Bearer '+token}, body:JSON.stringify(payload)});
+      if(!res.ok){ 
+        alert('❌ Error guardando producto'); 
+        btnSubmit.disabled=false; 
+        btnSubmit.textContent=origText; 
+        return; 
+      }
+      const prod=await res.json();
+      const finalSlug=prod.Slug || slug;
+      
+      // Images?
+      if(imagesInput.files && imagesInput.files.length>0){
+        btnSubmit.textContent = '📤 Subiendo imágenes...';
+        const fd=new FormData();
+        fd.append('existing_slug', finalSlug);
+        fd.append('brand', fBrand.value.trim());
+        fd.append('model', fModel.value.trim());
+        if(attrs){ fd.append('attributes', JSON.stringify(attrs)); }
+        for(const f of imagesInput.files){ fd.append('images', f); }
+        const upRes=await fetch('/api/products/upload',{method:'POST', headers:{Authorization:'Bearer '+token}, body:fd});
+        if(!upRes.ok){ 
+          alert('⚠️ Producto guardado, pero error subiendo imágenes\n\nEl producto se guardó correctamente pero las imágenes no se pudieron subir.'); 
+          localStorage.removeItem('productDraft');
+          location.reload(); 
+          return; 
+        }
+      }
+      
+      // Éxito: mostrar mensaje y recargar
+      localStorage.removeItem('productDraft'); // Limpiar borrador
+      const successMsg = slug ? 
+        '✅ Producto actualizado exitosamente!\n\n' + payload.name :
+        '✅ Producto creado exitosamente!\n\n' + payload.name;
+      
+      // Preservar logs en consola antes de recargar
+      console.log('%c✅ OPERACIÓN COMPLETADA EXITOSAMENTE', 'background: #4CAF50; color: white; padding: 4px 8px; font-weight: bold; border-radius: 4px;');
+      console.log('📝 Producto:', payload.name);
+      console.log('🔄 Recargando página en 1 segundo...');
+      
+      alert(successMsg + '\n\nLa página se recargará para mostrar los cambios.');
+      
+      setTimeout(() => {
+        location.reload();
+      }, 100);
+      
+    }catch(err){
+      alert('❌ Error de red: ' + err.message);
+      btnSubmit.disabled=false;
+      btnSubmit.textContent=origText;
     }
-    location.reload();
   });
   // Carga masiva CSV
   const bulkXlsx=document.getElementById('bulkXlsx');
   const bulkRun=document.getElementById('bulkRun');
   const bulkPrices=document.getElementById('bulkPrices');
   const pricesFileName=document.getElementById('pricesFileName');
+  const xlsxFileName=document.getElementById('xlsxFileName');
+  const xlsxLabel=document.getElementById('xlsxLabel');
+  const pricesLabel=document.getElementById('pricesLabel');
   const bulkFx=document.getElementById('bulkFx');
   const bulkMargin=document.getElementById('bulkMargin');
   const bulkUseOpenAI=document.getElementById('bulkUseOpenAI');
+  
+  // Mostrar nombre del archivo XLSX seleccionado
+  if(bulkXlsx){
+    bulkXlsx.addEventListener('change', ()=>{
+      if(bulkXlsx.files && bulkXlsx.files.length>0){
+        const fileName = bulkXlsx.files[0].name;
+        xlsxFileName.textContent = '✓ ' + fileName;
+        xlsxFileName.style.color = 'var(--color-success)';
+        if(xlsxLabel) xlsxLabel.textContent = '✓ ' + (fileName.length > 20 ? fileName.substring(0,17)+'...' : fileName);
+      } else {
+        xlsxFileName.textContent = '';
+        if(xlsxLabel) xlsxLabel.textContent = '📄 Seleccionar XLSX';
+      }
+    });
+  }
   
   // Mostrar nombre del archivo de precios seleccionado
   if(bulkPrices){
     bulkPrices.addEventListener('change', ()=>{
       if(bulkPrices.files && bulkPrices.files.length>0){
-        pricesFileName.textContent = '✓ ' + bulkPrices.files[0].name;
+        const fileName = bulkPrices.files[0].name;
+        pricesFileName.textContent = '✓ ' + fileName;
+        pricesFileName.style.color = 'var(--color-success)';
+        if(pricesLabel) pricesLabel.textContent = '✓ ' + (fileName.length > 20 ? fileName.substring(0,17)+'...' : fileName);
       } else {
         pricesFileName.textContent = '';
+        if(pricesLabel) pricesLabel.textContent = '💵 Seleccionar Precios (.txt)';
       }
     });
   }
@@ -1023,30 +1408,37 @@
   if(bulkRun){ 
     bulkRun.addEventListener('click', ()=>{ 
       if(!bulkXlsx.files || bulkXlsx.files.length===0){ 
+        alert('⚠️ Por favor selecciona el archivo XLSX de colores primero');
         bulkXlsx.click(); 
       } else if(!bulkPrices.files || bulkPrices.files.length===0){
+        alert('⚠️ Por favor selecciona el archivo de precios (.txt) primero');
         bulkPrices.click();
       } else { 
-        runBulkUpload(); 
+        // Mostrar confirmación antes de importar
+        const xlsxName = bulkXlsx.files[0].name;
+        const pricesName = bulkPrices.files[0].name;
+        const fx = bulkFx.value || '0';
+        const margin = bulkMargin.value || '0';
+        const useAI = bulkUseOpenAI && bulkUseOpenAI.checked;
+        
+        const confirmMsg = 
+          '📦 CONFIRMAR IMPORTACIÓN\n\n' +
+          '📄 Archivo colores: ' + xlsxName + '\n' +
+          '💵 Archivo precios: ' + pricesName + '\n' +
+          '💱 Tipo de cambio: $' + fx + '\n' +
+          '📈 Margen: ' + margin + '%\n' +
+          (useAI ? '🤖 Usando OpenAI (lento)\n' : '⚡ Método tradicional (rápido)\n') +
+          '\n¿Deseas continuar con la importación?';
+        
+        if(confirm(confirmMsg)){
+          runBulkUpload(); 
+        }
       } 
     }); 
   }
   
-  // Auto-run después de seleccionar el segundo archivo
-  if(bulkXlsx){ 
-    bulkXlsx.addEventListener('change', ()=>{ 
-      if(bulkXlsx.files && bulkXlsx.files.length>0 && bulkPrices.files && bulkPrices.files.length>0){ 
-        runBulkUpload(); 
-      }
-    }); 
-  }
-  if(bulkPrices){
-    bulkPrices.addEventListener('change', ()=>{ 
-      if(bulkXlsx.files && bulkXlsx.files.length>0 && bulkPrices.files && bulkPrices.files.length>0){ 
-        runBulkUpload(); 
-      }
-    }); 
-  }
+  // Removido: auto-run después de seleccionar archivos
+  // Ahora el usuario debe hacer click en "Importar" manualmente
 
   btnReset.addEventListener('click', clear);
   btnDel.addEventListener('click', async ()=>{ const slug=fSlug.value.trim(); if(!slug) return; if(!confirm('Eliminar producto y sus imágenes?')) return; const res=await fetch('/api/products/'+slug,{method:'DELETE', headers:{Authorization:'Bearer '+token}}); if(res.ok){ clear(); location.reload(); } else { alert('Error'); } });
@@ -1082,21 +1474,81 @@
 
   // Drag & drop images preview
   function refreshPreview(){
+    if(!preview || !dzCount) return;
     preview.innerHTML='';
     const files=Array.from(imagesInput.files||[]);
-    dzCount.textContent=files.length+ (files.length===1?' archivo':' archivos');
+    const count = files.length;
+    dzCount.textContent = count + (count === 0 ? ' archivos seleccionados' : (count === 1 ? ' archivo seleccionado' : ' archivos seleccionados'));
+    
+    if(count > 0){
+      dropZone.style.borderColor = 'var(--color-success)';
+      dropZone.style.background = 'color-mix(in srgb, var(--color-success) 5%, var(--panel-alt))';
+    } else {
+      dropZone.style.borderColor = 'var(--color-border)';
+      dropZone.style.background = 'var(--panel-alt)';
+    }
+    
     files.slice(0,6).forEach(f=>{
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'position:relative;width:70px;height:70px;border-radius:8px;overflow:hidden;border:2px solid var(--color-success)';
+      
       const r=new FileReader();
-      r.onload=ev=>{ const img=document.createElement('img'); img.src=ev.target.result; img.alt=f.name; img.style.width='52px'; img.style.height='52px'; img.style.objectFit='cover'; img.style.borderRadius='10px'; img.style.border='1px solid #223140'; preview.appendChild(img); };
+      r.onload=ev=>{ 
+        const img=document.createElement('img'); 
+        img.src=ev.target.result; 
+        img.alt=f.name; 
+        img.style.cssText='width:100%;height:100%;object-fit:cover;display:block';
+        wrapper.appendChild(img);
+      };
       r.readAsDataURL(f);
+      preview.appendChild(wrapper);
+    });
+    
+    if(count > 6){
+      const more = document.createElement('div');
+      more.style.cssText = 'width:70px;height:70px;border-radius:8px;background:var(--panel);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--muted)';
+      more.textContent = '+' + (count - 6);
+      preview.appendChild(more);
+    }
+  }
+  
+  if(imagesInput) imagesInput.addEventListener('change', refreshPreview);
+  if(fGross) fGross.addEventListener('input', recomputePrice);
+  if(fMargin) fMargin.addEventListener('input', recomputePrice);
+  
+  // Mejorar dropzone con efectos visuales
+  if(dropZone){
+    ['dragenter','dragover'].forEach(ev=>dropZone.addEventListener(ev,e=>{
+      e.preventDefault(); 
+      dropZone.style.borderColor='var(--color-brand)';
+      dropZone.style.background='color-mix(in srgb, var(--color-brand) 8%, var(--panel-alt))';
+      dropZone.style.transform='scale(1.02)';
+    }));
+    
+    ['dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev,e=>{
+      e.preventDefault(); 
+      dropZone.style.borderColor='var(--color-border)';
+      dropZone.style.background='var(--panel-alt)';
+      dropZone.style.transform='scale(1)';
+    }));
+    
+    dropZone.addEventListener('drop', e=>{ 
+      const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')); 
+      if(files.length){ 
+        const dt=new DataTransfer(); 
+        files.forEach(f=>dt.items.add(f)); 
+        imagesInput.files=dt.files; 
+        refreshPreview(); 
+      }
+    });
+    
+    // Click en el dropzone para abrir selector
+    dropZone.addEventListener('click', (e)=>{
+      if(e.target !== imagesInput && !e.target.closest('.dz-preview')){
+        imagesInput.click();
+      }
     });
   }
-  imagesInput.addEventListener('change', refreshPreview);
-  fGross.addEventListener('input', recomputePrice);
-  fMargin.addEventListener('input', recomputePrice);
-  ;['dragenter','dragover'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault(); dropZone.classList.add('drag');}));
-  ;['dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault(); dropZone.classList.remove('drag');}));
-  dropZone.addEventListener('drop', e=>{ const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')); if(files.length){ const dt=new DataTransfer(); files.forEach(f=>dt.items.add(f)); imagesInput.files=dt.files; refreshPreview(); }});
 
 })();
 </script>
@@ -1132,3 +1584,4 @@
 
 {{template "layout_end" .}}
 {{end}}
+

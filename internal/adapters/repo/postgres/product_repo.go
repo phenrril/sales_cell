@@ -17,6 +17,9 @@ type ProductRepo struct{ db *gorm.DB }
 
 func NewProductRepo(db *gorm.DB) *ProductRepo { return &ProductRepo{db: db} }
 
+// RawDB expone la conexión de base de datos (útil para operaciones avanzadas)
+func (r *ProductRepo) RawDB() *gorm.DB { return r.db }
+
 func (r *ProductRepo) Save(ctx context.Context, p *domain.Product) error {
 	return r.db.WithContext(ctx).Save(p).Error
 }
