@@ -3264,7 +3264,7 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 				_ = "fuzzy" // matchMethod - unused but kept for potential future logging
 			}
 		}
-			if usd <= 0 {
+		if usd <= 0 {
 				unmatched++
 				rep.UnmatchedItems[baseKey]++ // incrementar contador de este producto
 

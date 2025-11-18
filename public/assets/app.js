@@ -165,13 +165,13 @@
     function formatARS(v){
       const s=Math.round(v).toString();
       const n=s.length;
-      if(n<=3) return 'ARS '+s;
+      if(n<=3) return '$ '+s;
       const rem=n%3||3;
       let out=s.substring(0,rem);
       for(let i=rem;i<n;i+=3){
         out+='.'+s.substring(i,i+3);
       }
-      return 'ARS '+out;
+      return '$ '+out;
     }
     
     function createProductCard(p,idx){
@@ -188,7 +188,7 @@
       const category=escapeHtml(p.Category||'');
       
       card.innerHTML=`
-        <div class="card-media ar-1-1">
+        <div class="card-media">
           ${hasImages?`<img src="${imgSrc}" alt="${imgAlt}" loading="lazy" decoding="async" 
                srcset="${imgSrc} 300w, ${imgSrc480} 480w, ${imgSrc640} 640w" 
                sizes="(max-width:480px) 92vw, (max-width:768px) 44vw, 300px" class="card-img" />`

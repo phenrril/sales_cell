@@ -371,6 +371,25 @@ function clearError(input) {
   }
 }
 
+window.formatPrice = function(v) {
+  const rounded = Math.round(v);
+  const s = Math.abs(rounded).toString();
+  const n = s.length;
+  const neg = rounded < 0;
+  
+  if (n <= 3) {
+    return neg ? '$ -' + s : '$ ' + s;
+  }
+  
+  const rem = n % 3 || 3;
+  let out = s.substring(0, rem);
+  for (let i = rem; i < n; i += 3) {
+    out += '.' + s.substring(i, i + 3);
+  }
+  
+  return neg ? '$ -' + out : '$ ' + out;
+};
+
 function updateShippingSummary() {
   const shippingMethod = document.querySelector('input[name="shipping_method"]:checked');
   const shippingCostEl = document.getElementById('shippingCostSummary');
@@ -380,12 +399,12 @@ function updateShippingSummary() {
   if (shippingMethod.value === 'retiro') {
     shippingCostEl.textContent = 'Gratis';
   } else if (shippingMethod.value === 'cadete') {
-    shippingCostEl.textContent = '$5.000,00';
+    shippingCostEl.textContent = formatPrice(5000);
   } else if (shippingMethod.value === 'envio') {
     const province = document.getElementById('province');
     if (province && province.value && provinceCosts[province.value] !== undefined) {
       const cost = provinceCosts[province.value];
-      shippingCostEl.textContent = cost > 0 ? `$${cost.toFixed(2).replace('.', ',')}` : 'Gratis';
+      shippingCostEl.textContent = cost > 0 ? formatPrice(cost) : 'Gratis';
     } else {
       shippingCostEl.textContent = 'Según provincia';
     }
@@ -411,7 +430,13 @@ function updateTotalSummary() {
   const totalEl = document.getElementById('totalAmount');
   if (!totalEl) return;
   
-  const baseTotal = parseFloat(totalEl.textContent.replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
+  let baseTotal = 0;
+  if (totalEl.dataset.value) {
+    baseTotal = parseFloat(totalEl.dataset.value) || 0;
+  } else {
+    const baseTotalText = totalEl.textContent.replace(/\$/g, '').replace(/\s/g, '').replace(/\./g, '').replace(/,/g, '.');
+    baseTotal = parseFloat(baseTotalText) || 0;
+  }
   
   let shippingCost = 0;
   const shippingMethod = document.querySelector('input[name="shipping_method"]:checked');
@@ -431,7 +456,13 @@ function updateTotalSummary() {
   const total = baseTotal + shippingCost;
   
   if (totalEl) {
-    totalEl.textContent = total.toFixed(2).replace('.', ',');
+    totalEl.textContent = formatPrice(total);
+    totalEl.dataset.value = total.toString();
+  }
+  
+  const stickyTotal = document.querySelector('.cart-sticky-price span');
+  if (stickyTotal) {
+    stickyTotal.textContent = formatPrice(total);
   }
   
   const discountSummary = document.getElementById('discountSummary');
