@@ -65,12 +65,15 @@ func main() {
 	}
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
+		zlog.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
 	application, err := app.NewApp(db)
 	if err != nil {
+		zlog.Fatal().Err(err).Msg("failed to create app")
 	}
 	if err := application.MigrateAndSeed(); err != nil {
+		zlog.Fatal().Err(err).Msg("failed to migrate and seed database")
 	}
 
 	port := os.Getenv("PORT")

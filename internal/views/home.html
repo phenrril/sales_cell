@@ -1,7 +1,6 @@
 {{define "home.html"}}
 {{template "layout_start" .}}
 <style>
-/* Fallback modal (evita problemas de caché) */
 #howBuyBackdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:20px;z-index:110;opacity:0;pointer-events:none;transition:opacity .25s ease}
 #howBuyBackdrop.show{opacity:1;pointer-events:auto}
 #howBuyBackdrop .modal{background:#1a2430;border:1px solid #243044;border-radius:22px;padding:24px 24px 28px;max-width:560px;width:100%;color:#e5e7eb;font-family:Poppins,sans-serif;opacity:0;transform:translateY(20px) scale(.94);transition:opacity .28s ease,transform .35s cubic-bezier(.4,0,.2,1)}
@@ -21,7 +20,7 @@
   </div>
   
 </section>
-<section style="margin-top:48px">
+<section style="margin-top:24px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
     <h2 style="font-size:32px;font-weight:800;margin:0;color:var(--color-text);letter-spacing:-.8px">Ofertas imperdibles</h2>
     <a href="/products" style="color:var(--color-brand);text-decoration:none;font-weight:600;font-size:14px">Ver todos →</a>
