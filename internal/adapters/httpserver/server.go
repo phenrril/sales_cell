@@ -3163,11 +3163,9 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			// Log para debug de matching
 
 			usd := priceUSD[baseKey]
-			matchMethod := "exacto"
 			if usd <= 0 {
 				if alt := matchUSDPrice(priceUSD, baseKey); alt > 0 {
 					usd = alt
-					matchMethod = "fuzzy"
 				}
 			}
 			if usd <= 0 {
