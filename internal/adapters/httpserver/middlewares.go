@@ -35,6 +35,7 @@ func GetReqID(ctx context.Context) string {
 
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = time.Now() // start - kept for potential future logging
 		rw := &respWriter{ResponseWriter: w, status: 200}
 		next.ServeHTTP(rw, r)
 	})

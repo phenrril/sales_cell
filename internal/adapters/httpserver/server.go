@@ -32,6 +32,7 @@ import (
 	"github.com/phenrril/tienda3d/internal/domain"
 	"github.com/phenrril/tienda3d/internal/usecase"
 	"github.com/xuri/excelize/v2"
+	"gorm.io/gorm"
 )
 
 type Server struct {
@@ -492,6 +493,11 @@ func (s *Server) apiProductByID(w http.ResponseWriter, r *http.Request) {
 		s.apiProductDownloadImage(w, r)
 		return
 	}
+	// Delete individual image: /api/products/{slug}/delete-image
+	if strings.HasSuffix(r.URL.Path, "/delete-image") {
+		s.apiProductDeleteImage(w, r)
+		return
+	}
 	if r.Method == http.MethodGet {
 		idStr := strings.TrimPrefix(r.URL.Path, "/api/products/")
 		p, err := s.products.GetBySlug(r.Context(), idStr)
@@ -763,6 +769,94 @@ func (s *Server) apiProductDownloadImage(w http.ResponseWriter, r *http.Request)
 	}
 
 	writeJSON(w, 200, map[string]any{"status": "ok", "image_url": storedPath, "message": "Imagen agregada exitosamente"})
+}
+
+// /api/products/{slug}/delete-image - Eliminar una imagen individual de un producto
+func (s *Server) apiProductDeleteImage(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAdmin(w, r) {
+		return
+	}
+	if r.Method != http.MethodPost && r.Method != http.MethodDelete {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	rest := strings.TrimPrefix(r.URL.Path, "/api/products/")
+	slugEnc := strings.TrimSuffix(rest, "/delete-image")
+	slugEnc = strings.TrimSuffix(slugEnc, "/")
+	slug, _ := url.PathUnescape(slugEnc)
+
+	p, err := s.products.GetBySlug(r.Context(), slug)
+	if err != nil || p == nil {
+		writeJSON(w, 404, map[string]any{"status": "error", "message": "producto no encontrado"})
+		return
+	}
+
+	var payload struct {
+		ImageIndex int `json:"image_index"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeJSON(w, 400, map[string]any{"status": "error", "message": "invalid json"})
+		return
+	}
+
+	if payload.ImageIndex < 0 || payload.ImageIndex >= len(p.Images) {
+		writeJSON(w, 400, map[string]any{"status": "error", "message": "índice de imagen inválido"})
+		return
+	}
+
+	// Obtener la imagen a eliminar
+	imageToDelete := p.Images[payload.ImageIndex]
+	imagePath := imageToDelete.URL
+	imageID := imageToDelete.ID
+
+	// Log para debug
+	fmt.Printf("🗑️ Eliminando imagen ID %s (índice %d) de producto %s\n", imageID, payload.ImageIndex, slug)
+	fmt.Printf("📊 Imágenes antes: %d\n", len(p.Images))
+
+	// IMPORTANTE: Eliminar la imagen directamente de la base de datos
+	// No podemos simplemente modificar p.Images y hacer Save(), porque GORM no actualiza las relaciones automáticamente
+	if repo, ok := s.products.Products.(interface {
+		RawDB() *gorm.DB
+	}); ok {
+		db := repo.RawDB().WithContext(r.Context())
+		// Eliminar la imagen de la BD
+		if err := db.Delete(&domain.Image{}, "id = ?", imageID).Error; err != nil {
+			fmt.Printf("❌ Error eliminando imagen de BD: %v\n", err)
+			writeJSON(w, 500, map[string]any{"status": "error", "message": "error eliminando imagen de BD"})
+			return
+		}
+		fmt.Printf("✅ Imagen eliminada de BD correctamente\n")
+	} else {
+		writeJSON(w, 500, map[string]any{"status": "error", "message": "método de eliminación no disponible"})
+		return
+	}
+	
+	// Verificar que se eliminó correctamente
+	pVerify, _ := s.products.GetBySlug(r.Context(), slug)
+	if pVerify != nil {
+		fmt.Printf("✅ Producto verificado: %d imágenes en BD (antes: %d)\n", len(pVerify.Images), len(p.Images))
+	}
+
+	// Intentar eliminar archivo físico del disco
+	deleted := false
+	if imagePath != "" {
+		imagePath = strings.TrimPrefix(imagePath, "/")
+		if strings.Contains(imagePath, "uploads") {
+			if _, err := os.Stat(imagePath); err == nil {
+				if err := os.Remove(imagePath); err == nil {
+					deleted = true
+				}
+			}
+		}
+	}
+
+	writeJSON(w, 200, map[string]any{
+		"status":       "ok",
+		"message":      "Imagen eliminada exitosamente",
+		"deleted_file": deleted,
+		"image_url":    imagePath,
+	})
 }
 
 // /api/products/{slug}/search-specs - Buscar especificaciones técnicas en internet
@@ -3160,15 +3254,17 @@ func (s *Server) importFromXLSXCombined(r *http.Request, data []byte, priceUSD m
 			}
 			stock := mapStock(stockStr)
 
-			// Log para debug de matching
+		// Log para debug de matching
 
-			usd := priceUSD[baseKey]
-			if usd <= 0 {
-				if alt := matchUSDPrice(priceUSD, baseKey); alt > 0 {
-					usd = alt
-				}
+		usd := priceUSD[baseKey]
+		_ = "exacto" // matchMethod - unused but kept for potential future logging
+		if usd <= 0 {
+			if alt := matchUSDPrice(priceUSD, baseKey); alt > 0 {
+				usd = alt
+				_ = "fuzzy" // matchMethod - unused but kept for potential future logging
 			}
-			if usd <= 0 {
+		}
+		if usd <= 0 {
 				unmatched++
 				rep.UnmatchedItems[baseKey]++ // incrementar contador de este producto
 
