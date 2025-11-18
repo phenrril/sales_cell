@@ -45,22 +45,94 @@
     </button>
   </div>
   <nav class="mobile-menu-nav">
-    <a href="/products?category=celulares">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-      Celulares
-    </a>
-    <a href="/products?q=Accesorios">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-      Accesorios
-    </a>
-    <a href="/cart">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-      Carrito
-    </a>
-    <a href="https://wa.me/5493416620117?text=buen%20dia,%20te%20escribo%20para%20saber%20mas%20del%20celular.." target="_blank" rel="noopener">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      WhatsApp
-    </a>
+    <!-- Marcas de celulares -->
+    <div class="mobile-menu-section">
+      <div class="mobile-menu-section-title">Marcas</div>
+      <a href="/products?q=Samsung&category=celulares" class="mobile-menu-brand">
+        <div class="mobile-menu-brand-icon">
+          <img src="/public/assets/logos/samsung.svg" alt="Samsung" />
+        </div>
+        <span>Samsung</span>
+      </a>
+      <a href="/products?q=Apple&category=celulares" class="mobile-menu-brand">
+        <div class="mobile-menu-brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.38 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor"/>
+          </svg>
+        </div>
+        <span>Apple</span>
+      </a>
+      <a href="/products?q=Motorola&category=celulares" class="mobile-menu-brand">
+        <div class="mobile-menu-brand-icon">
+          <img src="/public/assets/logos/motorola.png" alt="Motorola" />
+        </div>
+        <span>Motorola</span>
+      </a>
+      <a href="/products?q=Xiaomi&category=celulares" class="mobile-menu-brand">
+        <div class="mobile-menu-brand-icon">
+          <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" />
+        </div>
+        <span>Xiaomi</span>
+      </a>
+    </div>
+    
+    <!-- Categorías generales -->
+    <div class="mobile-menu-section">
+      <div class="mobile-menu-section-title">Categorías</div>
+      <a href="/products?category=celulares" class="mobile-menu-item">
+        <div class="mobile-menu-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+        </div>
+        <span>Todos los Celulares</span>
+      </a>
+      <a href="/products?q=novedades&sort=newest" class="mobile-menu-item">
+        <div class="mobile-menu-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>
+        </div>
+        <span>Novedades</span>
+      </a>
+      <a href="/products?q=ofertas&sort=price_asc" class="mobile-menu-item">
+        <div class="mobile-menu-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l3 3 7-7"/><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <span>Ofertas</span>
+      </a>
+      <a href="/products?q=auriculares" class="mobile-menu-item">
+        <div class="mobile-menu-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10v4c0 2.21 1.79 4 4 4h1v-2H7c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h1V6H7c-2.21 0-4 1.79-4 4z" fill="currentColor"/><path d="M21 10v4c0 2.21-1.79 4-4 4h-1v-2h1c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2h-1V6h1c2.21 0 4 1.79 4 4z" fill="currentColor"/><path d="M10 6v2h4V6h-4z" fill="currentColor"/></svg>
+        </div>
+        <span>Auriculares</span>
+      </a>
+      <a href="/products?q=notebooks" class="mobile-menu-item">
+        <div class="mobile-menu-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z"/><path d="M2 8h20"/></svg>
+        </div>
+        <span>Notebooks</span>
+      </a>
+      <a href="/products?q=Accesorios" class="mobile-menu-item">
+        <div class="mobile-menu-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </div>
+        <span>Accesorios</span>
+      </a>
+    </div>
+    
+    <!-- Otras opciones -->
+    <div class="mobile-menu-section">
+      <div class="mobile-menu-section-title">Más opciones</div>
+      <a href="/cart" class="mobile-menu-item">
+        <div class="mobile-menu-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        </div>
+        <span>Carrito</span>
+      </a>
+      <a href="https://wa.me/5493416620117?text=buen%20dia,%20te%20escribo%20para%20saber%20mas%20del%20celular.." target="_blank" rel="noopener" class="mobile-menu-item">
+        <div class="mobile-menu-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </div>
+        <span>WhatsApp</span>
+      </a>
+    </div>
   </nav>
 </div>
 
@@ -498,25 +570,127 @@
   padding: 12px 0;
 }
 
-.mobile-menu-nav a {
+.mobile-menu-section {
+  margin-bottom: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mobile-menu-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.mobile-menu-section-title {
+  padding: 12px 20px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #9ca3af;
+}
+
+.mobile-menu-brand {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 20px;
+  padding: 14px 20px;
   color: var(--color-text);
   text-decoration: none;
   font-size: 16px;
   font-weight: 500;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  background: transparent;
 }
 
-.mobile-menu-nav a:hover {
-  background: #f9fafb;
+.mobile-menu-brand:hover {
+  background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-left: 3px solid var(--color-brand);
+  padding-left: 17px;
 }
 
-.mobile-menu-nav a svg {
+.mobile-menu-brand-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  border: 1px solid rgba(0, 118, 199, 0.1);
+  transition: all 0.2s;
+}
+
+.mobile-menu-brand:hover .mobile-menu-brand-icon {
+  background: linear-gradient(135deg, #BBDEFB, #90CAF9);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 118, 199, 0.2);
+}
+
+.mobile-menu-brand-icon img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
+
+.mobile-menu-brand-icon svg {
+  width: 70%;
+  height: 70%;
   color: var(--color-brand);
+}
+
+.mobile-menu-brand span {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Estilo homogéneo para todos los items del menú */
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.mobile-menu-item:hover {
+  background: linear-gradient(90deg, #f9fafb 0%, #f3f4f6 100%);
+  border-left: 3px solid var(--color-brand);
+  padding-left: 17px;
+}
+
+.mobile-menu-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 118, 199, 0.08);
+  transition: all 0.2s;
+}
+
+.mobile-menu-item:hover .mobile-menu-icon {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 118, 199, 0.15);
+}
+
+.mobile-menu-icon svg {
+  color: var(--color-brand);
+}
+
+.mobile-menu-item span {
+  font-weight: 600;
+  font-size: 15px;
 }
 
 .nav-backdrop {
@@ -774,15 +948,11 @@
   }
   
   .brands-carousel-mobile {
-    display: block;
-    width: 100%;
-    clear: both;
+    display: none !important;
   }
   
   .mobile-business-info {
-    display: block;
-    width: 100%;
-    clear: both;
+    display: none !important;
   }
   
   /* Adjust header */
@@ -1035,6 +1205,14 @@
       }
       
       navBackdrop.addEventListener('click', closeMenu);
+      
+      // Cerrar menú al hacer clic en cualquier enlace
+      const menuLinks = mobileMenu.querySelectorAll('.mobile-menu-brand, .mobile-menu-item');
+      menuLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          closeMenu();
+        });
+      });
     }
     
     // Mobile search modal
