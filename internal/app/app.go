@@ -129,6 +129,34 @@ func NewApp(db *gorm.DB) (*App, error) {
 			}
 			return "ARS " + out
 		},
+		"formatPrice": func(v float64) string {
+			s := fmt.Sprintf("%.0f", v)
+			n := len(s)
+			neg := false
+			if n > 0 && s[0] == '-' {
+				neg = true
+				s = s[1:]
+				n--
+			}
+			if n <= 3 {
+				if neg {
+					return "$ -" + s
+				}
+				return "$ " + s
+			}
+			rem := n % 3
+			if rem == 0 {
+				rem = 3
+			}
+			out := s[:rem]
+			for i := rem; i < n; i += 3 {
+				out += "." + s[i:i+3]
+			}
+			if neg {
+				out = "-" + out
+			}
+			return "$ " + out
+		},
 		"percent": func(v float64, pct float64) float64 { return v * (1.0 + pct/100.0) },
 		"gain":    func(gross float64, pct float64) float64 { return gross * (pct / 100.0) },
 		"colorhex": func(s string) string {
