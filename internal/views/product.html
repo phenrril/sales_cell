@@ -9,7 +9,7 @@
 </nav>
 
 <article class="product-detail">
-  <div class="pd-media">
+  <div class="pd-media" style="flex-direction: column;">
     {{if .Product.Images}}
       <div class="pd-carousel" id="pdCarousel" data-count="{{len .Product.Images}}">
         <div class="pd-slides">
@@ -33,6 +33,7 @@
     {{else}}
       <div class="pd-carousel empty" data-count="0"><div class="pd-slides placeholder">SIN IMAGEN</div></div>
     {{end}}
+    <p style="display: block; width: 100%; margin-top: 16px; margin-bottom: 0; font-style: italic; color: #9CA3AF; font-size: 13px; text-align: center; padding: 0 16px; box-sizing: border-box;">imagenes a modo ilustrativo</p>
   </div>
   
   <div class="pd-info">
