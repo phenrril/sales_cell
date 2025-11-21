@@ -169,7 +169,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	base := s.canonicalBase(r)
-	data := map[string]any{"Products": list, "CanonicalURL": base + "/", "OGImage": base + "/public/assets/img/chroma-logo.png"}
+	data := map[string]any{"Products": list, "CanonicalURL": base + "/", "OGImage": base + "/public/assets/img/newmobile.png"}
 	if u := readUserSession(w, r); u != nil {
 		data["User"] = u
 	}
@@ -215,7 +215,7 @@ func (s *Server) handleProducts(w http.ResponseWriter, r *http.Request) {
 		"Category":     category,
 		"Categories":   cats,
 		"CanonicalURL": base + "/products",
-		"OGImage":      base + "/public/assets/img/chroma-logo.png",
+		"OGImage":      base + "/public/assets/img/newmobile.png",
 	}
 	if u := readUserSession(w, r); u != nil {
 		data["User"] = u
@@ -264,7 +264,7 @@ func (s *Server) handleProduct(w http.ResponseWriter, r *http.Request) {
 		added = 1
 	}
 	base := s.canonicalBase(r)
-	og := base + "/public/assets/img/chroma-logo.png"
+	og := base + "/public/assets/img/newmobile.png"
 	if len(p.Images) > 0 && strings.TrimSpace(p.Images[0].URL) != "" {
 		if strings.HasPrefix(p.Images[0].URL, "http://") || strings.HasPrefix(p.Images[0].URL, "https://") {
 			og = p.Images[0].URL

@@ -16,10 +16,10 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .topbar{background:#FFFFFF;color:var(--color-text);padding:12px 0;box-shadow:0 2px 8px rgba(0,0,0,.08);position:sticky;top:0;z-index:var(--z-topbar);border-bottom:2px solid var(--color-brand)}
 .dark .topbar{background:#1E1E1E;box-shadow:0 2px 8px rgba(0,0,0,.3);border-bottom:2px solid var(--color-brand)}
 .brand{display:flex;flex-direction:row;align-items:center;gap:8px;color:var(--color-text);text-decoration:none;flex-shrink:0;min-width:0}
-.brand-logo{height:60px;width:auto;object-fit:contain;display:block;flex-shrink:0;transition:height .2s ease}
 .brand-text{display:flex;flex-direction:column;gap:2px;line-height:1;align-items:flex-end;text-align:right;min-width:0;flex-shrink:1}
-.brand-title{font-weight:700;font-size:24px;letter-spacing:0;color:var(--color-brand);font-family:'Roboto',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;transition:font-size .2s ease}
+.brand-title{font-weight:700;font-size:24px;letter-spacing:0;color:var(--color-brand);font-family:'Roboto',sans-serif;white-space:nowrap;overflow:visible;text-overflow:clip;max-width:100%;transition:font-size .2s ease}
 .brand-sub{font-size:13px;opacity:.7;color:var(--color-muted);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;transition:font-size .2s ease,opacity .2s ease}
+.brand-tagline{font-size:11px;color:#9ca3af;font-weight:400;white-space:nowrap;letter-spacing:0.3px;opacity:0.8;margin-top:2px}
 /* Header: contenedor principal en fila con menú a la derecha */
 .topbar .container{display:flex;flex-direction:row;align-items:center;gap:8px;justify-content:space-between;flex-wrap:nowrap}
 .searchbar{display:none;gap:8px;align-items:center;margin:0 10px;flex:1;min-width:0;max-width:1200px}
@@ -137,7 +137,7 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
   .topbar{padding:10px 0}
   .topbar .container{gap:6px}
   .brand{gap:6px}
-  .brand-logo{height:50px}
+  .brand-tagline{font-size:10px}
   .brand-title{font-size:20px}
   .brand-sub{font-size:12px}
   .searchbar input{min-width:180px;font-size:13px}
@@ -145,9 +145,10 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 }
 @media (max-width:768px){
   .topbar{padding:8px 0}
-  .brand-logo{height:48px}
-  .brand-title{font-size:18px}
-  .brand-sub{font-size:11px;opacity:.8}
+  .brand-tagline{font-size:12px}
+  .brand-text{min-width:auto;flex-shrink:0}
+  .brand-title{font-size:29px;overflow:visible;text-overflow:clip;max-width:none}
+  .brand-sub{font-size:14px;opacity:.8}
   .brands-grid{grid-template-columns:repeat(4,1fr);gap:16px}
   .brand-icon{width:80px;height:80px}
   .brand-icon svg{width:40px;height:40px}
@@ -162,10 +163,10 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
   .topbar{padding:8px 0}
   .topbar .container{gap:4px}
   .brand{gap:6px;min-width:0;flex:0 1 auto}
-  .brand-logo{height:44px}
-  .brand-text{gap:1px}
-  .brand-title{font-size:16px;max-width:140px}
-  .brand-sub{font-size:10px;display:none}
+  .brand-tagline{font-size:10px}
+  .brand-text{gap:1px;min-width:auto;flex-shrink:0}
+  .brand-title{font-size:26px;max-width:none;overflow:visible;text-overflow:clip}
+  .brand-sub{font-size:13px;display:none}
   .searchbar{display:none!important}
   .mainnav .whatsapp{width:36px;height:36px}
   .promobar-row{flex-direction:column;gap:6px;font-size:11px;padding:8px 0;line-height:1.4}
@@ -173,8 +174,9 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 }
 @media (max-width:480px){
   .topbar{padding:6px 0}
-  .brand-logo{height:40px}
-  .brand-title{font-size:15px;max-width:120px}
+  .brand-tagline{font-size:9px}
+  .brand-text{min-width:auto;flex-shrink:0}
+  .brand-title{font-size:23px;max-width:none;overflow:visible;text-overflow:clip}
   .brands-grid{grid-template-columns:repeat(4,1fr);gap:12px}
   .brand-icon{width:70px;height:70px}
   .brand-icon svg{width:36px;height:36px}
@@ -187,8 +189,9 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
   .promobar-row strong{font-size:10px}
 }
 @media (max-width:360px){
-  .brand-logo{height:36px}
-  .brand-title{font-size:14px;max-width:100px}
+  .brand-tagline{font-size:9px;display:none}
+  .brand-text{min-width:auto;flex-shrink:0}
+  .brand-title{font-size:21px;max-width:none;overflow:visible;text-overflow:clip}
   .brands-grid{grid-template-columns:repeat(3,1fr);gap:10px}
   .brand-icon{width:65px;height:65px}
   .brand-icon svg{width:32px;height:32px}
