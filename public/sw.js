@@ -2,7 +2,7 @@ const CACHE_NAME = 'newmobile-v1';
 const urlsToCache = [
   '/',
   '/public/assets/styles.css',
-  '/public/assets/img/chroma-logo.png',
+  '/public/assets/img/newmobile.png',
   '/public/assets/img/img1.webp',
   '/public/assets/img/img2.webp',
   '/public/assets/img/img3.webp',
