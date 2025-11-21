@@ -63,8 +63,11 @@
   </div>
   <div>
     <h2 style="margin:0 0 10px;font-size:18px">Listado ({{.Total}})</h2>
-    <div style="margin-bottom:12px">
-      <input type="text" id="prodSearch" placeholder="Buscar productos por nombre, slug, marca o modelo..." aria-label="Buscar productos" style="width:100%;max-width:500px;background:#FFFFFF;border:1px solid var(--color-border);color:var(--color-text);font:inherit;padding:11px 14px;border-radius:14px;font-size:14px;line-height:1.3;transition:border-color .18s,background .18s,box-shadow .18s" />
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" id="prodSearch" placeholder="Buscar productos por nombre, slug, marca o modelo..." aria-label="Buscar productos" style="flex:1;min-width:200px;max-width:500px;background:#FFFFFF;border:1px solid var(--color-border);color:var(--color-text);font:inherit;padding:11px 14px;border-radius:14px;font-size:14px;line-height:1.3;transition:border-color .18s,background .18s,box-shadow .18s" />
+      <button type="button" id="filterNoImages" class="btn-secondary" style="white-space:nowrap;padding:11px 16px;font-size:14px;font-weight:500;border-radius:14px;cursor:pointer;transition:all .18s;background:var(--panel);border:1px solid var(--color-border);color:var(--color-text)">
+        🖼️ Sin imágenes
+      </button>
     </div>
     <div style="overflow-x:auto;overflow-y:visible;max-width:100%">
       <div class="import-section" style="background:var(--panel-alt);padding:16px;border-radius:8px;margin-bottom:12px">
@@ -1499,31 +1502,64 @@
   }
   
   // Búsqueda de productos en la tabla
-  if(searchInput && tbl){
-    searchInput.addEventListener('input', (e)=>{
-      const searchTerm=e.target.value.toLowerCase().trim();
-      const rows=tbl.querySelectorAll('tbody tr');
-      let visibleCount=0;
-      rows.forEach(row=>{
-        const name=(row.cells[0]?.textContent||'').toLowerCase();
-        const slug=(row.cells[1]?.textContent||'').toLowerCase();
-        const brand=(row.cells[2]?.textContent||'').toLowerCase();
-        const model=(row.cells[3]?.textContent||'').toLowerCase();
-        const matches=!searchTerm || name.includes(searchTerm) || slug.includes(searchTerm) || brand.includes(searchTerm) || model.includes(searchTerm);
-        row.style.display=matches?'':'none';
-        if(matches) visibleCount++;
-      });
-      // Actualizar contador en el título si es necesario
-      const titleEl=document.querySelector('div > h2');
-      if(titleEl && titleEl.textContent.includes('Listado')){
-        const totalMatch=titleEl.textContent.match(/\((\d+)\)/);
-        const total=totalMatch?parseInt(totalMatch[1]):rows.length;
-        if(searchTerm){
-          titleEl.textContent=`Listado (${visibleCount}${visibleCount!==total?' de '+total:''})`;
-        } else {
-          titleEl.textContent=`Listado (${total})`;
-        }
+  let filterNoImagesActive = false;
+  const filterNoImagesBtn = document.getElementById('filterNoImages');
+  
+  function applyFilters(){
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const rows = tbl ? tbl.querySelectorAll('tbody tr') : [];
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+      const name = (row.cells[0]?.textContent || '').toLowerCase();
+      const slug = (row.cells[1]?.textContent || '').toLowerCase();
+      const brand = (row.cells[2]?.textContent || '').toLowerCase();
+      const model = (row.cells[3]?.textContent || '').toLowerCase();
+      const imagesCount = (row.cells[9]?.textContent || '').trim(); // Columna "Imgs" (índice 9)
+      
+      let matchesSearch = !searchTerm || name.includes(searchTerm) || slug.includes(searchTerm) || brand.includes(searchTerm) || model.includes(searchTerm);
+      let matchesImageFilter = !filterNoImagesActive || imagesCount === '0';
+      
+      const matches = matchesSearch && matchesImageFilter;
+      row.style.display = matches ? '' : 'none';
+      if(matches) visibleCount++;
+    });
+    
+    // Actualizar contador en el título
+    const titleEl = document.querySelector('div > h2');
+    if(titleEl && titleEl.textContent.includes('Listado')){
+      const totalMatch = titleEl.textContent.match(/\((\d+)\)/);
+      const total = totalMatch ? parseInt(totalMatch[1]) : rows.length;
+      if(searchTerm || filterNoImagesActive){
+        titleEl.textContent = `Listado (${visibleCount}${visibleCount !== total ? ' de ' + total : ''})`;
+      } else {
+        titleEl.textContent = `Listado (${total})`;
       }
+    }
+    
+    // Actualizar estado del botón de filtro
+    if(filterNoImagesBtn){
+      if(filterNoImagesActive){
+        filterNoImagesBtn.style.background = 'var(--color-brand)';
+        filterNoImagesBtn.style.color = '#fff';
+        filterNoImagesBtn.style.borderColor = 'var(--color-brand)';
+      } else {
+        filterNoImagesBtn.style.background = 'var(--panel)';
+        filterNoImagesBtn.style.color = 'var(--color-text)';
+        filterNoImagesBtn.style.borderColor = 'var(--color-border)';
+      }
+    }
+  }
+  
+  if(searchInput && tbl){
+    searchInput.addEventListener('input', applyFilters);
+  }
+  
+  // Filtro por productos sin imágenes
+  if(filterNoImagesBtn && tbl){
+    filterNoImagesBtn.addEventListener('click', () => {
+      filterNoImagesActive = !filterNoImagesActive;
+      applyFilters();
     });
   }
   
