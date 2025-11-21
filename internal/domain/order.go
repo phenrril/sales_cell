@@ -29,6 +29,7 @@ type Order struct {
 	Address        string     `gorm:"size:255"`
 	PostalCode     string     `gorm:"size:20"`
 	Province       string     `gorm:"size:80"`
+	DeliveryNotes  string     `gorm:"type:text"`
 	MPPreferenceID string     `gorm:"size:140"`
 	MPStatus       string     `gorm:"size:60"`
 	CustomerID     *uuid.UUID `gorm:"type:uuid;index"`

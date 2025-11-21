@@ -166,6 +166,7 @@ function validateStep3() {
   
   if (method === 'cadete') {
     const cadeteAddress = document.getElementById('cadeteAddress');
+    const cadeteNotes = document.getElementById('cadeteNotes');
     if (!cadeteAddress.value.trim()) {
       showError(cadeteAddress, 'La dirección es obligatoria');
       isValid = false;
@@ -173,7 +174,8 @@ function validateStep3() {
       clearError(cadeteAddress);
       checkoutData.step3 = {
         shipping_method: 'cadete',
-        address: cadeteAddress.value.trim()
+        address: cadeteAddress.value.trim(),
+        delivery_notes: cadeteNotes ? cadeteNotes.value.trim() : ''
       };
       saveStepData(3, checkoutData.step3);
     }
@@ -431,11 +433,15 @@ function updateTotalSummary() {
   if (!totalEl) return;
   
   let baseTotal = 0;
-  if (totalEl.dataset.value) {
+  if (totalEl.dataset.baseValue) {
+    baseTotal = parseFloat(totalEl.dataset.baseValue) || 0;
+  } else if (totalEl.dataset.value) {
     baseTotal = parseFloat(totalEl.dataset.value) || 0;
+    totalEl.dataset.baseValue = baseTotal.toString();
   } else {
     const baseTotalText = totalEl.textContent.replace(/\$/g, '').replace(/\s/g, '').replace(/\./g, '').replace(/,/g, '.');
     baseTotal = parseFloat(baseTotalText) || 0;
+    totalEl.dataset.baseValue = baseTotal.toString();
   }
   
   let shippingCost = 0;
@@ -457,7 +463,6 @@ function updateTotalSummary() {
   
   if (totalEl) {
     totalEl.textContent = formatPrice(total);
-    totalEl.dataset.value = total.toString();
   }
   
   const stickyTotal = document.querySelector('.cart-sticky-price span');
@@ -534,6 +539,10 @@ function populateFormFields() {
         if (data.delivery_notes) document.getElementById('deliveryNotes').value = data.delivery_notes;
       } else if (data.shipping_method === 'cadete') {
         if (data.address) document.getElementById('cadeteAddress').value = data.address;
+        if (data.delivery_notes) {
+          const cadeteNotes = document.getElementById('cadeteNotes');
+          if (cadeteNotes) cadeteNotes.value = data.delivery_notes;
+        }
       }
     }
   }
