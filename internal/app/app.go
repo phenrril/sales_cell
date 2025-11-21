@@ -258,6 +258,7 @@ func (a *App) MigrateAndSeed() error {
 	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost DECIMAL(12,2) DEFAULT 0").Error
 	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal_net DECIMAL(12,2) DEFAULT 0").Error
 	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS vat_amount DECIMAL(12,2) DEFAULT 0").Error
+	_ = a.DB.Exec("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_notes TEXT").Error
 
 	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_orders_payment_method ON orders(payment_method)").Error
 	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id)").Error

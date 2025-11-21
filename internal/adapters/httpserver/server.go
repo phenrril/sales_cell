@@ -1704,7 +1704,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extraer datos del paso 3 (método de entrega)
-	var shippingMethod, province, postal, address string
+	var shippingMethod, province, postal, address, deliveryNotes string
 	if isJSON {
 		if step3Data != nil {
 			if v, ok := step3Data["shipping_method"].(string); ok {
@@ -1715,6 +1715,9 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			}
 			if v, ok := step3Data["postal_code"].(string); ok {
 				postal = v
+			}
+			if v, ok := step3Data["delivery_notes"].(string); ok {
+				deliveryNotes = v
 			}
 			if v, ok := step3Data["address"].(string); ok {
 				address = v
@@ -1740,6 +1743,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		shippingMethod = r.FormValue("shipping")
 		province = r.FormValue("province")
 		postal = r.FormValue("postal_code")
+		deliveryNotes = r.FormValue("delivery_notes")
 		addrEnvio := r.FormValue("address_envio")
 		addrCadete := r.FormValue("address_cadete")
 		switch shippingMethod {
@@ -1916,6 +1920,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		}
 		o.Address = address
 		o.Province = province
+		o.DeliveryNotes = deliveryNotes
 	} else if shippingMethod == "cadete" {
 		shippingCost = 5000
 		if address == "" {
@@ -1926,6 +1931,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 			province = "Santa Fe"
 		}
 		o.Province = province
+		o.DeliveryNotes = deliveryNotes
 	}
 	o.ShippingCost = shippingCost
 	subtotal := itemsTotal + shippingCost
@@ -2710,6 +2716,9 @@ func sendOrderEmail(o *domain.Order, success bool) error {
 	_, _ = fmt.Fprintf(&buf, "Nombre: %s\nEmail: %s\nTel: %s\nDNI: %s\n", o.Name, o.Email, o.Phone, o.DNI)
 	if o.ShippingMethod == "envio" || o.ShippingMethod == "cadete" {
 		_, _ = fmt.Fprintf(&buf, "Envío (%s) a: %s (%s) CP:%s\n", o.ShippingMethod, o.Address, o.Province, o.PostalCode)
+		if o.DeliveryNotes != "" {
+			_, _ = fmt.Fprintf(&buf, "Observaciones: %s\n", o.DeliveryNotes)
+		}
 	} else {
 		buf.WriteString("Retiro en local\n")
 	}
@@ -2753,6 +2762,9 @@ func sendOrderTelegram(o *domain.Order, success bool) error {
 	fmt.Fprintf(&b, "Nombre: %s\nEmail: %s\nTel: %s\nDNI: %s\n", o.Name, o.Email, o.Phone, o.DNI)
 	if o.ShippingMethod == "envio" || o.ShippingMethod == "cadete" {
 		fmt.Fprintf(&b, "Envío (%s) a: %s (%s %s) CP:%s\n", o.ShippingMethod, o.Address, o.Province, o.ShippingMethod, o.PostalCode)
+		if o.DeliveryNotes != "" {
+			fmt.Fprintf(&b, "Observaciones: %s\n", o.DeliveryNotes)
+		}
 	} else {
 		b.WriteString("Retiro en local\n")
 	}
