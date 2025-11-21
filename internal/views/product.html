@@ -157,28 +157,7 @@
     <div class="pd-accordion-panel" id="accordion-highlights" style="display:block">
   
   <div class="pd-tab-content pd-tab-content-desktop" id="tab-highlights">
-    <div class="pd-features-grid">
-      <div class="pd-feature-card">
-        <div class="pd-feature-icon">📱</div>
-        <div class="pd-feature-title">Pantalla</div>
-        <div class="pd-feature-desc">Pantalla de alta calidad para una experiencia visual superior</div>
-      </div>
-      <div class="pd-feature-card">
-        <div class="pd-feature-icon">📷</div>
-        <div class="pd-feature-title">Cámara</div>
-        <div class="pd-feature-desc">Sistema de cámaras avanzado para capturar tus mejores momentos</div>
-      </div>
-      <div class="pd-feature-card">
-        <div class="pd-feature-icon">⚡</div>
-        <div class="pd-feature-title">Rendimiento</div>
-        <div class="pd-feature-desc">Procesador potente para un rendimiento fluido y rápido</div>
-      </div>
-      <div class="pd-feature-card">
-        <div class="pd-feature-icon">🔋</div>
-        <div class="pd-feature-title">Batería</div>
-        <div class="pd-feature-desc">Batería de larga duración para todo el día</div>
-      </div>
-    </div>
+    <!-- Contenido vacío -->
   </div>
     </div><!-- Close accordion-highlights -->
   
@@ -191,68 +170,7 @@
     <div class="pd-accordion-panel" id="accordion-specs" style="display:none">
   
   <div class="pd-tab-content pd-tab-content-desktop" id="tab-specs" style="display:none">
-    {{if .Product.Specifications}}
-      <ul class="pd-specs-list" style="list-style:none;padding:0;margin:0">
-        {{$specs := .Product.Specifications}}
-        {{if $specs.Almacenamiento}}
-          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Almacenamiento:</strong>
-            <span style="color:var(--color-text)">{{$specs.Almacenamiento}}</span>
-          </li>
-        {{end}}
-        {{if $specs.Procesador}}
-          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Procesador:</strong>
-            <span style="color:var(--color-text)">{{$specs.Procesador}}</span>
-          </li>
-        {{end}}
-        {{if $specs.RAM}}
-          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">RAM:</strong>
-            <span style="color:var(--color-text)">{{$specs.RAM}}</span>
-          </li>
-        {{end}}
-        {{if index $specs "Batería"}}
-          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Batería:</strong>
-            <span style="color:var(--color-text)">{{index $specs "Batería"}}</span>
-          </li>
-        {{end}}
-        {{if $specs.Pantalla}}
-          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Pantalla:</strong>
-            <span style="color:var(--color-text)">{{$specs.Pantalla}}</span>
-          </li>
-        {{end}}
-        {{if index $specs "Sistema Operativo"}}
-          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Sistema Operativo:</strong>
-            <span style="color:var(--color-text)">{{index $specs "Sistema Operativo"}}</span>
-          </li>
-        {{end}}
-        {{if $specs.Sensores}}
-          <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-            <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Sensores:</strong>
-            <span style="color:var(--color-text)">{{$specs.Sensores}}</span>
-          </li>
-        {{end}}
-      </ul>
-    {{else}}
-      <ul class="pd-specs-list" style="list-style:none;padding:0;margin:0">
-        <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-          <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Marca/Categoría:</strong>
-          <span style="color:var(--color-text)">{{.Product.Category}}</span>
-        </li>
-        <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-          <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Garantía:</strong>
-          <span style="color:var(--color-text)">Oficial</span>
-        </li>
-        <li class="pd-spec-list-item" style="padding:12px 0;border-bottom:1px solid var(--color-border)">
-          <strong style="display:inline-block;min-width:180px;color:var(--color-muted)">Incluye:</strong>
-          <span style="color:var(--color-text)">Cargador, cable, manual de usuario</span>
-        </li>
-      </ul>
-    {{end}}
+    <!-- Contenido vacío -->
   </div>
     </div><!-- Close accordion-specs -->
   
@@ -265,10 +183,7 @@
     <div class="pd-accordion-panel" id="accordion-info" style="display:none">
   
   <div class="pd-tab-content pd-tab-content-desktop" id="tab-info" style="display:none">
-    <div class="pd-info-content" style="line-height:1.6;color:var(--color-text)">
-      <p>Envío en el día y factura. Envío a todo el país o retiro en local.</p>
-      <p style="margin-top:12px">Para más información, escribinos por <a href="https://wa.me/5493416620117?text=buen%20dia,%20te%20escribo%20para%20saber%20mas%20del%20celular.." target="_blank" rel="noopener" style="color:var(--color-brand);text-decoration:underline">WhatsApp</a>.</p>
-    </div>
+    <!-- Contenido vacío -->
   </div>
     </div><!-- Close accordion-info -->
   </div><!-- Close pd-accordion-mobile -->
