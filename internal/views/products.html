@@ -1,53 +1,139 @@
 {{define "products.html"}}
 {{template "layout_start" .}}
-<div style="margin-bottom:32px">
+<div style="margin-bottom:24px">
   <h1 style="font-size:36px;font-weight:800;margin:0 0 8px;color:var(--color-text);letter-spacing:-1px;line-height:1.2">Celulares y accesorios</h1>
   <p id="productsCounter" style="font-size:15px;color:var(--color-muted);margin:0;font-weight:500">
     Mostrando <span id="loadedCount">{{len .Products}}</span> de <span id="totalCount">{{.Total}}</span> productos
   </p>
 </div>
 
-<aside id="filterDrawer" class="drawer" hidden aria-hidden="true">
-  <form id="filtersForm" method="get" action="/products" class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
-    <header class="drawer-head">
-      <h2 id="drawerTitle">Filtrar</h2>
-      <button type="button" class="drawer-close" aria-label="Cerrar">×</button>
-    </header>
+<!-- Botones de Filtro y Ordenamiento -->
+<div class="mobile-actions">
+  <button type="button" class="btn-filter {{if or .Query .Category}}has-active{{end}}" aria-expanded="false" aria-label="Abrir filtros">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+      <line x1="4" y1="6" x2="20" y2="6"></line>
+      <line x1="4" y1="12" x2="20" y2="12"></line>
+      <line x1="4" y1="18" x2="20" y2="18"></line>
+      <circle cx="8" cy="6" r="2"></circle>
+      <circle cx="16" cy="12" r="2"></circle>
+      <circle cx="12" cy="18" r="2"></circle>
+    </svg>
+    <span>Filtrar</span>
+    {{if or .Query .Category}}
+    <span class="filter-badge">
+      {{if and .Query .Category}}2{{else}}1{{end}}
+    </span>
+    {{end}}
+  </button>
+  <button type="button" class="btn-sort {{if .Sort}}has-active{{end}}" aria-expanded="false" aria-label="Ordenar productos">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+      <path d="M3 6h18M3 12h12M3 18h6"></path>
+      <path d="M16 18l3-3 3 3"></path>
+      <path d="M19 15v6"></path>
+    </svg>
+    <span>Ordenar</span>
+    {{if .Sort}}
+    <span class="filter-badge">1</span>
+    {{end}}
+  </button>
+</div>
 
-    <div class="drawer-body">
-      <div class="field">
-        <label for="q">Buscar por nombre</label>
-        <input id="q" type="text" name="q" value="{{.Query}}" placeholder="Buscar..." />
-      </div>
-      <div class="field">
-        <label for="category">Categoría</label>
-        <select id="category" name="category">
-          <option value="">Todas las categorías</option>
-          {{range .Categories}}
-            <option value="{{.}}" {{if eq $.Category .}}selected{{end}}>{{.}}</option>
-          {{end}}
-        </select>
-      </div>
-      <input type="hidden" id="sortInput" name="sort" value="{{.Sort}}">
+<!-- Filtros activos (chips) -->
+{{if or .Query .Category .Sort}}
+<div class="active-chips">
+  {{if .Query}}
+  <span class="chip" data-clear="q">
+    🔍 Búsqueda: "{{.Query}}"
+    <button type="button" aria-label="Quitar filtro de búsqueda">×</button>
+  </span>
+  {{end}}
+  {{if .Category}}
+  <span class="chip" data-clear="category">
+    📱 {{.Category}}
+    <button type="button" aria-label="Quitar filtro de categoría">×</button>
+  </span>
+  {{end}}
+  {{if .Sort}}
+  <span class="chip" data-clear="sort">
+    {{if eq .Sort "newest"}}⭐ Novedades{{end}}
+    {{if eq .Sort "price_asc"}}💰 Menor precio{{end}}
+    {{if eq .Sort "price_desc"}}💰 Mayor precio{{end}}
+    {{if eq .Sort "name"}}🔤 A-Z{{end}}
+    <button type="button" aria-label="Quitar ordenamiento">×</button>
+  </span>
+  {{end}}
+</div>
+{{end}}
+
+<!-- Backdrop para los sheets -->
+<div id="filterSheetBackdrop" class="sheet-backdrop" hidden></div>
+<div id="sortSheetBackdrop" class="sheet-backdrop" hidden></div>
+
+<!-- Sheet de Filtros -->
+<div id="filterSheet" class="sheet" hidden aria-hidden="true">
+  <header class="sheet-head">
+    <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--color-text)">Filtrar productos</h2>
+    <button type="button" class="sheet-close" aria-label="Cerrar" style="background:var(--panel-alt);border:1px solid var(--color-border);color:var(--color-text);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center">×</button>
+  </header>
+  <form id="filtersForm" method="get" action="/products" style="display:flex;flex-direction:column;gap:16px;margin-top:16px">
+    <div class="field" style="display:flex;flex-direction:column;gap:8px">
+      <label for="q" style="font-size:14px;font-weight:600;color:var(--color-text)">Buscar por nombre</label>
+      <input id="q" type="text" name="q" value="{{.Query}}" placeholder="Ej: Samsung Galaxy..." style="width:100%;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--panel-alt);color:var(--color-text);font-size:14px" />
     </div>
-
-    <footer class="drawer-foot">
-      <button type="submit" class="btn-primary">Aplicar</button>
-      <a class="link-reset" href="/products">Limpiar</a>
-    </footer>
+    <div class="field" style="display:flex;flex-direction:column;gap:8px">
+      <label for="category" style="font-size:14px;font-weight:600;color:var(--color-text)">Categoría</label>
+      <select id="category" name="category" style="width:100%;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--panel-alt);color:var(--color-text);font-size:14px">
+        <option value="">Todas las categorías</option>
+        {{range .Categories}}
+          <option value="{{.}}" {{if eq $.Category .}}selected{{end}}>{{.}}</option>
+        {{end}}
+      </select>
+    </div>
+    <input type="hidden" id="sortInput" name="sort" value="{{.Sort}}">
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <button type="submit" class="btn-primary" style="flex:1;padding:14px;font-size:15px;font-weight:600">Aplicar filtros</button>
+      <a href="/products" class="btn-secondary" style="flex:1;padding:14px;font-size:15px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center">Limpiar</a>
+    </div>
   </form>
-</aside>
+</div>
 
+<!-- Sheet de Ordenamiento -->
 <div id="sortSheet" class="sheet" hidden aria-hidden="true">
   <header class="sheet-head">
-    <h2>Ordenar</h2>
-    <button type="button" class="sheet-close" aria-label="Cerrar">×</button>
+    <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--color-text)">Ordenar por</h2>
+    <button type="button" class="sheet-close" aria-label="Cerrar" style="background:var(--panel-alt);border:1px solid var(--color-border);color:var(--color-text);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center">×</button>
   </header>
   <ul class="sort-list">
-    <li><button type="button" data-sort="newest" aria-pressed="{{eq .Sort "newest"}}">Novedades</button></li>
-    <li><button type="button" data-sort="price_asc" aria-pressed="{{eq .Sort "price_asc"}}">Precio: menor a mayor</button></li>
-    <li><button type="button" data-sort="price_desc" aria-pressed="{{eq .Sort "price_desc"}}">Precio: mayor a menor</button></li>
-    <li><button type="button" data-sort="name" aria-pressed="{{eq .Sort "name"}}">Nombre A–Z</button></li>
+    <li><button type="button" data-sort="" aria-pressed="{{not .Sort}}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span>Relevancia</span>
+        {{if not .Sort}}<span style="color:var(--color-brand)">✓</span>{{end}}
+      </div>
+    </button></li>
+    <li><button type="button" data-sort="newest" aria-pressed="{{eq .Sort "newest"}}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span>Novedades</span>
+        {{if eq .Sort "newest"}}<span style="color:var(--color-brand)">✓</span>{{end}}
+      </div>
+    </button></li>
+    <li><button type="button" data-sort="price_asc" aria-pressed="{{eq .Sort "price_asc"}}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span>💰 Precio: menor a mayor</span>
+        {{if eq .Sort "price_asc"}}<span style="color:var(--color-brand)">✓</span>{{end}}
+      </div>
+    </button></li>
+    <li><button type="button" data-sort="price_desc" aria-pressed="{{eq .Sort "price_desc"}}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span>💰 Precio: mayor a menor</span>
+        {{if eq .Sort "price_desc"}}<span style="color:var(--color-brand)">✓</span>{{end}}
+      </div>
+    </button></li>
+    <li><button type="button" data-sort="name" aria-pressed="{{eq .Sort "name"}}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span>🔤 Nombre A–Z</span>
+        {{if eq .Sort "name"}}<span style="color:var(--color-brand)">✓</span>{{end}}
+      </div>
+    </button></li>
   </ul>
 </div>
 

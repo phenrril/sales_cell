@@ -56,48 +56,93 @@
 (function(){
   const filterBtn=document.querySelector('.btn-filter');
   const sortBtn=document.querySelector('.btn-sort');
-  const drawer=document.getElementById('filterDrawer');
-  const drawerClose=drawer?drawer.querySelector('.drawer-close'):null;
-  const panel=drawer?drawer.querySelector('.drawer-panel'):null;
-  const sheet=document.getElementById('sortSheet');
+  const filterSheet=document.getElementById('filterSheet');
+  const sortSheet=document.getElementById('sortSheet');
+  const filterBackdrop=document.getElementById('filterSheetBackdrop');
+  const sortBackdrop=document.getElementById('sortSheetBackdrop');
   const form=document.getElementById('filtersForm');
   const sortInput=document.getElementById('sortInput');
 
-  function openDrawer(){
-    if(!drawer) return;
-    drawer.hidden=false;
-    drawer.setAttribute('aria-hidden','false');
+  function openFilterSheet(){
+    if(!filterSheet) return;
+    filterSheet.hidden=false;
+    if(filterBackdrop) filterBackdrop.hidden=false;
     filterBtn&&filterBtn.setAttribute('aria-expanded','true');
-    document.body.classList.add('drawer-open');
-    const first=panel&&panel.querySelector('input, select, button');
-    if(first) first.focus();
+    document.body.style.overflow='hidden';
+    // Focus en el primer input
+    const firstInput=filterSheet.querySelector('input, select');
+    if(firstInput) setTimeout(()=>firstInput.focus(), 100);
   }
-  function closeDrawer(){
-    if(!drawer) return;
-    drawer.hidden=true;
-    drawer.setAttribute('aria-hidden','true');
+  
+  function closeFilterSheet(){
+    if(!filterSheet) return;
+    filterSheet.hidden=true;
+    if(filterBackdrop) filterBackdrop.hidden=true;
     filterBtn&&filterBtn.setAttribute('aria-expanded','false');
-    document.body.classList.remove('drawer-open');
+    document.body.style.overflow='';
   }
-  function openSheet(){ if(!sheet) return; sheet.hidden=false; sortBtn&&sortBtn.setAttribute('aria-expanded','true'); }
-  function closeSheet(){ if(!sheet) return; sheet.hidden=true;  sortBtn&&sortBtn.setAttribute('aria-expanded','false'); }
+  
+  function openSortSheet(){
+    if(!sortSheet) return;
+    sortSheet.hidden=false;
+    if(sortBackdrop) sortBackdrop.hidden=false;
+    sortBtn&&sortBtn.setAttribute('aria-expanded','true');
+    document.body.style.overflow='hidden';
+  }
+  
+  function closeSortSheet(){
+    if(!sortSheet) return;
+    sortSheet.hidden=true;
+    if(sortBackdrop) sortBackdrop.hidden=true;
+    sortBtn&&sortBtn.setAttribute('aria-expanded','false');
+    document.body.style.overflow='';
+  }
 
-  filterBtn&&filterBtn.addEventListener('click',openDrawer);
-  drawerClose&&drawerClose.addEventListener('click',closeDrawer);
-  sortBtn&&sortBtn.addEventListener('click',()=>{ if(sheet&&sheet.hidden){ openSheet(); } else { closeSheet(); } });
+  // Event listeners para botones
+  filterBtn&&filterBtn.addEventListener('click',()=>{ 
+    if(filterSheet&&filterSheet.hidden){ 
+      openFilterSheet(); 
+    } else { 
+      closeFilterSheet(); 
+    } 
+  });
+  
+  sortBtn&&sortBtn.addEventListener('click',()=>{ 
+    if(sortSheet&&sortSheet.hidden){ 
+      openSortSheet(); 
+    } else { 
+      closeSortSheet(); 
+    } 
+  });
+  
+  // Cerrar sheets con botón de cerrar
+  const filterSheetClose=filterSheet?filterSheet.querySelector('.sheet-close'):null;
+  filterSheetClose&&filterSheetClose.addEventListener('click',closeFilterSheet);
+  
+  const sortSheetClose=sortSheet?sortSheet.querySelector('.sheet-close'):null;
+  sortSheetClose&&sortSheetClose.addEventListener('click',closeSortSheet);
+  
+  // Cerrar sheets al hacer clic en los backdrops
+  filterBackdrop&&filterBackdrop.addEventListener('click',closeFilterSheet);
+  sortBackdrop&&sortBackdrop.addEventListener('click',closeSortSheet);
+  
+  // Cerrar con ESC
   window.addEventListener('keydown',(e)=>{
     if(e.key==='Escape'){
-      if(drawer&&!drawer.hidden) closeDrawer();
-      if(sheet&&!sheet.hidden) closeSheet();
+      if(filterSheet&&!filterSheet.hidden) closeFilterSheet();
+      if(sortSheet&&!sortSheet.hidden) closeSortSheet();
     }
   });
-  if(drawer){ drawer.addEventListener('click',(e)=>{ if(e.target===drawer) closeDrawer(); }); }
 
+  // Manejar clics en opciones de ordenamiento
   document.querySelectorAll('#sortSheet [data-sort]').forEach(btn=>{
     btn.addEventListener('click',()=>{
       if(!sortInput || !form) return;
-      sortInput.value=btn.getAttribute('data-sort')||'';
-      form.submit();
+      const sortValue=btn.getAttribute('data-sort')||'';
+      sortInput.value=sortValue;
+      closeSortSheet();
+      // Pequeño delay para que se vea la animación de cierre
+      setTimeout(()=>form.submit(), 150);
     });
   });
 

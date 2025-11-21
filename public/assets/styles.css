@@ -212,6 +212,9 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .filters-row{display:none!important}
 .result-count{color:var(--color-muted);margin:4px 0 8px;font-size:13px}
 .active-chips{margin:8px 0 12px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--color-accent);color:#fff;border-radius:20px;font-size:13px;transition:all .2s ease}
+.chip button{background:none;border:none;color:inherit;cursor:pointer;padding:0;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;opacity:.8;transition:opacity .2s}
+.chip button:hover{opacity:1;transform:scale(1.1)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .field input,.field select{background:var(--panel);color:var(--color-text);border:1px solid var(--color-border);padding:9px 10px;border-radius:10px;min-width:200px}
 .field input:focus,.field select:focus{outline:2px solid var(--color-brand);outline-offset:1px}
@@ -476,9 +479,11 @@ body.nav-open .nav-backdrop{opacity:1;pointer-events:auto}
 /* Mobile actions sticky - posicionados después de las marcas */
 .mobile-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0 16px;position:sticky;top:calc(var(--topbar-h, 72px) + 80px);z-index:calc(var(--z-topbar) + 1);background:transparent;backdrop-filter:none;padding:8px 0;border:0}
 .dark .mobile-actions{background:transparent;border:0}
-.mobile-actions .btn-filter,.mobile-actions .btn-sort{height:48px;border-radius:12px;font-weight:600;background:var(--panel);color:var(--color-text);border:1px solid var(--color-border);padding:10px 12px;cursor:pointer;box-shadow:none;transition:all .2s ease}
+.mobile-actions .btn-filter,.mobile-actions .btn-sort{height:48px;border-radius:12px;font-weight:600;background:var(--panel);color:var(--color-text);border:1px solid var(--color-border);padding:10px 12px;cursor:pointer;box-shadow:none;transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:6px;position:relative}
 .mobile-actions .btn-filter:hover,.mobile-actions .btn-sort:hover{background:var(--panel-alt);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .mobile-actions .btn-filter[aria-expanded=true],.mobile-actions .btn-sort[aria-expanded=true]{background:var(--panel-alt)}
+.mobile-actions .btn-filter.has-active,.mobile-actions .btn-sort.has-active{border-color:var(--color-brand);background:color-mix(in srgb, var(--color-brand) 8%, var(--panel))}
+.filter-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;background:var(--color-brand);color:#fff;border-radius:10px;font-size:11px;font-weight:700;line-height:1}
 @media (max-width: 380px){.mobile-actions{grid-template-columns:1fr}}
 
 /* Drawer overlay + panel full-height */
@@ -494,13 +499,29 @@ body.nav-open .nav-backdrop{opacity:1;pointer-events:auto}
 .drawer .field input,.drawer .field select{height:44px}
 
 /* Sheet bottom */
-.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top-left-radius:18px;border-top-right-radius:18px;border:1px solid var(--color-border);padding:12px;z-index:120}
+.sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(2px);z-index:119;animation:fadeIn .2s ease-out}
+.sheet-backdrop[hidden]{display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top-left-radius:18px;border-top-right-radius:18px;border:1px solid var(--color-border);padding:16px 16px max(16px, env(safe-area-inset-bottom));z-index:120;box-shadow:0 -8px 24px rgba(0,0,0,.2);animation:slideUp .25s ease-out;max-height:80vh;overflow-y:auto}
 .sheet[hidden]{display:none}
-.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.sort-list{display:grid;gap:8px;list-style:none;margin:8px 0 0;padding:0}
-.sort-list li{border-bottom:1px solid #223140}
-.sort-list button{width:100%;min-height:44px;border-radius:10px;text-align:left;padding:10px 12px;background:none;border:0;color:var(--text);font:inherit;cursor:pointer}
-.sort-list button:hover{background:#12263a}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--color-border)}
+.sheet .field{display:flex;flex-direction:column;gap:8px}
+.sheet .field label{font-size:14px;font-weight:600;color:var(--color-text)}
+.sheet .field input,.sheet .field select{width:100%;padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--panel-alt);color:var(--color-text);font-size:14px}
+.sheet .field input:focus,.sheet .field select:focus{outline:2px solid var(--color-brand);outline-offset:1px}
+.sort-list{display:grid;gap:4px;list-style:none;margin:0;padding:0}
+.sort-list li{border-bottom:1px solid var(--color-border)}
+.sort-list li:last-child{border-bottom:none}
+.sort-list button{width:100%;min-height:48px;border-radius:10px;text-align:left;padding:12px 14px;background:none;border:0;color:var(--color-text);font:inherit;cursor:pointer;transition:background .2s ease}
+.sort-list button:hover{background:var(--panel-alt)}
+.sort-list button[aria-pressed=true]{background:color-mix(in srgb, var(--color-brand) 10%, transparent);font-weight:600}
+
+/* Sheet centrado en desktop */
+@media (min-width:768px){
+  .sheet{left:50%;right:auto;transform:translateX(-50%);width:min(90vw,500px);border-radius:18px;animation:slideUpCenter .25s ease-out}
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes slideUpCenter{from{transform:translateX(-50%) translateY(100%)}to{transform:translateX(-50%) translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
 /* Cards responsive cols */
 @media (max-width:767.98px){
