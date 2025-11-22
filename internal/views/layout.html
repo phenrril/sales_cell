@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="/public/assets/img/cel.svg" />
 <link rel="apple-touch-icon" href="/public/assets/img/cel.svg" />
+<link rel="preload" href="/public/assets/styles.css?v=personal9" as="style" />
 <link rel="stylesheet" href="/public/assets/styles.css?v=personal9" />
 <link rel="preload" as="image" href="/public/assets/img/img1.webp">
 <link rel="manifest" href="/public/manifest.json">
@@ -26,6 +27,12 @@
 <meta name="twitter:description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país.{{end}}">
 <meta name="twitter:image" content="{{.OGImage}}">
 {{with .SchemaJSON}}<script type="application/ld+json">{{.}}</script>{{end}}
+<!-- Critical CSS to prevent FOUC -->
+<style>
+.brand-icon img,.brand-icon svg{max-width:70px;max-height:70px;width:70px;height:70px;display:block}
+.mobile-menu-brand-icon img,.mobile-menu-brand-icon svg{max-width:42px;max-height:42px;width:42px;height:42px}
+.brand-chip img,.brand-chip svg{max-width:32px;max-height:32px;width:32px;height:32px}
+</style>
 <!-- JS unificado de UI -->
 <script type="module" src="/public/assets/app.js?v=3"></script>
 <script>document.addEventListener('DOMContentLoaded',function(){document.body.classList.remove('dark');try{localStorage.removeItem('theme');}catch(e){}});</script>
@@ -50,13 +57,13 @@
       <div class="mobile-menu-section-title">Marcas</div>
       <a href="/products?q=Samsung&category=celulares" class="mobile-menu-brand">
         <div class="mobile-menu-brand-icon">
-          <img src="/public/assets/logos/samsung.svg" alt="Samsung" />
+          <img src="/public/assets/logos/samsung.svg" alt="Samsung" width="42" height="42" />
         </div>
         <span>Samsung</span>
       </a>
       <a href="/products?q=Apple&category=celulares" class="mobile-menu-brand">
         <div class="mobile-menu-brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="42" height="42">
             <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.38 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor"/>
           </svg>
         </div>
@@ -64,13 +71,13 @@
       </a>
       <a href="/products?q=Motorola&category=celulares" class="mobile-menu-brand">
         <div class="mobile-menu-brand-icon">
-          <img src="/public/assets/logos/motorola.png" alt="Motorola" />
+          <img src="/public/assets/logos/motorola.png" alt="Motorola" width="42" height="42" />
         </div>
         <span>Motorola</span>
       </a>
       <a href="/products?q=Xiaomi&category=celulares" class="mobile-menu-brand">
         <div class="mobile-menu-brand-icon">
-          <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" />
+          <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" width="42" height="42" />
         </div>
         <span>Xiaomi</span>
       </a>
@@ -215,7 +222,7 @@
       <div class="brands-grid brands-grid-desktop">
         <a href="/products?q=Samsung&category=celulares" class="brand-circle" title="Samsung">
           <div class="brand-icon">
-            <img src="/public/assets/logos/samsung.svg" alt="Samsung" />
+            <img src="/public/assets/logos/samsung.svg" alt="Samsung" width="70" height="70" />
           </div>
           <span class="brand-name">Samsung</span>
         </a>
@@ -229,13 +236,13 @@
         </a>
         <a href="/products?q=Motorola&category=celulares" class="brand-circle" title="Motorola">
           <div class="brand-icon">
-            <img src="/public/assets/logos/motorola.png" alt="Motorola" />
+            <img src="/public/assets/logos/motorola.png" alt="Motorola" width="70" height="70" />
           </div>
           <span class="brand-name">Motorola</span>
         </a>
         <a href="/products?q=Xiaomi&category=celulares" class="brand-circle" title="Xiaomi">
           <div class="brand-icon">
-            <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" />
+            <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" width="70" height="70" />
           </div>
           <span class="brand-name">Xiaomi</span>
         </a>
@@ -289,19 +296,19 @@
       <div class="brands-carousel-mobile">
         <div class="brands-carousel-track">
           <a href="/products?q=Samsung&category=celulares" class="brand-chip">
-            <img src="/public/assets/logos/samsung.svg" alt="Samsung" />
+            <img src="/public/assets/logos/samsung.svg" alt="Samsung" width="32" height="32" />
             <span>Samsung</span>
           </a>
           <a href="/products?q=Apple&category=celulares" class="brand-chip">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.38 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" width="32" height="32"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.38 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor"/></svg>
             <span>Apple</span>
           </a>
           <a href="/products?q=Motorola&category=celulares" class="brand-chip">
-            <img src="/public/assets/logos/motorola.png" alt="Motorola" />
+            <img src="/public/assets/logos/motorola.png" alt="Motorola" width="32" height="32" />
             <span>Motorola</span>
           </a>
           <a href="/products?q=Xiaomi&category=celulares" class="brand-chip">
-            <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" />
+            <img src="/public/assets/logos/xiaomi-new-2021-seeklogo-4.svg" alt="Xiaomi" width="32" height="32" />
             <span>Xiaomi</span>
           </a>
           <a href="/products?category=celulares" class="brand-chip">
@@ -719,7 +726,7 @@
   width: 100%;
   height: 100vh;
   background: #FFFFFF;
-  z-index: 10001;
+  z-index: 10003;
   transform: translateY(-100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
