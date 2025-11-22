@@ -823,3 +823,17 @@ body.drawer-open .fab-whatsapp{display:none}
 .color-chip.selected{outline:2px solid var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.25)}
 /* ensure readable text on dark backgrounds */
 .dark .color-chip{color:#e5e7eb!important}
+
+/* Botón "Ver todos" mejorado para mobile */
+.section-header-wrapper{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.btn-view-all-desktop{color:var(--color-brand);text-decoration:none;font-weight:600;font-size:14px;white-space:nowrap;padding:8px 0;transition:color .2s ease}
+.btn-view-all-desktop:hover{color:var(--color-brand-hover);text-decoration:underline}
+.btn-view-all-mobile{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:16px 24px;background:linear-gradient(135deg,#0076C7,#005A9E);color:#fff;text-decoration:none;border-radius:14px;font-weight:700;font-size:16px;box-shadow:0 6px 20px rgba(0,118,199,.4),0 2px 8px rgba(0,0,0,.15);transition:all .3s cubic-bezier(.4,0,.2,1);width:100%;text-align:center;min-height:56px;margin-bottom:16px;position:relative;overflow:hidden;border:2px solid rgba(255,255,255,.2)}
+.btn-view-all-mobile::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(255,255,255,.3) 50%,transparent);transform:translateX(-100%);animation:shimmer 2.5s infinite}
+.btn-view-all-mobile:hover{background:linear-gradient(135deg,#005A9E,#004580);box-shadow:0 8px 28px rgba(0,118,199,.5),0 4px 12px rgba(0,0,0,.2);transform:translateY(-3px) scale(1.02)}
+.btn-view-all-mobile:active{transform:translateY(-1px) scale(.99)}
+.btn-view-all-mobile svg{flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));animation:arrowMove 1.5s ease-in-out infinite}
+@keyframes arrowMove{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+@media (min-width:768px){.btn-view-all-mobile{display:none}}
+@media (max-width:767px){.btn-view-all-desktop{display:none}.section-header-wrapper{margin-bottom:12px}}

@@ -21,10 +21,16 @@
   
 </section>
 <section style="margin-top:24px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-    <h2 style="font-size:32px;font-weight:800;margin:0;color:var(--color-text);letter-spacing:-.8px">Ofertas imperdibles</h2>
-    <a href="/products" style="color:var(--color-brand);text-decoration:none;font-weight:600;font-size:14px">Ver todos →</a>
+  <div class="section-header-wrapper">
+    <h2 style="font-size:28px;font-weight:800;margin:0;color:var(--color-text);letter-spacing:-.8px">Ofertas imperdibles</h2>
+    <a href="/products" class="btn-view-all-desktop">Ver todos →</a>
   </div>
+  <a href="/products" class="btn-view-all-mobile">
+    <span>Ver todas las ofertas</span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </a>
   <div class="cards cards--home">
     {{range .Products}}
     <div class="card">
