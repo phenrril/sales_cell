@@ -55,3 +55,10 @@ type Image struct {
 	Alt       string    `gorm:"size:140"`
 	CreatedAt time.Time
 }
+
+type FeaturedProduct struct {
+	ID           uuid.UUID `gorm:"type:uuid;primaryKey"`
+	ProductID    uuid.UUID `gorm:"type:uuid;not null;uniqueIndex"`
+	DisplayOrder int       `gorm:"not null;uniqueIndex"`
+	CreatedAt    time.Time
+}

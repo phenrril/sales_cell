@@ -1,7 +1,7 @@
 {{define "admin_uncharged.html"}}
 {{template "layout_start" .}}
 <h1>Productos sin precio / no cargados</h1>
-<nav class="admin-nav"><a href="/admin/products">Productos</a> | <a href="/admin/orders">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/uncharged" class="active">Sin precio</a> | <a href="/admin/logout">Salir</a></nav>
+<nav class="admin-nav"><a href="/admin/products">Productos</a> | <a href="/admin/featured">Destacados</a> | <a href="/admin/orders">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/uncharged" class="active">Sin precio</a> | <a href="/admin/logout">Salir</a></nav>
 
 <section class="admin-card" style="margin-top:1rem;padding:18px 20px 24px">
   <p style="margin:0 0 10px;color:var(--muted)">Última importación: {{if .Report.Timestamp}}{{.Report.Timestamp}}{{else}}-{{end}}</p>

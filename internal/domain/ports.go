@@ -68,6 +68,14 @@ type PageRepo interface {
 	Save(ctx context.Context, p *Page) error
 }
 
+type FeaturedProductRepo interface {
+	List(ctx context.Context) ([]FeaturedProduct, error)
+	Save(ctx context.Context, productID uuid.UUID, order int) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	Clear(ctx context.Context) error
+	GetWithProducts(ctx context.Context) ([]Product, error)
+}
+
 type QuoteService interface {
 	EstimateFromModel(ctx context.Context, modelID uuid.UUID, cfg QuoteConfig) (*Quote, error)
 }

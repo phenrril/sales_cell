@@ -36,18 +36,19 @@ import (
 )
 
 type Server struct {
-	mux          *http.ServeMux
-	tmpl         *template.Template
-	products     *usecase.ProductUC
-	quotes       *usecase.QuoteUC
-	orders       *usecase.OrderUC
-	payments     *usecase.PaymentUC
-	models       domain.UploadedModelRepo
-	storage      domain.FileStorage
-	customers    domain.CustomerRepo
-	oauthCfg     *oauth2.Config
-	scraper      *scraper.SpecsScraper
-	imageScraper *scraper.ImageScraper
+	mux              *http.ServeMux
+	tmpl             *template.Template
+	products         *usecase.ProductUC
+	quotes           *usecase.QuoteUC
+	orders           *usecase.OrderUC
+	payments         *usecase.PaymentUC
+	models           domain.UploadedModelRepo
+	storage          domain.FileStorage
+	customers        domain.CustomerRepo
+	featuredProducts domain.FeaturedProductRepo
+	oauthCfg         *oauth2.Config
+	scraper          *scraper.SpecsScraper
+	imageScraper     *scraper.ImageScraper
 
 	adminAllowed map[string]struct{}
 	adminSecret  []byte
@@ -58,8 +59,8 @@ type Server struct {
 
 var emailRe = regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`)
 
-func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, oauthCfg *oauth2.Config) http.Handler {
-	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), mux: http.NewServeMux()}
+func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, featuredProducts domain.FeaturedProductRepo, oauthCfg *oauth2.Config) http.Handler {
+	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), mux: http.NewServeMux()}
 
 	allowed := map[string]struct{}{}
 	if raw := os.Getenv("ADMIN_ALLOWED_EMAILS"); raw != "" {
@@ -154,8 +155,13 @@ func (s *Server) routes() {
 
 	s.mux.HandleFunc("/admin/orders", s.handleAdminOrders)
 	s.mux.HandleFunc("/admin/products", s.handleAdminProducts)
+	s.mux.HandleFunc("/admin/featured", s.handleAdminFeatured)
 
 	s.mux.HandleFunc("/admin/sales", s.handleAdminSales)
+
+	// API endpoints para productos destacados
+	s.mux.HandleFunc("/api/featured", s.apiFeatured)
+	s.mux.HandleFunc("/api/featured/", s.apiFeaturedByID)
 }
 
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
@@ -163,11 +169,18 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	list, _, err := s.products.List(r.Context(), domain.ProductFilter{Page: 1, PageSize: 8})
-	if err != nil {
-		http.Error(w, "err", 500)
-		return
+	
+	// Intentar cargar productos destacados primero
+	list, err := s.featuredProducts.GetWithProducts(r.Context())
+	if err != nil || len(list) == 0 {
+		// Fallback: usar los primeros 8 productos activos
+		list, _, err = s.products.List(r.Context(), domain.ProductFilter{Page: 1, PageSize: 8})
+		if err != nil {
+			http.Error(w, "err", 500)
+			return
+		}
 	}
+	
 	base := s.canonicalBase(r)
 	data := map[string]any{"Products": list, "CanonicalURL": base + "/", "OGImage": base + "/public/assets/img/newmobile.png"}
 	if u := readUserSession(w, r); u != nil {
@@ -4124,4 +4137,111 @@ func (s *Server) importFromNormalizedData(r *http.Request, normalized map[string
 	s.lastImport = rep
 
 	return createdP, updatedP, createdV, updatedV, unmatched
+}
+
+// handleAdminFeatured renderiza la página de gestión de productos destacados
+func (s *Server) handleAdminFeatured(w http.ResponseWriter, r *http.Request) {
+	if !s.isAdminSession(r) {
+		http.Redirect(w, r, "/admin/auth", 302)
+		return
+	}
+
+	// Obtener productos destacados actuales
+	featured, _ := s.featuredProducts.List(r.Context())
+
+	// Obtener todos los productos para el selector
+	allProducts, total, _ := s.products.List(r.Context(), domain.ProductFilter{Page: 1, PageSize: 10000})
+
+	tok := s.readAdminToken(r)
+	data := map[string]any{
+		"Featured":    featured,
+		"Products":    allProducts,
+		"Total":       total,
+		"AdminToken":  tok,
+	}
+	s.render(w, "admin_featured.html", data)
+}
+
+// apiFeatured maneja GET (listar) y POST (guardar)
+func (s *Server) apiFeatured(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		// Listar productos destacados con información completa
+		products, err := s.featuredProducts.GetWithProducts(r.Context())
+		if err != nil {
+			writeJSON(w, 500, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"products": products})
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		if !s.requireAdmin(w, r) {
+			return
+		}
+
+		var payload struct {
+			ProductIDs []string `json:"product_ids"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			writeJSON(w, 400, map[string]any{"error": "invalid payload"})
+			return
+		}
+
+		// Validar que no sean más de 8
+		if len(payload.ProductIDs) > 8 {
+			writeJSON(w, 400, map[string]any{"error": "máximo 8 productos destacados"})
+			return
+		}
+
+		// Limpiar productos destacados existentes
+		if err := s.featuredProducts.Clear(r.Context()); err != nil {
+			writeJSON(w, 500, map[string]any{"error": "error limpiando productos destacados"})
+			return
+		}
+
+		// Guardar nuevos productos destacados con su orden
+		for i, idStr := range payload.ProductIDs {
+			productID, err := uuid.Parse(idStr)
+			if err != nil {
+				continue
+			}
+			if err := s.featuredProducts.Save(r.Context(), productID, i+1); err != nil {
+				writeJSON(w, 500, map[string]any{"error": "error guardando producto destacado"})
+				return
+			}
+		}
+
+		writeJSON(w, 200, map[string]any{"status": "ok", "count": len(payload.ProductIDs)})
+		return
+	}
+
+	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+}
+
+// apiFeaturedByID maneja DELETE para eliminar un producto destacado
+func (s *Server) apiFeaturedByID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if !s.requireAdmin(w, r) {
+		return
+	}
+
+	// Extraer ID del path /api/featured/{id}
+	path := strings.TrimPrefix(r.URL.Path, "/api/featured/")
+	id, err := uuid.Parse(path)
+	if err != nil {
+		writeJSON(w, 400, map[string]any{"error": "invalid id"})
+		return
+	}
+
+	if err := s.featuredProducts.Delete(r.Context(), id); err != nil {
+		writeJSON(w, 500, map[string]any{"error": "error eliminando producto destacado"})
+		return
+	}
+
+	writeJSON(w, 200, map[string]any{"status": "ok"})
 }
