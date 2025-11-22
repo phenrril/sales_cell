@@ -1,7 +1,7 @@
 {{define "admin_orders.html"}}
 {{template "layout_start" .}}
 <h1>Órdenes</h1>
-<nav class="admin-nav"><a href="/admin/products">Productos</a> | <a href="/admin/orders" class="active">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/logout">Salir</a></nav>
+<nav class="admin-nav"><a href="/admin/products">Productos</a> | <a href="/admin/featured">Destacados</a> | <a href="/admin/orders" class="active">Órdenes</a> | <a href="/admin/sales">Ventas</a> | <a href="/admin/logout">Salir</a></nav>
 <form method="GET" class="filter-bar" style="margin:12px 0 4px;display:flex;align-items:center;gap:16px">
   <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">
     <input type="checkbox" name="approved" value="1" {{if .FilterApproved}}checked{{end}} /> Solo aprobadas MP

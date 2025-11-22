@@ -1,0 +1,429 @@
+{{define "admin_featured.html"}}
+{{template "layout_start" .}}
+<h1>Productos Destacados</h1>
+<nav class="admin-nav">
+  <a href="/admin/products">Productos</a> | 
+  <a href="/admin/featured" class="active">Destacados</a> | 
+  <a href="/admin/orders">Órdenes</a> | 
+  <a href="/admin/sales">Ventas</a> | 
+  <a href="/admin/uncharged">Sin precio</a> | 
+  <a href="/admin/logout">Salir</a>
+</nav>
+
+<section class="grid" style="margin-top:1rem;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:2rem;align-items:start">
+  <!-- Panel izquierdo: Productos destacados actuales -->
+  <div class="admin-card" style="padding:18px 20px 24px">
+    <div class="row between center" style="margin-bottom:16px">
+      <h2 style="margin:0;font-size:18px">Productos Destacados <span id="featuredCount">(0/8)</span></h2>
+      <button class="btn-primary" id="btnSave" style="display:none">Guardar cambios</button>
+    </div>
+    
+    <div id="featuredList" style="min-height:200px">
+      <p style="color:var(--muted);text-align:center;padding:40px 20px">
+        No hay productos destacados.<br>
+        <small>Agregá productos desde el panel de la derecha.</small>
+      </p>
+    </div>
+  </div>
+
+  <!-- Panel derecho: Búsqueda de productos -->
+  <div class="admin-card" style="padding:18px 20px 24px">
+    <h2 style="margin:0 0 16px;font-size:18px">Buscar Productos</h2>
+    
+    <input 
+      type="text" 
+      id="searchInput" 
+      placeholder="Buscar por nombre, marca o modelo..." 
+      style="width:100%;padding:10px 14px;margin-bottom:16px;border:1px solid var(--color-border);border-radius:8px;font-size:14px"
+    />
+    
+    <div id="productsList" style="max-height:600px;overflow-y:auto">
+      <!-- Los productos se cargarán aquí via JS -->
+    </div>
+  </div>
+</section>
+
+<style>
+.admin-nav a.active {
+  color: var(--color-brand);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.featured-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: var(--panel);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  cursor: move;
+  transition: all 0.2s;
+}
+
+.featured-item:hover {
+  border-color: var(--color-brand);
+  box-shadow: 0 2px 8px rgba(0,118,199,0.2);
+}
+
+.featured-item.dragging {
+  opacity: 0.5;
+}
+
+.featured-item.drag-over {
+  border-color: var(--color-brand);
+  border-style: dashed;
+  background: color-mix(in srgb, var(--color-brand) 5%, var(--panel));
+}
+
+.drag-handle {
+  font-size: 20px;
+  cursor: grab;
+  color: var(--muted);
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.product-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: var(--panel);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.product-item:hover {
+  background: var(--panel-alt);
+  border-color: var(--color-brand);
+}
+
+.product-item.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.product-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-name {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.product-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.btn-add {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: var(--color-brand);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add:hover {
+  background: color-mix(in srgb, var(--color-brand) 80%, black);
+  transform: scale(1.05);
+}
+
+.btn-remove {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-remove:hover {
+  background: color-mix(in srgb, var(--color-danger) 80%, black);
+}
+
+#searchInput:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(0,118,199,0.1);
+}
+</style>
+
+<script>
+(function() {
+  const token = '{{.AdminToken}}';
+  const featuredList = document.getElementById('featuredList');
+  const productsList = document.getElementById('productsList');
+  const searchInput = document.getElementById('searchInput');
+  const btnSave = document.getElementById('btnSave');
+  const featuredCount = document.getElementById('featuredCount');
+  
+  let allProducts = [];
+  let featuredProducts = [];
+  let hasChanges = false;
+
+  // Cargar datos iniciales
+  async function loadData() {
+    try {
+      // Cargar productos destacados
+      const featuredRes = await fetch('/api/featured');
+      if (featuredRes.ok) {
+        const data = await featuredRes.json();
+        featuredProducts = data.products || [];
+      }
+
+      // Cargar todos los productos
+      allProducts = {{.Products | json}};
+      
+      renderFeatured();
+      renderProducts();
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+      alert('Error cargando datos: ' + err.message);
+    }
+  }
+
+  // Renderizar lista de productos destacados
+  function renderFeatured() {
+    if (featuredProducts.length === 0) {
+      featuredList.innerHTML = `
+        <p style="color:var(--muted);text-align:center;padding:40px 20px">
+          No hay productos destacados.<br>
+          <small>Agregá productos desde el panel de la derecha.</small>
+        </p>
+      `;
+      featuredCount.textContent = '(0/8)';
+      btnSave.style.display = 'none';
+      return;
+    }
+
+    featuredCount.textContent = `(${featuredProducts.length}/8)`;
+    btnSave.style.display = hasChanges ? 'inline-block' : 'none';
+
+    let html = '';
+    featuredProducts.forEach((product, index) => {
+      const imageUrl = product.Images && product.Images.length > 0 
+        ? (product.Images[0].URL.startsWith('http') ? product.Images[0].URL : '/' + product.Images[0].URL.replace(/^\/+/, ''))
+        : '/public/assets/img/no imagen.jpg';
+      
+      html += `
+        <div class="featured-item" draggable="true" data-id="${product.ID}" data-index="${index}">
+          <span class="drag-handle">⋮⋮</span>
+          <div style="width:50px;height:50px;border-radius:6px;overflow:hidden;flex-shrink:0">
+            <img src="${imageUrl}" alt="${product.Name}" style="width:100%;height:100%;object-fit:cover">
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              ${product.Name}
+            </div>
+            <div style="font-size:12px;color:var(--muted)">
+              ${product.Brand || ''} ${product.Model || ''} · $${product.BasePrice.toFixed(2)}
+            </div>
+          </div>
+          <button class="btn-remove" onclick="removeFeatured('${product.ID}')">Quitar</button>
+        </div>
+      `;
+    });
+
+    featuredList.innerHTML = html;
+    
+    // Agregar eventos de drag and drop
+    addDragAndDropEvents();
+  }
+
+  // Renderizar lista de productos disponibles
+  function renderProducts(filter = '') {
+    const filterLower = filter.toLowerCase().trim();
+    const featuredIDs = new Set(featuredProducts.map(p => p.ID));
+    
+    const filtered = allProducts.filter(p => {
+      if (!filter) return true;
+      return (
+        (p.Name || '').toLowerCase().includes(filterLower) ||
+        (p.Brand || '').toLowerCase().includes(filterLower) ||
+        (p.Model || '').toLowerCase().includes(filterLower) ||
+        (p.Category || '').toLowerCase().includes(filterLower)
+      );
+    });
+
+    if (filtered.length === 0) {
+      productsList.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">No se encontraron productos</p>';
+      return;
+    }
+
+    let html = '';
+    filtered.forEach(product => {
+      const isDisabled = featuredIDs.has(product.ID);
+      const disabledClass = isDisabled ? 'disabled' : '';
+      const btnText = isDisabled ? 'Ya agregado' : 'Agregar';
+      
+      html += `
+        <div class="product-item ${disabledClass}">
+          <div class="product-info">
+            <div class="product-name">${product.Name}</div>
+            <div class="product-meta">
+              ${product.Brand || ''} ${product.Model || ''} · $${product.BasePrice.toFixed(2)}
+            </div>
+          </div>
+          ${!isDisabled ? `<button class="btn-add" onclick="addFeatured('${product.ID}')">+ ${btnText}</button>` : '<span style="color:var(--muted);font-size:12px">✓ Agregado</span>'}
+        </div>
+      `;
+    });
+
+    productsList.innerHTML = html;
+  }
+
+  // Agregar producto a destacados
+  window.addFeatured = function(productID) {
+    if (featuredProducts.length >= 8) {
+      alert('⚠️ Solo podés tener hasta 8 productos destacados');
+      return;
+    }
+
+    const product = allProducts.find(p => p.ID === productID);
+    if (!product) return;
+
+    featuredProducts.push(product);
+    hasChanges = true;
+    renderFeatured();
+    renderProducts(searchInput.value);
+  };
+
+  // Quitar producto de destacados
+  window.removeFeatured = function(productID) {
+    featuredProducts = featuredProducts.filter(p => p.ID !== productID);
+    hasChanges = true;
+    renderFeatured();
+    renderProducts(searchInput.value);
+  };
+
+  // Drag and Drop
+  function addDragAndDropEvents() {
+    const items = featuredList.querySelectorAll('.featured-item');
+    
+    items.forEach(item => {
+      item.addEventListener('dragstart', handleDragStart);
+      item.addEventListener('dragend', handleDragEnd);
+      item.addEventListener('dragover', handleDragOver);
+      item.addEventListener('drop', handleDrop);
+      item.addEventListener('dragleave', handleDragLeave);
+    });
+  }
+
+  let draggedElement = null;
+  let draggedIndex = null;
+
+  function handleDragStart(e) {
+    draggedElement = this;
+    draggedIndex = parseInt(this.dataset.index);
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+  }
+
+  function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    featuredList.querySelectorAll('.featured-item').forEach(item => {
+      item.classList.remove('drag-over');
+    });
+  }
+
+  function handleDragOver(e) {
+    if (e.preventDefault) {
+      e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+  }
+
+  function handleDrop(e) {
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+    e.preventDefault();
+
+    const dropIndex = parseInt(this.dataset.index);
+    
+    if (draggedElement !== this && draggedIndex !== dropIndex) {
+      // Reordenar array
+      const item = featuredProducts[draggedIndex];
+      featuredProducts.splice(draggedIndex, 1);
+      featuredProducts.splice(dropIndex, 0, item);
+      
+      hasChanges = true;
+      renderFeatured();
+    }
+
+    this.classList.remove('drag-over');
+    return false;
+  }
+
+  function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+  }
+
+  // Búsqueda
+  searchInput.addEventListener('input', (e) => {
+    renderProducts(e.target.value);
+  });
+
+  // Guardar cambios
+  btnSave.addEventListener('click', async () => {
+    const productIDs = featuredProducts.map(p => p.ID);
+    
+    try {
+      btnSave.disabled = true;
+      btnSave.textContent = 'Guardando...';
+      
+      const res = await fetch('/api/featured', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ product_ids: productIDs })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error guardando');
+      }
+
+      alert('✅ Productos destacados guardados exitosamente');
+      hasChanges = false;
+      renderFeatured();
+    } catch (err) {
+      alert('❌ Error: ' + err.message);
+    } finally {
+      btnSave.disabled = false;
+      btnSave.textContent = 'Guardar cambios';
+    }
+  });
+
+  // Inicializar
+  loadData();
+})();
+</script>
+
+{{template "layout_end" .}}
+{{end}}
+

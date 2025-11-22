@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -22,18 +23,19 @@ import (
 )
 
 type App struct {
-	DB             *gorm.DB
-	Tmpl           *template.Template
-	ProductUC      *usecase.ProductUC
-	QuoteUC        *usecase.QuoteUC
-	OrderUC        *usecase.OrderUC
-	PaymentUC      *usecase.PaymentUC
-	ModelRepo      domain.UploadedModelRepo
-	ShippingMethod string  `gorm:"size:30"`
-	ShippingCost   float64 `gorm:"type:decimal(12,2)"`
-	Storage        domain.FileStorage
-	Customers      domain.CustomerRepo
-	OAuthConfig    *oauth2.Config
+	DB               *gorm.DB
+	Tmpl             *template.Template
+	ProductUC        *usecase.ProductUC
+	QuoteUC          *usecase.QuoteUC
+	OrderUC          *usecase.OrderUC
+	PaymentUC        *usecase.PaymentUC
+	ModelRepo        domain.UploadedModelRepo
+	ShippingMethod   string  `gorm:"size:30"`
+	ShippingCost     float64 `gorm:"type:decimal(12,2)"`
+	Storage          domain.FileStorage
+	Customers        domain.CustomerRepo
+	FeaturedProducts domain.FeaturedProductRepo
+	OAuthConfig      *oauth2.Config
 }
 
 func NewApp(db *gorm.DB) (*App, error) {
@@ -42,6 +44,7 @@ func NewApp(db *gorm.DB) (*App, error) {
 	orderRepo := postgres.NewOrderRepo(db)
 	modelRepo := postgres.NewUploadedModelRepo(db)
 	custRepo := postgres.NewCustomerRepo(db)
+	featuredRepo := postgres.NewFeaturedProductRepo(db)
 	storageDir := os.Getenv("STORAGE_DIR")
 	if storageDir == "" {
 		storageDir = "uploads"
@@ -94,6 +97,7 @@ func NewApp(db *gorm.DB) (*App, error) {
 	app.ModelRepo = modelRepo
 	app.Storage = storage
 	app.Customers = custRepo
+	app.FeaturedProducts = featuredRepo
 	app.OAuthConfig = oauthCfg
 
 	funcMap := template.FuncMap{
@@ -101,6 +105,10 @@ func NewApp(db *gorm.DB) (*App, error) {
 		"sub": func(a, b int) int { return a - b },
 		"div": func(a, b float64) float64 { return a / b },
 		"mul": func(a, b float64) float64 { return a * b },
+		"json": func(v interface{}) template.JS {
+			b, _ := json.Marshal(v)
+			return template.JS(b)
+		},
 		"ars": func(v float64) string {
 			s := fmt.Sprintf("%.0f", v)
 			n := len(s)
@@ -241,12 +249,12 @@ func NewApp(db *gorm.DB) (*App, error) {
 }
 
 func (a *App) HTTPHandler() http.Handler {
-	return httpserver.New(a.Tmpl, a.ProductUC, a.QuoteUC, a.OrderUC, a.PaymentUC, a.ModelRepo, a.Storage, a.Customers, a.OAuthConfig)
+	return httpserver.New(a.Tmpl, a.ProductUC, a.QuoteUC, a.OrderUC, a.PaymentUC, a.ModelRepo, a.Storage, a.Customers, a.FeaturedProducts, a.OAuthConfig)
 }
 
 func (a *App) MigrateAndSeed() error {
 	if err := a.DB.AutoMigrate(
-		&domain.Product{}, &domain.Variant{}, &domain.Image{}, &domain.Order{}, &domain.OrderItem{}, &domain.UploadedModel{}, &domain.Quote{}, &domain.Page{}, &domain.Customer{},
+		&domain.Product{}, &domain.Variant{}, &domain.Image{}, &domain.Order{}, &domain.OrderItem{}, &domain.UploadedModel{}, &domain.Quote{}, &domain.Page{}, &domain.Customer{}, &domain.FeaturedProduct{},
 	); err != nil {
 		return err
 	}
@@ -289,6 +297,10 @@ func (a *App) MigrateAndSeed() error {
 	_ = a.DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_variants_ean_unique ON variants (ean) WHERE ean IS NOT NULL AND ean <> ''").Error
 	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_variants_product_id ON variants (product_id)").Error
 	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_variants_attributes_gin ON variants USING gin (attributes)").Error
+
+	// Migración de productos destacados
+	_ = a.DB.Exec("CREATE INDEX IF NOT EXISTS idx_featured_products_order ON featured_products(display_order)").Error
+	_ = a.DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_featured_products_product_id ON featured_products(product_id)").Error
 
 	return nil
 }
