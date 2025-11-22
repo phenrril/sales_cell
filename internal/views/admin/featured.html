@@ -30,12 +30,23 @@
   <div class="admin-card" style="padding:18px 20px 24px">
     <h2 style="margin:0 0 16px;font-size:18px">Buscar Productos</h2>
     
-    <input 
-      type="text" 
-      id="searchInput" 
-      placeholder="Buscar por nombre, marca o modelo..." 
-      style="width:100%;padding:10px 14px;margin-bottom:16px;border:1px solid var(--color-border);border-radius:8px;font-size:14px"
-    />
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <input 
+        type="text" 
+        id="searchInput" 
+        placeholder="Buscar por nombre, marca o modelo..." 
+        style="flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--color-border);border-radius:8px;font-size:14px"
+      />
+      
+      <select 
+        id="sortPrice" 
+        style="padding:10px 14px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:white;cursor:pointer;min-width:150px"
+      >
+        <option value="">Sin ordenar</option>
+        <option value="asc">Precio: Menor a Mayor</option>
+        <option value="desc">Precio: Mayor a Menor</option>
+      </select>
+    </div>
     
     <div id="productsList" style="max-height:600px;overflow-y:auto">
       <!-- Los productos se cargarán aquí via JS -->
@@ -166,6 +177,20 @@
   border-color: var(--color-brand);
   box-shadow: 0 0 0 3px rgba(0,118,199,0.1);
 }
+
+#sortPrice {
+  transition: all 0.2s;
+}
+
+#sortPrice:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(0,118,199,0.1);
+}
+
+#sortPrice:hover {
+  border-color: var(--color-brand);
+}
 </style>
 
 <script>
@@ -174,6 +199,7 @@
   const featuredList = document.getElementById('featuredList');
   const productsList = document.getElementById('productsList');
   const searchInput = document.getElementById('searchInput');
+  const sortPrice = document.getElementById('sortPrice');
   const btnSave = document.getElementById('btnSave');
   const featuredCount = document.getElementById('featuredCount');
   
@@ -251,11 +277,12 @@
   }
 
   // Renderizar lista de productos disponibles
-  function renderProducts(filter = '') {
+  function renderProducts(filter = '', sortOrder = '') {
     const filterLower = filter.toLowerCase().trim();
     const featuredIDs = new Set(featuredProducts.map(p => p.ID));
     
-    const filtered = allProducts.filter(p => {
+    // Filtrar productos
+    let filtered = allProducts.filter(p => {
       if (!filter) return true;
       return (
         (p.Name || '').toLowerCase().includes(filterLower) ||
@@ -264,6 +291,13 @@
         (p.Category || '').toLowerCase().includes(filterLower)
       );
     });
+
+    // Ordenar por precio si está seleccionado
+    if (sortOrder === 'asc') {
+      filtered.sort((a, b) => a.BasePrice - b.BasePrice);
+    } else if (sortOrder === 'desc') {
+      filtered.sort((a, b) => b.BasePrice - a.BasePrice);
+    }
 
     if (filtered.length === 0) {
       productsList.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">No se encontraron productos</p>';
@@ -305,7 +339,7 @@
     featuredProducts.push(product);
     hasChanges = true;
     renderFeatured();
-    renderProducts(searchInput.value);
+    renderProducts(searchInput.value, sortPrice.value);
   };
 
   // Quitar producto de destacados
@@ -313,7 +347,7 @@
     featuredProducts = featuredProducts.filter(p => p.ID !== productID);
     hasChanges = true;
     renderFeatured();
-    renderProducts(searchInput.value);
+    renderProducts(searchInput.value, sortPrice.value);
   };
 
   // Drag and Drop
@@ -381,9 +415,13 @@
     this.classList.remove('drag-over');
   }
 
-  // Búsqueda
+  // Búsqueda y filtros
   searchInput.addEventListener('input', (e) => {
-    renderProducts(e.target.value);
+    renderProducts(e.target.value, sortPrice.value);
+  });
+
+  sortPrice.addEventListener('change', (e) => {
+    renderProducts(searchInput.value, e.target.value);
   });
 
   // Guardar cambios
