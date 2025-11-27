@@ -1949,9 +1949,12 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	o.ShippingCost = shippingCost
 	subtotal := itemsTotal + shippingCost
 
-	// Sin descuentos - el cliente paga el precio total
+	// Aplicar descuento del 15% si el método de pago es transferencia
 	o.DiscountAmount = 0.0
-	o.Total = subtotal
+	if paymentMethod == "transferencia" {
+		o.DiscountAmount = subtotal * 0.15
+	}
+	o.Total = subtotal - o.DiscountAmount
 
 	if err := s.orders.Orders.Save(r.Context(), o); err != nil {
 		if isJSON {

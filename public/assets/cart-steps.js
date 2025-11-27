@@ -457,9 +457,16 @@ function updateTotalSummary() {
     }
   }
   
-  const discount = 0;
+  const subtotal = baseTotal + shippingCost;
   
-  const total = baseTotal + shippingCost;
+  // Aplicar descuento del 15% si el método de pago es transferencia
+  const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+  let discount = 0;
+  if (paymentMethod && paymentMethod.value === 'transferencia') {
+    discount = subtotal * 0.15;
+  }
+  
+  const total = subtotal - discount;
   
   if (totalEl) {
     totalEl.textContent = formatPrice(total);
@@ -471,8 +478,14 @@ function updateTotalSummary() {
   }
   
   const discountSummary = document.getElementById('discountSummary');
-  if (discountSummary) {
-    discountSummary.style.display = 'none';
+  const discountAmount = document.getElementById('discountAmount');
+  if (discountSummary && discountAmount) {
+    if (discount > 0) {
+      discountSummary.style.display = 'flex';
+      discountAmount.textContent = '-' + formatPrice(discount);
+    } else {
+      discountSummary.style.display = 'none';
+    }
   }
 }
 
