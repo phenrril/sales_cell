@@ -234,16 +234,17 @@
       
       card.innerHTML=`
         <div class="card-media">
+          <div class="badges">
+            <span class="badge installment">3 cuotas sin interés</span>
+            <span class="badge green">En stock</span>
+            <span class="badge gray">Envío en el día</span>
+          </div>
           ${hasImages?`<img src="${imgSrc}" alt="${imgAlt}" loading="lazy" decoding="async" 
                srcset="${imgSrc} 300w, ${imgSrc480} 480w, ${imgSrc640} 640w" 
                sizes="(max-width:480px) 92vw, (max-width:768px) 44vw, 300px" class="card-img" />`
                :'<div class="placeholder">IMG</div>'}
         </div>
         <div class="card-body">
-          <div class="badges">
-            <span class="badge green">En stock</span>
-            <span class="badge gray">Envío en el día</span>
-          </div>
           <h3 class="card-title"><a href="/product/${slug}">${name}</a></h3>
           <div class="card-meta">${category}</div>
           <div class="price-row">
