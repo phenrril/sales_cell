@@ -26,7 +26,7 @@
     <a href="/products" class="btn-view-all-desktop">Ver todos →</a>
   </div>
   <a href="/products" class="btn-view-all-mobile">
-    <span>Ver todas las ofertas</span>
+    <span>Ver todos los productos</span>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M5 12h14M12 5l7 7-7 7"/>
     </svg>
@@ -35,6 +35,10 @@
     {{range .Products}}
     <div class="card">
       <div class="card-media">
+        <div class="badges">
+          <span class="badge installment">3 cuotas sin interés</span>
+          <span class="badge green">En stock</span>
+        </div>
         {{if .Images}}
           <img src="{{img (index .Images 0).URL}}"
                alt="{{if (index .Images 0).Alt}}{{(index .Images 0).Alt}}{{else}}{{.Name}}{{end}}"
@@ -45,9 +49,6 @@
         
       </div>
       <div class="card-body">
-        <div class="badges">
-          <span class="badge green">En stock</span>
-        </div>
         <h3 class="card-title"><a href="/product/{{.Slug}}">{{.Name}}</a></h3>
         <div class="card-meta">{{.Category}}</div>
         <div class="price-row">

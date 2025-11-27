@@ -141,6 +141,11 @@
   {{range $idx, $p := .Products}}
   <div class="card">
     <div class="card-media">
+      <div class="badges">
+        <span class="badge installment">3 cuotas sin interés</span>
+        <span class="badge green">En stock</span>
+        <span class="badge gray">Envío en el día</span>
+      </div>
       {{if $p.Images}}
         <img src="{{img (index $p.Images 0).URL}}"
              alt="{{if (index $p.Images 0).Alt}}{{(index $p.Images 0).Alt}}{{else}}{{$p.Name}}{{end}}"
@@ -153,10 +158,6 @@
       {{end}}
     </div>
     <div class="card-body">
-      <div class="badges">
-        <span class="badge green">En stock</span>
-        <span class="badge gray">Envío en el día</span>
-      </div>
       <h3 class="card-title"><a href="/product/{{$p.Slug}}">{{$p.Name}}</a></h3>
       <div class="card-meta">{{$p.Category}}</div>
       <div class="price-row">
