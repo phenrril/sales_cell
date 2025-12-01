@@ -1,0 +1,67 @@
+{{define "admin_confirm_payment.html"}}
+{{template "layout_start" .}}
+<h1>Confirmar Pago</h1>
+<nav class="admin-nav">
+  <a href="/admin/products">Productos</a> | 
+  <a href="/admin/featured">Destacados</a> | 
+  <a href="/admin/orders">Órdenes</a> | 
+  <a href="/admin/sales">Ventas</a> | 
+  <a href="/admin/confirm-payment" class="active">Confirmar pago</a> | 
+  <a href="/admin/uncharged">Sin precio</a> | 
+  <a href="/admin/logout">Salir</a>
+</nav>
+
+<section class="admin-card" style="max-width:600px;margin:2rem auto;padding:24px">
+  <h2 style="margin:0 0 20px;font-size:20px">Confirmar Pago por Transferencia</h2>
+  
+  {{if .Error}}
+  <div style="padding:12px;background:#fee;color:#c33;border-radius:8px;margin-bottom:16px;border:1px solid #fcc">
+    <strong>❌ Error:</strong> {{.Error}}
+  </div>
+  {{end}}
+  
+  {{if .Success}}
+  <div style="padding:12px;background:#efe;color:#3c3;border-radius:8px;margin-bottom:16px;border:1px solid #cfc">
+    <strong>✅ Éxito:</strong> {{.Success}}
+  </div>
+  {{end}}
+  
+  <form method="POST" action="/admin/confirm-payment">
+    <label style="display:block;margin-bottom:16px">
+      <span style="display:block;margin-bottom:6px;font-size:14px;font-weight:600;color:var(--muted)">UUID de la Orden</span>
+      <input 
+        type="text" 
+        name="order_id" 
+        required 
+        placeholder="ej: dde11072-6927-46d3-95c3-8e517ec794d8"
+        style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-family:monospace;font-size:14px"
+        value="{{.OrderID}}"
+      />
+      <small style="display:block;margin-top:4px;color:var(--muted);font-size:12px">
+        Ingresá el UUID completo de la orden por transferencia que deseas confirmar
+      </small>
+    </label>
+    
+    <button type="submit" class="btn-primary" style="width:100%;padding:12px;font-size:16px;font-weight:600">
+      ✅ Confirmar Pago y Enviar Email
+    </button>
+  </form>
+  
+  {{if .Order}}
+  <div style="margin-top:24px;padding:16px;background:var(--panel-alt);border-radius:8px;border:1px solid var(--border)">
+    <h3 style="margin:0 0 12px;font-size:16px">Información de la Orden</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:14px">
+      <div><strong>ID:</strong> <span style="font-family:monospace">{{.Order.ID}}</span></div>
+      <div><strong>Cliente:</strong> {{.Order.Name}} ({{.Order.Email}})</div>
+      <div><strong>Total:</strong> ${{printf "%.2f" .Order.Total}}</div>
+      <div><strong>Método de pago:</strong> {{.Order.PaymentMethod}}</div>
+      <div><strong>Estado:</strong> {{.Order.Status}}</div>
+      <div><strong>Notificado:</strong> {{if .Order.Notified}}✅ Sí{{else}}❌ No{{end}}</div>
+    </div>
+  </div>
+  {{end}}
+</section>
+
+{{template "layout_end" .}}
+{{end}}
+
