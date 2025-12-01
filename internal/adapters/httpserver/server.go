@@ -24,6 +24,7 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"github.com/sashabaranov/go-openai"
 	"golang.org/x/oauth2"
 
@@ -49,6 +50,7 @@ type Server struct {
 	oauthCfg         *oauth2.Config
 	scraper          *scraper.SpecsScraper
 	imageScraper     *scraper.ImageScraper
+	emailService     domain.EmailService
 
 	adminAllowed map[string]struct{}
 	adminSecret  []byte
@@ -59,8 +61,8 @@ type Server struct {
 
 var emailRe = regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`)
 
-func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, featuredProducts domain.FeaturedProductRepo, oauthCfg *oauth2.Config) http.Handler {
-	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), mux: http.NewServeMux()}
+func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, featuredProducts domain.FeaturedProductRepo, oauthCfg *oauth2.Config, emailService domain.EmailService) http.Handler {
+	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), emailService: emailService, mux: http.NewServeMux()}
 
 	allowed := map[string]struct{}{}
 	if raw := os.Getenv("ADMIN_ALLOWED_EMAILS"); raw != "" {
@@ -156,6 +158,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/admin/orders", s.handleAdminOrders)
 	s.mux.HandleFunc("/admin/products", s.handleAdminProducts)
 	s.mux.HandleFunc("/admin/featured", s.handleAdminFeatured)
+	s.mux.HandleFunc("/admin/confirm-payment", s.handleAdminConfirmPayment)
 
 	s.mux.HandleFunc("/admin/sales", s.handleAdminSales)
 
@@ -1309,7 +1312,7 @@ func (s *Server) webhookMP(w http.ResponseWriter, r *http.Request) {
 	if err := s.orders.Orders.Save(r.Context(), o); err != nil {
 	}
 	if notify {
-		go sendOrderNotify(o, true)
+		go s.sendOrderNotify(o, true)
 	}
 	w.WriteHeader(200)
 }
@@ -1975,7 +1978,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		o.Status = domain.OrderStatusAwaitingPay
 		o.MPStatus = "transferencia_pending"
 		_ = s.orders.Orders.Save(r.Context(), o)
-		sendOrderNotify(o, false)
+		s.sendOrderNotify(o, false)
 		writeCart(w, cartPayload{})
 		if isJSON {
 			writeJSON(w, 200, map[string]interface{}{
@@ -2076,7 +2079,7 @@ func (s *Server) handlePaySimulated(w http.ResponseWriter, r *http.Request) {
 			if !o.Notified {
 				o.Notified = true
 				_ = s.orders.Orders.Save(r.Context(), o)
-				go sendOrderNotify(o, true)
+				go s.sendOrderNotify(o, true)
 			} else {
 				_ = s.orders.Orders.Save(r.Context(), o)
 			}
@@ -2445,6 +2448,77 @@ func (s *Server) handleAdminOrders(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "admin_orders.html", data)
 }
 
+func (s *Server) handleAdminConfirmPayment(w http.ResponseWriter, r *http.Request) {
+	if !s.isAdminSession(r) {
+		http.Redirect(w, r, "/admin/auth", 302)
+		return
+	}
+
+	data := map[string]any{
+		"AdminToken": s.readAdminToken(r),
+	}
+
+	if r.Method == http.MethodPost {
+		orderIDStr := strings.TrimSpace(r.FormValue("order_id"))
+		if orderIDStr == "" {
+			data["Error"] = "UUID de orden requerido"
+			s.render(w, "admin_confirm_payment.html", data)
+			return
+		}
+
+		orderID, err := uuid.Parse(orderIDStr)
+		if err != nil {
+			data["Error"] = "UUID inválido: " + err.Error()
+			data["OrderID"] = orderIDStr
+			s.render(w, "admin_confirm_payment.html", data)
+			return
+		}
+
+		// Buscar la orden
+		order, err := s.orders.Orders.FindByID(r.Context(), orderID)
+		if err != nil || order == nil {
+			data["Error"] = "Orden no encontrada"
+			data["OrderID"] = orderIDStr
+			s.render(w, "admin_confirm_payment.html", data)
+			return
+		}
+
+		// Verificar que sea transferencia
+		if order.PaymentMethod != "transferencia" {
+			data["Error"] = "Esta orden no es por transferencia. Método de pago: " + order.PaymentMethod
+			data["OrderID"] = orderIDStr
+			data["Order"] = order
+			s.render(w, "admin_confirm_payment.html", data)
+			return
+		}
+
+		// Actualizar estado
+		order.Status = domain.OrderStatusFinished
+		order.MPStatus = "approved"
+		order.Notified = true
+
+		// Guardar
+		if err := s.orders.Orders.Save(r.Context(), order); err != nil {
+			data["Error"] = "Error guardando orden: " + err.Error()
+			data["OrderID"] = orderIDStr
+			data["Order"] = order
+			s.render(w, "admin_confirm_payment.html", data)
+			return
+		}
+
+		// Enviar email de confirmación (asíncrono)
+		go s.sendOrderNotify(order, true)
+
+		data["Success"] = fmt.Sprintf("Pago confirmado exitosamente. Email de confirmación enviado a %s", order.Email)
+		data["Order"] = order
+		s.render(w, "admin_confirm_payment.html", data)
+		return
+	}
+
+	// GET: mostrar formulario
+	s.render(w, "admin_confirm_payment.html", data)
+}
+
 func (s *Server) handleAdminSales(w http.ResponseWriter, r *http.Request) {
 	if !s.isAdminSession(r) {
 		http.Redirect(w, r, "/admin/auth", 302)
@@ -2721,6 +2795,8 @@ func sendOrderEmail(o *domain.Order, success bool) error {
 	statusTxt := "PAGO FALLIDO"
 	if success {
 		statusTxt = "PAGO APROBADO"
+	} else if o.PaymentMethod == "transferencia" {
+		statusTxt = "PAGO EN PROCESO"
 	}
 	var buf bytes.Buffer
 	_, _ = fmt.Fprintf(&buf, "Subject: Nueva orden %s #%s\r\n", statusTxt, o.ID.String())
@@ -2768,6 +2844,8 @@ func sendOrderTelegram(o *domain.Order, success bool) error {
 	statusTxt := "PAGO FALLIDO"
 	if success {
 		statusTxt = "PAGO APROBADO"
+	} else if o.PaymentMethod == "transferencia" {
+		statusTxt = "PAGO EN PROCESO"
 	}
 	var b strings.Builder
 	b.WriteString("Orden ")
@@ -2828,10 +2906,18 @@ func sendOrderTelegram(o *domain.Order, success bool) error {
 	return lastErr
 }
 
-func sendOrderNotify(o *domain.Order, success bool) {
+func (s *Server) sendOrderNotify(o *domain.Order, success bool) {
+	// Notificar al admin (Telegram o email de admin)
 	if err := sendOrderTelegram(o, success); err != nil {
 		if os.Getenv("SMTP_HOST") != "" {
 			_ = sendOrderEmail(o, success)
+		}
+	}
+
+	// Enviar email de confirmación al comprador
+	if s.emailService != nil {
+		if err := s.emailService.SendOrderConfirmation(context.Background(), o); err != nil {
+			log.Error().Err(err).Str("order_id", o.ID.String()).Msg("error enviando email al comprador")
 		}
 	}
 }
