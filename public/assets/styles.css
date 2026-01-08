@@ -259,16 +259,43 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .price{font-weight:700;font-size:24px;color:var(--color-brand);line-height:1}
 .price-old{font-size:14px;color:var(--color-muted);text-decoration:line-through;font-weight:500}
 .price-installment{font-size:13px;color:var(--color-muted);font-weight:400}
-/* Banner promocional */
-.promo-banner-mobile{display:block;background:linear-gradient(135deg,#0076C7,#005A9E);padding:12px 16px;margin:0;border-bottom:2px solid rgba(255,255,255,.1)}
-.promo-banner-content{display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap}
-.promo-item{display:flex;align-items:center;gap:8px;color:#fff;font-size:13px;font-weight:600}
-.promo-icon{font-size:18px;line-height:1}
-.promo-text{white-space:nowrap}
+/* Banner promocional hero */
+.promo-hero-banner{position:relative;background:linear-gradient(135deg,#FF6B35 0%,#FF8C42 50%,#FFB347 100%);padding:16px 20px;overflow:hidden;box-shadow:0 4px 20px rgba(255,107,53,.4)}
+.promo-hero-content{display:flex;justify-content:center;align-items:center;gap:24px;position:relative;z-index:2}
+.promo-hero-item{display:flex;align-items:center;gap:12px;animation:promo-fade-in .6s ease-out both}
+.promo-hero-item:nth-child(1){animation-delay:.1s}
+.promo-hero-item:nth-child(3){animation-delay:.3s}
+.promo-hero-item.highlight{background:rgba(255,255,255,.2);padding:8px 16px;border-radius:12px;backdrop-filter:blur(4px)}
+.promo-hero-icon{width:40px;height:40px;background:rgba(255,255,255,.95);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.15);flex-shrink:0}
+.promo-hero-icon svg{width:22px;height:22px;stroke:#FF6B35}
+.promo-hero-text{display:flex;flex-direction:column;gap:0}
+.promo-hero-title{font-size:18px;font-weight:800;color:#fff;line-height:1.1;text-shadow:0 2px 4px rgba(0,0,0,.2);letter-spacing:.5px}
+.promo-hero-subtitle{font-size:12px;font-weight:500;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:1px}
+.promo-hero-divider{width:2px;height:40px;background:rgba(255,255,255,.3);border-radius:2px}
+.promo-hero-shine{position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:promo-shine 3s ease-in-out infinite;z-index:1}
+@keyframes promo-shine{0%,100%{left:-100%}50%{left:100%}}
+@keyframes promo-fade-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+/* Desktop: banner más grande */
 @media (min-width:769px){
-  .promo-banner-mobile{padding:14px 20px}
-  .promo-item{font-size:14px}
-  .promo-icon{font-size:20px}
+  .promo-hero-banner{padding:20px 24px}
+  .promo-hero-content{gap:40px}
+  .promo-hero-icon{width:48px;height:48px;border-radius:12px}
+  .promo-hero-icon svg{width:26px;height:26px}
+  .promo-hero-title{font-size:22px}
+  .promo-hero-subtitle{font-size:13px}
+  .promo-hero-divider{height:50px}
+  .promo-hero-item.highlight{padding:12px 20px;border-radius:14px}
+}
+/* Mobile: más compacto pero llamativo */
+@media (max-width:480px){
+  .promo-hero-banner{padding:14px 12px}
+  .promo-hero-content{gap:12px;flex-wrap:wrap}
+  .promo-hero-icon{width:36px;height:36px;border-radius:8px}
+  .promo-hero-icon svg{width:20px;height:20px}
+  .promo-hero-title{font-size:15px}
+  .promo-hero-subtitle{font-size:10px}
+  .promo-hero-divider{display:none}
+  .promo-hero-item.highlight{padding:6px 12px;border-radius:10px}
 }
 .actions{display:flex;gap:8px;margin-top:8px;padding-top:4px}
 
