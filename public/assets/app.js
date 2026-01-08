@@ -234,11 +234,6 @@
       
       card.innerHTML=`
         <div class="card-media">
-          <div class="badges">
-            <span class="badge installment">3 cuotas sin interés</span>
-            <span class="badge discount">15% descuento transferencia</span>
-            <span class="badge gray">Envío en el día</span>
-          </div>
           ${hasImages?`<img src="${imgSrc}" alt="${imgAlt}" loading="lazy" decoding="async" 
                srcset="${imgSrc} 300w, ${imgSrc480} 480w, ${imgSrc640} 640w" 
                sizes="(max-width:480px) 92vw, (max-width:768px) 44vw, 300px" class="card-img" />`
@@ -249,10 +244,6 @@
           <div class="card-meta">${category}</div>
           <div class="price-row">
             <span class="price">${formatARS(p.BasePrice)}</span>
-          </div>
-          <div class="badges-mobile">
-            <span class="badge-mobile installment">3 cuotas sin interés</span>
-            <span class="badge-mobile discount">15% descuento transferencia</span>
           </div>
           <div class="actions">
             <a href="/product/${slug}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a>
