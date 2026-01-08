@@ -38,7 +38,6 @@
         <div class="badges">
           <span class="badge installment">3 cuotas sin interés</span>
           <span class="badge discount">15% descuento transferencia</span>
-          <span class="badge green">En stock</span>
         </div>
         {{if .Images}}
           <img src="{{img (index .Images 0).URL}}"
@@ -54,6 +53,10 @@
         <div class="card-meta">{{.Category}}</div>
         <div class="price-row">
           <span class="price">{{formatPrice .BasePrice}}</span>
+        </div>
+        <div class="badges-mobile">
+          <span class="badge-mobile installment">3 cuotas sin interés</span>
+          <span class="badge-mobile discount">15% descuento transferencia</span>
         </div>
         <div class="actions"><a href="/product/{{.Slug}}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a></div>
       </div>

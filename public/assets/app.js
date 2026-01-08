@@ -237,7 +237,6 @@
           <div class="badges">
             <span class="badge installment">3 cuotas sin interés</span>
             <span class="badge discount">15% descuento transferencia</span>
-            <span class="badge green">En stock</span>
             <span class="badge gray">Envío en el día</span>
           </div>
           ${hasImages?`<img src="${imgSrc}" alt="${imgAlt}" loading="lazy" decoding="async" 
@@ -250,6 +249,10 @@
           <div class="card-meta">${category}</div>
           <div class="price-row">
             <span class="price">${formatARS(p.BasePrice)}</span>
+          </div>
+          <div class="badges-mobile">
+            <span class="badge-mobile installment">3 cuotas sin interés</span>
+            <span class="badge-mobile discount">15% descuento transferencia</span>
           </div>
           <div class="actions">
             <a href="/product/${slug}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a>
