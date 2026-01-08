@@ -259,10 +259,17 @@ body{font-family:'Roboto',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantare
 .price{font-weight:700;font-size:24px;color:var(--color-brand);line-height:1}
 .price-old{font-size:14px;color:var(--color-muted);text-decoration:line-through;font-weight:500}
 .price-installment{font-size:13px;color:var(--color-muted);font-weight:400}
-.badges-mobile{display:none;flex-wrap:wrap;gap:6px;margin-top:6px}
-.badge-mobile{font-size:10px;padding:3px 8px;border-radius:4px;font-weight:500;letter-spacing:.2px;text-transform:none;line-height:1.4}
-.badge-mobile.installment{background:linear-gradient(135deg,#FF6B35,#FF8C42);color:#fff}
-.badge-mobile.discount{background:linear-gradient(135deg,#10B981,#059669);color:#fff}
+/* Banner promocional */
+.promo-banner-mobile{display:block;background:linear-gradient(135deg,#0076C7,#005A9E);padding:12px 16px;margin:0;border-bottom:2px solid rgba(255,255,255,.1)}
+.promo-banner-content{display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap}
+.promo-item{display:flex;align-items:center;gap:8px;color:#fff;font-size:13px;font-weight:600}
+.promo-icon{font-size:18px;line-height:1}
+.promo-text{white-space:nowrap}
+@media (min-width:769px){
+  .promo-banner-mobile{padding:14px 20px}
+  .promo-item{font-size:14px}
+  .promo-icon{font-size:20px}
+}
 .actions{display:flex;gap:8px;margin-top:8px;padding-top:4px}
 
 
@@ -667,10 +674,7 @@ body.drawer-open .fab-whatsapp{display:none}
 @media (max-width:900px){
   .cards--home{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
 }
-@media (max-width:768px){
-  .badges{display:none}
-  .badges-mobile{display:flex}
-}
+/* Badges eliminados - información ahora en banner promocional */
 @media (max-width:640px){
   .cards--home{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .cards--home .card-media{height:220px}
