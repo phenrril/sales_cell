@@ -57,12 +57,14 @@ type Server struct {
 
 	// último reporte de importación masiva (en memoria)
 	lastImport *ImportReport
+
+	assetVersion string
 }
 
 var emailRe = regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`)
 
 func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, featuredProducts domain.FeaturedProductRepo, oauthCfg *oauth2.Config, emailService domain.EmailService) http.Handler {
-	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), emailService: emailService, mux: http.NewServeMux()}
+	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), emailService: emailService, mux: http.NewServeMux(), assetVersion: fmt.Sprintf("%d", time.Now().Unix())}
 
 	allowed := map[string]struct{}{}
 	if raw := os.Getenv("ADMIN_ALLOWED_EMAILS"); raw != "" {
@@ -2171,9 +2173,13 @@ func (s *Server) render(w http.ResponseWriter, name string, data any) {
 				m["User"] = u
 			}
 		}
+		m["AssetV"] = s.assetVersion
 		data = m
 	} else {
-		m2 := map[string]any{"Year": time.Now().Year()}
+		m2 := map[string]any{
+			"Year":   time.Now().Year(),
+			"AssetV": s.assetVersion,
+		}
 		if u := readUserSession(w, nil); u != nil {
 			m2["User"] = u
 		}
