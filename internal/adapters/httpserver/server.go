@@ -59,12 +59,13 @@ type Server struct {
 	lastImport *ImportReport
 
 	assetVersion string
+	bannerImages []string
 }
 
 var emailRe = regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`)
 
 func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, featuredProducts domain.FeaturedProductRepo, oauthCfg *oauth2.Config, emailService domain.EmailService) http.Handler {
-	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), emailService: emailService, mux: http.NewServeMux(), assetVersion: fmt.Sprintf("%d", time.Now().Unix())}
+	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), emailService: emailService, mux: http.NewServeMux(), assetVersion: fmt.Sprintf("%d", time.Now().Unix()), bannerImages: loadBannerImages()}
 
 	allowed := map[string]struct{}{}
 	if raw := os.Getenv("ADMIN_ALLOWED_EMAILS"); raw != "" {
@@ -187,7 +188,12 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	base := s.canonicalBase(r)
-	data := map[string]any{"Products": list, "CanonicalURL": base + "/", "OGImage": base + "/public/assets/img/newmobile.png"}
+	data := map[string]any{
+		"Products":     list,
+		"CanonicalURL": base + "/",
+		"OGImage":      base + "/public/assets/img/newmobile.png",
+		"BannerImages": s.bannerImages,
+	}
 	if u := readUserSession(w, r); u != nil {
 		data["User"] = u
 	}
@@ -2195,6 +2201,25 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+func loadBannerImages() []string {
+	entries, err := os.ReadDir("public/assets/img")
+	if err != nil {
+		return nil
+	}
+	var images []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if strings.HasSuffix(strings.ToLower(name), ".webp") {
+			images = append(images, "/public/assets/img/"+name)
+		}
+	}
+	sort.Strings(images)
+	return images
 }
 
 func secretKey() []byte {
