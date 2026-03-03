@@ -10,9 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="/public/assets/img/cel.svg" />
 <link rel="apple-touch-icon" href="/public/assets/img/cel.svg" />
-<link rel="preload" href="/public/assets/styles.css?v=personal9" as="style" />
-<link rel="stylesheet" href="/public/assets/styles.css?v=personal9" />
-<link rel="preload" as="image" href="/public/assets/img/img1.webp">
+<link rel="preload" href="/public/assets/styles.css?v={{.AssetV}}" as="style" />
+<link rel="stylesheet" href="/public/assets/styles.css?v={{.AssetV}}" />
+<link rel="preload" as="image" href="/public/assets/img/img1.webp?v={{.AssetV}}">
 <link rel="manifest" href="/public/manifest.json">
 <meta name="theme-color" content="#0076C7">
 <meta name="description" content="{{if .PageDescription}}{{.PageDescription}}{{else}}Catálogo de celulares, smartphones y accesorios al mejor precio. Envíos a todo el país.{{end}}">
@@ -34,7 +34,7 @@
 .brand-chip img,.brand-chip svg{max-width:32px;max-height:32px;width:32px;height:32px}
 </style>
 <!-- JS unificado de UI -->
-<script type="module" src="/public/assets/app.js?v=3"></script>
+<script type="module" src="/public/assets/app.js?v={{.AssetV}}"></script>
 <script>document.addEventListener('DOMContentLoaded',function(){document.body.classList.remove('dark');try{localStorage.removeItem('theme');}catch(e){}});</script>
 </head>
 <body class="site">
