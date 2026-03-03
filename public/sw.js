@@ -1,12 +1,8 @@
-const CACHE_NAME = 'newmobile-v2';
+const CACHE_NAME = 'newmobile-v3';
 const urlsToCache = [
   '/',
   '/public/assets/styles.css',
-  '/public/assets/img/newmobile.png',
-  '/public/assets/img/img1.webp',
-  '/public/assets/img/img2.webp',
-  '/public/assets/img/img3.webp',
-  '/public/assets/img/img4.webp'
+  '/public/assets/img/newmobile.png'
 ];
 
 self.addEventListener('install', event => {

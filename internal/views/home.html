@@ -11,11 +11,9 @@
 </style>
 <section class="banner">
   <div class="banner-carousel" id="bannerCarousel" data-interval="7000">
-    <img class="bc-slide active" src="/public/assets/img/img1.webp?v={{.AssetV}}" alt="Banner 1" sizes="100vw" fetchpriority="high" decoding="async" />
-    <img class="bc-slide" src="/public/assets/img/img2.webp?v={{.AssetV}}" alt="Banner 2" sizes="100vw" loading="lazy" decoding="async" />
-    <img class="bc-slide" src="/public/assets/img/img3.webp?v={{.AssetV}}" alt="Banner 3" sizes="100vw" loading="lazy" decoding="async" />
-    <img class="bc-slide" src="/public/assets/img/img4.webp?v={{.AssetV}}" alt="Banner 4" sizes="100vw" loading="lazy" decoding="async" />
-    <img class="bc-slide" src="/public/assets/img/img1.webp?v={{.AssetV}}" alt="Banner 5" sizes="100vw" loading="lazy" decoding="async" />
+    {{range $i, $src := .BannerImages}}
+    <img class="bc-slide{{if eq $i 0}} active{{end}}" src="{{$src}}?v={{$.AssetV}}" alt="Banner {{add $i 1}}" sizes="100vw" {{if eq $i 0}}fetchpriority="high"{{else}}loading="lazy"{{end}} decoding="async" />
+    {{end}}
     <div class="bc-dots" id="bcDots"></div>
   </div>
   
