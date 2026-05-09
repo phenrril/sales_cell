@@ -101,6 +101,14 @@ func SecurityAndStaticCache(next http.Handler) http.Handler {
 		w.Header().Set("Cross-Origin-Opener-Policy", coop)
 		w.Header().Set("Content-Security-Policy", csp)
 
+		// El service worker debe poder actualizarse siempre. Si queda cacheado en CDN,
+		// los navegadores siguen instalando lógica vieja aunque el deploy esté correcto.
+		if r.URL.Path == "/public/sw.js" && r.Method == http.MethodGet {
+			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+			w.Header().Set("Pragma", "no-cache")
+			w.Header().Set("Expires", "0")
+		}
+
 		// Caché estático para /public/
 		if strings.HasPrefix(r.URL.Path, "/public/") && r.Method == http.MethodGet {
 			// En desarrollo, deshabilitar completamente el caché para ver cambios inmediatos
@@ -110,7 +118,9 @@ func SecurityAndStaticCache(next http.Handler) http.Handler {
 			// Si tiene parámetro de versión en query string (ej: ?v=123), no cachear agresivamente
 			hasVersion := r.URL.Query().Get("v") != ""
 
-			if isDev || hasVersion {
+			if r.URL.Path == "/public/sw.js" {
+				// Headers ya seteados arriba.
+			} else if isDev || hasVersion {
 				// En desarrollo: deshabilitar completamente el caché
 				w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 				w.Header().Set("Pragma", "no-cache")
