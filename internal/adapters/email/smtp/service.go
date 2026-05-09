@@ -355,6 +355,8 @@ func (s *SMTPService) mapPaymentMethod(method string) string {
 		return "Efectivo"
 	case "transferencia", "transfer":
 		return "Transferencia Bancaria"
+	case "cripto", "crypto":
+		return "Cripto (USDT/USDC - BSC)"
 	default:
 		if method == "" {
 			return "No especificado"

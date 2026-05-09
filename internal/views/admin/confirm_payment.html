@@ -12,7 +12,7 @@
 </nav>
 
 <section class="admin-card" style="max-width:600px;margin:2rem auto;padding:24px">
-  <h2 style="margin:0 0 20px;font-size:20px">Confirmar Pago por Transferencia</h2>
+  <h2 style="margin:0 0 20px;font-size:20px">Confirmar Pago Manual (Transferencia / Cripto)</h2>
   
   {{if .Error}}
   <div style="padding:12px;background:#fee;color:#c33;border-radius:8px;margin-bottom:16px;border:1px solid #fcc">
@@ -38,7 +38,7 @@
         value="{{.OrderID}}"
       />
       <small style="display:block;margin-top:4px;color:var(--muted);font-size:12px">
-        Ingresá el UUID completo de la orden por transferencia que deseas confirmar
+        Ingresá el UUID completo de la orden por transferencia o cripto que deseas confirmar
       </small>
     </label>
     

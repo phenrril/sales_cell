@@ -8,6 +8,17 @@ let checkoutData = {
   step4: {}
 };
 
+const CRYPTO_DISCOUNT_RATE = 0.10;
+const TRANSFER_DISCOUNT_RATE = 0.05;
+const cryptoState = {
+  usdtArs: 0,
+  usdcArs: 0,
+  fetchedAt: '',
+  loaded: false,
+  loading: false,
+  error: ''
+};
+
 const provinceCosts = {};
 (function() {
   const pcData = document.getElementById('pcData');
@@ -321,20 +332,23 @@ function updateProgressBar() {
     
     if (circle && label) {
       if (i < currentStep) {
-        circle.style.background = '#10b981';
-        circle.style.color = '#fff';
+        circle.style.background = 'var(--nm-lime)';
+        circle.style.borderColor = 'var(--nm-lime)';
+        circle.style.color = 'var(--nm-text-dark)';
         circle.innerHTML = '✓';
-        label.style.color = '#10b981';
+        label.style.color = 'var(--nm-lime)';
       } else if (i === currentStep) {
-        circle.style.background = '#0076C7';
-        circle.style.color = '#fff';
+        circle.style.background = 'rgba(184,255,28,.14)';
+        circle.style.borderColor = 'var(--nm-lime)';
+        circle.style.color = 'var(--nm-lime)';
         circle.innerHTML = i;
-        label.style.color = '#0076C7';
+        label.style.color = 'var(--nm-text)';
       } else {
-        circle.style.background = '#e5e7eb';
-        circle.style.color = '#6b7280';
+        circle.style.background = 'var(--nm-bg)';
+        circle.style.borderColor = 'var(--nm-border-3)';
+        circle.style.color = 'var(--nm-text-muted)';
         circle.innerHTML = i;
-        label.style.color = '#6b7280';
+        label.style.color = 'var(--nm-text-muted)';
       }
     }
   }
@@ -418,14 +432,91 @@ function updateShippingSummary() {
 function updatePaymentSummary() {
   const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
   const discountSummary = document.getElementById('discountSummary');
+  const cryptoInfoBox = document.getElementById('cryptoInfoBox');
   
   if (!paymentMethod) return;
   
   if (discountSummary) {
     discountSummary.style.display = 'none';
   }
+
+  if (cryptoInfoBox) {
+    const isCrypto = paymentMethod.value === 'cripto';
+    cryptoInfoBox.style.display = isCrypto ? 'block' : 'none';
+    if (isCrypto && !cryptoState.loaded && !cryptoState.loading) {
+      loadCryptoRates();
+    }
+  }
   
   updateTotalSummary();
+}
+
+function formatUsdAmount(v) {
+  return Number(v || 0).toFixed(2);
+}
+
+function formatRate(v) {
+  if (!v || v <= 0) return '-';
+  const rounded = Math.round(v);
+  return '$ ' + rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+async function loadCryptoRates() {
+  if (cryptoState.loading) return;
+  cryptoState.loading = true;
+  cryptoState.error = '';
+  try {
+    const resp = await fetch('/api/crypto/rates');
+    if (!resp.ok) {
+      throw new Error('No se pudo obtener cotización');
+    }
+    const data = await resp.json();
+    cryptoState.usdtArs = parseFloat(data.usdt_ars || 0);
+    cryptoState.usdcArs = parseFloat(data.usdc_ars || 0);
+    cryptoState.fetchedAt = data.fetched_at || '';
+    cryptoState.loaded = cryptoState.usdtArs > 0 && cryptoState.usdcArs > 0;
+    if (!cryptoState.loaded) {
+      cryptoState.error = 'Cotización no disponible';
+    }
+  } catch (e) {
+    cryptoState.error = 'No se pudo cargar cotización cripto';
+    cryptoState.loaded = false;
+  } finally {
+    cryptoState.loading = false;
+    updateCryptoSummary();
+  }
+}
+
+function updateCryptoSummary() {
+  const rateUsdtEl = document.getElementById('rateUsdtArs');
+  const rateUsdcEl = document.getElementById('rateUsdcArs');
+  const usdtAmountEl = document.getElementById('cryptoUsdtAmount');
+  const usdcAmountEl = document.getElementById('cryptoUsdcAmount');
+  const updatedEl = document.getElementById('cryptoRateUpdated');
+  const totalEl = document.getElementById('totalAmount');
+  if (!rateUsdtEl || !rateUsdcEl || !usdtAmountEl || !usdcAmountEl || !totalEl) return;
+
+  const totalArs = parseFloat(totalEl.dataset.currentValue || totalEl.dataset.baseValue || '0') || 0;
+  if (cryptoState.loaded) {
+    rateUsdtEl.textContent = formatRate(cryptoState.usdtArs);
+    rateUsdcEl.textContent = formatRate(cryptoState.usdcArs);
+    usdtAmountEl.textContent = formatUsdAmount(totalArs / cryptoState.usdtArs) + ' USDT';
+    usdcAmountEl.textContent = formatUsdAmount(totalArs / cryptoState.usdcArs) + ' USDC';
+    if (updatedEl) {
+      const d = cryptoState.fetchedAt ? new Date(cryptoState.fetchedAt) : null;
+      updatedEl.textContent = d && !isNaN(d.getTime())
+        ? 'Cotización actualizada: ' + d.toLocaleString('es-AR')
+        : 'Cotización de referencia en tiempo real';
+    }
+  } else {
+    rateUsdtEl.textContent = cryptoState.loading ? 'Cargando...' : '-';
+    rateUsdcEl.textContent = cryptoState.loading ? 'Cargando...' : '-';
+    usdtAmountEl.textContent = '-';
+    usdcAmountEl.textContent = '-';
+    if (updatedEl) {
+      updatedEl.textContent = cryptoState.error || 'Cotización de referencia no disponible';
+    }
+  }
 }
 
 function updateTotalSummary() {
@@ -459,17 +550,20 @@ function updateTotalSummary() {
   
   const subtotal = baseTotal + shippingCost;
   
-  // Aplicar descuento del 15% si el método de pago es transferencia
+  // Aplicar descuento según método de pago.
   const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
   let discount = 0;
   if (paymentMethod && paymentMethod.value === 'transferencia') {
-    discount = subtotal * 0.15;
+    discount = subtotal * TRANSFER_DISCOUNT_RATE;
+  } else if (paymentMethod && paymentMethod.value === 'cripto') {
+    discount = subtotal * CRYPTO_DISCOUNT_RATE;
   }
   
   const total = subtotal - discount;
   
   if (totalEl) {
     totalEl.textContent = formatPrice(total);
+    totalEl.dataset.currentValue = total.toString();
   }
   
   const stickyTotal = document.querySelector('.cart-sticky-price span');
@@ -487,6 +581,8 @@ function updateTotalSummary() {
       discountSummary.style.display = 'none';
     }
   }
+
+  updateCryptoSummary();
 }
 
 async function saveStepData(step, data) {
@@ -666,6 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   updateShippingSummary();
   updatePaymentSummary();
+  loadCryptoRates();
   updateTotalSummary();
 });
 
