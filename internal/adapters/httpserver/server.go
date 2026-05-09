@@ -127,6 +127,7 @@ func (s *Server) routes() {
 	// API endpoints para checkout por pasos
 	s.mux.HandleFunc("/api/checkout/step", s.apiCheckoutStep)
 	s.mux.HandleFunc("/api/checkout/data", s.apiCheckoutData)
+	s.mux.HandleFunc("/api/crypto/rates", s.apiCryptoRates)
 
 	s.mux.HandleFunc("/api/products", s.apiProducts)
 	s.mux.HandleFunc("/api/products/search", s.apiProductsSearch) // Búsqueda pública para autocompletado
@@ -1803,6 +1804,7 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	validPaymentMethods := map[string]bool{
 		"mercadopago":   true,
 		"transferencia": true,
+		"cripto":        true,
 	}
 	if !validPaymentMethods[paymentMethod] {
 		paymentMethod = "mercadopago"
@@ -1960,10 +1962,12 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 	o.ShippingCost = shippingCost
 	subtotal := itemsTotal + shippingCost
 
-	// Aplicar descuento del 15% si el método de pago es transferencia
+	// Aplicar descuento según método de pago.
 	o.DiscountAmount = 0.0
 	if paymentMethod == "transferencia" {
-		o.DiscountAmount = subtotal * 0.15
+		o.DiscountAmount = subtotal * 0.05
+	} else if paymentMethod == "cripto" {
+		o.DiscountAmount = subtotal * 0.10
 	}
 	o.Total = subtotal - o.DiscountAmount
 
@@ -1985,6 +1989,22 @@ func (s *Server) handleCartCheckout(w http.ResponseWriter, r *http.Request) {
 		// Orden con pago pendiente
 		o.Status = domain.OrderStatusAwaitingPay
 		o.MPStatus = "transferencia_pending"
+		_ = s.orders.Orders.Save(r.Context(), o)
+		s.sendOrderNotify(o, false)
+		writeCart(w, cartPayload{})
+		if isJSON {
+			writeJSON(w, 200, map[string]interface{}{
+				"success":      true,
+				"order_id":     o.ID.String(),
+				"redirect_url": "/pay/" + o.ID.String() + "?status=pending",
+			})
+		} else {
+			http.Redirect(w, r, "/pay/"+o.ID.String()+"?status=pending", 302)
+		}
+	case "cripto":
+		// Orden con pago cripto pendiente de confirmación manual
+		o.Status = domain.OrderStatusAwaitingPay
+		o.MPStatus = "crypto_pending"
 		_ = s.orders.Orders.Save(r.Context(), o)
 		s.sendOrderNotify(o, false)
 		writeCart(w, cartPayload{})
@@ -2108,12 +2128,15 @@ func (s *Server) handlePaySimulated(w http.ResponseWriter, r *http.Request) {
 		msg = "Pedido recibido. Te contactaremos para coordinar el pago en efectivo."
 	} else if o.PaymentMethod == "transferencia" && status == "pending" {
 		msg = "Pedido recibido. Por favor realiza la transferencia y envía el comprobante."
+	} else if o.PaymentMethod == "cripto" && status == "pending" {
+		msg = "Pedido recibido. Por favor realiza el pago en USDT/USDC (BSC) y envía el comprobante."
 	}
 	data := map[string]any{
 		"Order":                  o,
 		"StatusMsg":              msg,
 		"Success":                success,
 		"IsTransferenciaPending": o.PaymentMethod == "transferencia" && (status == "pending" || o.MPStatus == "transferencia_pending"),
+		"IsCryptoPending":        o.PaymentMethod == "cripto" && (status == "pending" || o.MPStatus == "crypto_pending"),
 	}
 	if u := readUserSession(w, r); u != nil {
 		data["User"] = u
@@ -2167,6 +2190,84 @@ func (s *Server) apiCheckoutData(w http.ResponseWriter, r *http.Request) {
 
 	checkoutData := readCheckoutData(r)
 	writeJSON(w, 200, checkoutData)
+}
+
+func (s *Server) apiCryptoRates(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", 405)
+		return
+	}
+
+	usdtRate, usdtSrc, errUSDT := fetchStablecoinARSRate("usdt")
+	usdcRate, usdcSrc, errUSDC := fetchStablecoinARSRate("usdc")
+	if errUSDT != nil || errUSDC != nil {
+		errMsg := "no se pudo obtener cotización cripto"
+		if errUSDT != nil && errUSDC == nil {
+			errMsg = "no se pudo obtener cotización USDT"
+		} else if errUSDT == nil && errUSDC != nil {
+			errMsg = "no se pudo obtener cotización USDC"
+		}
+		writeJSON(w, 502, map[string]any{
+			"success": false,
+			"error":   errMsg,
+		})
+		return
+	}
+
+	writeJSON(w, 200, map[string]any{
+		"success":      true,
+		"usdt_ars":     usdtRate,
+		"usdc_ars":     usdcRate,
+		"usdt_source":  usdtSrc,
+		"usdc_source":  usdcSrc,
+		"provider":     "criptoya",
+		"fetched_at":   time.Now().UTC().Format(time.RFC3339),
+		"disclaimer":   "Cotización de referencia, puede variar al momento del pago.",
+		"network":      "BSC",
+		"wallet_token": "USDT/USDC",
+	})
+}
+
+func fetchStablecoinARSRate(symbol string) (float64, string, error) {
+	client := &http.Client{Timeout: 6 * time.Second}
+	exchanges := []string{"binance", "belo", "fiwind", "ripio", "letsbit"}
+	for _, ex := range exchanges {
+		endpoint := fmt.Sprintf("https://criptoya.com/api/%s/%s/ars", ex, strings.ToLower(symbol))
+		req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+		if err != nil {
+			continue
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+		body, _ := io.ReadAll(res.Body)
+		_ = res.Body.Close()
+		if res.StatusCode < 200 || res.StatusCode >= 300 {
+			continue
+		}
+
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			continue
+		}
+		if v := pickCryptoARSValue(payload); v > 0 {
+			return v, ex, nil
+		}
+	}
+	return 0, "", fmt.Errorf("sin cotización para %s", symbol)
+}
+
+func pickCryptoARSValue(payload map[string]any) float64 {
+	keys := []string{"totalAsk", "ask", "price", "close"}
+	for _, k := range keys {
+		if raw, ok := payload[k]; ok {
+			if v, ok := raw.(float64); ok && v > 0 {
+				return v
+			}
+		}
+	}
+	return 0
 }
 
 func (s *Server) render(w http.ResponseWriter, name string, data any) {
@@ -2514,9 +2615,9 @@ func (s *Server) handleAdminConfirmPayment(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		// Verificar que sea transferencia
-		if order.PaymentMethod != "transferencia" {
-			data["Error"] = "Esta orden no es por transferencia. Método de pago: " + order.PaymentMethod
+		// Verificar que sea un método con confirmación manual
+		if order.PaymentMethod != "transferencia" && order.PaymentMethod != "cripto" {
+			data["Error"] = "Esta orden no requiere confirmación manual. Método de pago: " + order.PaymentMethod
 			data["OrderID"] = orderIDStr
 			data["Order"] = order
 			s.render(w, "admin_confirm_payment.html", data)
@@ -2828,6 +2929,8 @@ func sendOrderEmail(o *domain.Order, success bool) error {
 		statusTxt = "PAGO APROBADO"
 	} else if o.PaymentMethod == "transferencia" {
 		statusTxt = "PAGO EN PROCESO"
+	} else if o.PaymentMethod == "cripto" {
+		statusTxt = "PAGO CRIPTO EN PROCESO"
 	}
 	var buf bytes.Buffer
 	_, _ = fmt.Fprintf(&buf, "Subject: Nueva orden %s #%s\r\n", statusTxt, o.ID.String())
@@ -2877,6 +2980,8 @@ func sendOrderTelegram(o *domain.Order, success bool) error {
 		statusTxt = "PAGO APROBADO"
 	} else if o.PaymentMethod == "transferencia" {
 		statusTxt = "PAGO EN PROCESO"
+	} else if o.PaymentMethod == "cripto" {
+		statusTxt = "PAGO CRIPTO EN PROCESO"
 	}
 	var b strings.Builder
 	b.WriteString("Orden ")

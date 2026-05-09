@@ -70,23 +70,63 @@
     </div>
   </div>
   {{end}}
-  <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px">
-    <div><strong>Orden:</strong> {{.Order.ID}}</div>
-    <div><strong>Nombre:</strong> {{.Order.Name}}</div>
-    <div><strong>Email:</strong> {{.Order.Email}}</div>
-    <div><strong>Teléfono:</strong> {{.Order.Phone}}</div>
-    <div><strong>DNI:</strong> {{.Order.DNI}}</div>
-    <div><strong>Método de entrega:</strong> {{if eq .Order.ShippingMethod "envio"}}Envío{{else if eq .Order.ShippingMethod "cadete"}}Cadete (Rosario){{else}}Retiro{{end}}</div>
+  {{if .IsCryptoPending}}
+  <div style="background:linear-gradient(135deg, #111827 0%, #0f172a 100%);border:2px solid #06b6d4;border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 4px 20px rgba(6,182,212,0.2)">
+    <h2 style="margin:0;font-size:24px;color:#fff">🪙 Instrucciones para pago cripto</h2>
+
+    <div style="padding:16px;background:#0b1220;border-radius:12px;border:1px solid #1f2937;display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px">Red</div>
+      <div style="font-size:16px;color:#fff;font-weight:700">Binance Smart Chain (BSC)</div>
+      <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-top:6px">Wallet USDT/USDC</div>
+      <code style="font-family:'Courier New', monospace;font-size:14px;color:#67e8f9;word-break:break-all;padding:10px;border-radius:8px;background:#030712;border:1px solid #1f2937">0xe1d34cd635b31144fc7b26c586e3d6decbbfbc5a</code>
+    </div>
+
+    <div style="padding:16px;background:rgba(6,182,212,0.1);border-radius:10px;border:1px solid #06b6d4">
+      <div style="font-size:12px;color:#94a3b8;text-transform:uppercase">Total de la orden</div>
+      <div style="font-size:28px;color:#fff;font-weight:bold">${{printf "%.2f" .Order.Total}}</div>
+      <div style="font-size:12px;color:#cbd5e1;margin-top:4px">Este total ya incluye 10% de descuento por pago cripto.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="padding:14px;background:#0b1220;border-radius:10px;border:1px solid #1f2937">
+        <div style="font-size:12px;color:#94a3b8">Monto estimado en USDT</div>
+        <div id="payUsdtAmount" style="margin-top:4px;font-size:22px;color:#fff;font-weight:700">Cargando...</div>
+      </div>
+      <div style="padding:14px;background:#0b1220;border-radius:10px;border:1px solid #1f2937">
+        <div style="font-size:12px;color:#94a3b8">Monto estimado en USDC</div>
+        <div id="payUsdcAmount" style="margin-top:4px;font-size:22px;color:#fff;font-weight:700">Cargando...</div>
+      </div>
+    </div>
+    <div id="payCryptoRateMeta" style="font-size:12px;color:#94a3b8"></div>
+
+    <div style="padding:20px;background:rgba(6,182,212,0.1);border-radius:12px;border:1px solid #06b6d4">
+      <div style="margin-bottom:12px;font-size:18px;color:#fff;font-weight:600">⚠️ IMPORTANTE: Enviá el comprobante</div>
+      <p style="margin:0 0 16px;color:#cbd5e1;line-height:1.6;font-size:15px">
+        Cuando hagas la transferencia en USDT o USDC por BSC, enviá captura/comprobante por WhatsApp para confirmar y liberar tu pedido.
+      </p>
+      <a href="https://wa.me/5493416620117?text=Comprobante%20de%20pago%20cripto%20para%20la%20orden%20{{.Order.ID}}" target="_blank" rel="noopener noreferrer" style="display:block;padding:16px 24px;background:#25D366;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;text-align:center;box-shadow:0 4px 12px rgba(37,211,102,0.3);transition:transform 0.2s">
+        📲 Enviar comprobante por WhatsApp
+      </a>
+    </div>
+  </div>
+  {{end}}
+  <div style="background:var(--nm-bg-2);border:1px solid var(--nm-border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;color:var(--nm-text)">
+    <div><strong style="color:var(--nm-text)">Orden:</strong> <span style="color:var(--nm-text-soft)">{{.Order.ID}}</span></div>
+    <div><strong style="color:var(--nm-text)">Nombre:</strong> <span style="color:var(--nm-text-soft)">{{.Order.Name}}</span></div>
+    <div><strong style="color:var(--nm-text)">Email:</strong> <span style="color:var(--nm-text-soft)">{{.Order.Email}}</span></div>
+    <div><strong style="color:var(--nm-text)">Teléfono:</strong> <span style="color:var(--nm-text-soft)">{{.Order.Phone}}</span></div>
+    <div><strong style="color:var(--nm-text)">DNI:</strong> <span style="color:var(--nm-text-soft)">{{.Order.DNI}}</span></div>
+    <div><strong style="color:var(--nm-text)">Método de entrega:</strong> <span style="color:var(--nm-text-soft)">{{if eq .Order.ShippingMethod "envio"}}Envío{{else if eq .Order.ShippingMethod "cadete"}}Cadete (Rosario){{else}}Retiro{{end}}</span></div>
     {{if .Order.PaymentMethod}}
-    <div><strong>Método de pago:</strong> {{if eq .Order.PaymentMethod "efectivo"}}Efectivo{{else if eq .Order.PaymentMethod "transferencia"}}Transferencia{{else if eq .Order.PaymentMethod "mercadopago"}}Mercado Pago{{else}}{{.Order.PaymentMethod}}{{end}}</div>
+    <div><strong style="color:var(--nm-text)">Método de pago:</strong> <span style="color:var(--nm-text-soft)">{{if eq .Order.PaymentMethod "efectivo"}}Efectivo{{else if eq .Order.PaymentMethod "transferencia"}}Transferencia{{else if eq .Order.PaymentMethod "cripto"}}Cripto (USDT/USDC - BSC){{else if eq .Order.PaymentMethod "mercadopago"}}Mercado Pago{{else}}{{.Order.PaymentMethod}}{{end}}</span></div>
     {{end}}
     {{if or (eq .Order.ShippingMethod "envio") (eq .Order.ShippingMethod "cadete") }}
-      <div><strong>Dirección:</strong> {{.Order.Address}} {{if .Order.PostalCode}}({{.Order.PostalCode}} – {{.Order.Province}}){{end}}</div>
-      <div><strong>Costo envío:</strong> ${{printf "%.2f" .Order.ShippingCost}}</div>
+      <div><strong style="color:var(--nm-text)">Dirección:</strong> <span style="color:var(--nm-text-soft)">{{.Order.Address}} {{if .Order.PostalCode}}({{.Order.PostalCode}} – {{.Order.Province}}){{end}}</span></div>
+      <div><strong style="color:var(--nm-text)">Costo envío:</strong> <span style="color:var(--nm-text-soft)">${{printf "%.2f" .Order.ShippingCost}}</span></div>
     {{end}}
-    <div><strong>Total:</strong> ${{printf "%.2f" .Order.Total}}</div>
-    <div style="margin-top:6px"><strong>Items:</strong></div>
-    <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+    <div><strong style="color:var(--nm-text)">Total:</strong> <span style="color:var(--nm-text-soft)">${{printf "%.2f" .Order.Total}}</span></div>
+    <div style="margin-top:6px"><strong style="color:var(--nm-text)">Items:</strong></div>
+    <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;color:var(--nm-text-soft)">
       {{range .Order.Items}}
         <li>{{.Title}} x{{.Qty}} — ${{printf "%.2f" .UnitPrice}} {{if .Color}}<span style="display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid #000;vertical-align:middle;background:{{.Color}}"></span>{{end}}</li>
       {{end}}
@@ -94,5 +134,36 @@
   </div>
   <a href="/products" class="btn-secondary" style="text-decoration:none;display:inline-block;width:max-content">Volver al catálogo</a>
 </section>
+{{if .IsCryptoPending}}
+<script>
+(function() {
+  const totalArs = {{printf "%.2f" .Order.Total}};
+  const usdtEl = document.getElementById('payUsdtAmount');
+  const usdcEl = document.getElementById('payUsdcAmount');
+  const metaEl = document.getElementById('payCryptoRateMeta');
+  if (!usdtEl || !usdcEl) return;
+
+  fetch('/api/crypto/rates')
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('bad_status')); })
+    .then(function(data) {
+      const usdt = parseFloat(data.usdt_ars || 0);
+      const usdc = parseFloat(data.usdc_ars || 0);
+      if (usdt <= 0 || usdc <= 0) throw new Error('invalid_rates');
+      usdtEl.textContent = (totalArs / usdt).toFixed(2) + ' USDT';
+      usdcEl.textContent = (totalArs / usdc).toFixed(2) + ' USDC';
+      if (metaEl) {
+        metaEl.textContent = 'Referencia: USDT/ARS $' + Math.round(usdt) + ' · USDC/ARS $' + Math.round(usdc);
+      }
+    })
+    .catch(function() {
+      usdtEl.textContent = 'No disponible';
+      usdcEl.textContent = 'No disponible';
+      if (metaEl) {
+        metaEl.textContent = 'No se pudo cargar la cotización en este momento.';
+      }
+    });
+})();
+</script>
+{{end}}
 {{template "layout_end" .}}
 {{end}}

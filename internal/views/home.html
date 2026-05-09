@@ -1,58 +1,151 @@
 {{define "home.html"}}
 {{template "layout_start" .}}
-<style>
-#howBuyBackdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:20px;z-index:110;opacity:0;pointer-events:none;transition:opacity .25s ease}
-#howBuyBackdrop.show{opacity:1;pointer-events:auto}
-#howBuyBackdrop .modal{background:#1a2430;border:1px solid #243044;border-radius:22px;padding:24px 24px 28px;max-width:560px;width:100%;color:#e5e7eb;font-family:Poppins,sans-serif;opacity:0;transform:translateY(20px) scale(.94);transition:opacity .28s ease,transform .35s cubic-bezier(.4,0,.2,1)}
-#howBuyBackdrop.show .modal{opacity:1;transform:translateY(0) scale(1)}
-#howBuyBackdrop .modal-title{margin:0 0 14px;font-size:24px}
-#howBuyBackdrop .modal-close{position:absolute;top:10px;right:10px;background:#12202c;border:1px solid #243044;color:#e5e7eb;width:36px;height:36px;border-radius:12px;cursor:pointer;font-size:20px;font-weight:600}
-#howBuyBackdrop .modal-close:hover{background:#1f2c39}
-</style>
-<section class="banner">
-  <div class="banner-carousel" id="bannerCarousel" data-interval="7000">
-    {{range $i, $src := .BannerImages}}
-    <img class="bc-slide{{if eq $i 0}} active{{end}}" src="{{$src}}?v={{$.AssetV}}" alt="Banner {{add $i 1}}" sizes="100vw" {{if eq $i 0}}fetchpriority="high"{{else}}loading="lazy"{{end}} decoding="async" />
-    {{end}}
-    <div class="bc-dots" id="bcDots"></div>
-  </div>
-  
-</section>
-<section style="margin-top:24px">
-  <div class="section-header-wrapper">
-    <h2 style="font-size:28px;font-weight:800;margin:0;color:var(--color-text);letter-spacing:-.8px">Ofertas imperdibles</h2>
-    <a href="/products" class="btn-view-all-desktop">Ver todos →</a>
-  </div>
-  <a href="/products" class="btn-view-all-mobile">
-    <span>Ver todos los productos</span>
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 12h14M12 5l7 7-7 7"/>
-    </svg>
-  </a>
-  <div class="cards cards--home">
-    {{range .Products}}
-    <div class="card">
-      <div class="card-media">
-        {{if .Images}}
-          <img src="{{img (index .Images 0).URL}}"
-               alt="{{if (index .Images 0).Alt}}{{(index .Images 0).Alt}}{{else}}{{.Name}}{{end}}"
-               loading="lazy" decoding="async"
-               srcset="{{img (index .Images 0).URL}} 300w, {{imgw (index .Images 0).URL 480}} 480w, {{imgw (index .Images 0).URL 640}} 640w"
-               sizes="(max-width:480px) 92vw, (max-width:768px) 44vw, 300px" />
-        {{else}}<div class="placeholder">IMG</div>{{end}}
-        
-      </div>
-      <div class="card-body">
-        <h3 class="card-title"><a href="/product/{{.Slug}}">{{.Name}}</a></h3>
-        <div class="card-meta">{{.Category}}</div>
-        <div class="price-row">
-          <span class="price">{{formatPrice .BasePrice}}</span>
+<div class="nm-home">
+  <section class="nm-home-hero nm-bleed">
+    <div class="nm-shell">
+      <div class="nm-home-hero__grid">
+        <div>
+          <div class="nm-eyebrow">Nueva temporada · 2026</div>
+          <h1>Tu próximo celu, sin vueltas.</h1>
+          <p>Equipos originales, garantía oficial y atención real en Rosario. Te ayudamos a elegir sin apuro, con cuotas, envíos al país y descuento pagando con transferencia.</p>
+          <div class="nm-hero-actions">
+            <a href="/products" class="btn-primary">Ver catálogo</a>
+            <a href="https://wa.me/5493416620117?text=Hola%20NewMobile,%20quiero%20ver%20equipos." class="btn-secondary" target="_blank" rel="noopener">Hablar por WhatsApp</a>
+          </div>
         </div>
-        <div class="actions"><a href="/product/{{.Slug}}" class="btn-primary btn-full" style="text-align:center;text-decoration:none">Ver detalles</a></div>
+        <div class="nm-hero-card">
+          {{if .BannerImages}}
+          <img src="{{index .BannerImages 0}}?v={{.AssetV}}" alt="Equipo destacado NewMobile" fetchpriority="high" decoding="async" />
+          {{else}}
+          <img src="/public/assets/img/img1.webp?v={{.AssetV}}" alt="Equipo destacado NewMobile" fetchpriority="high" decoding="async" />
+          {{end}}
+          <div class="nm-hero-note">Garantía oficial · 12 meses · Productos originales liberados</div>
+        </div>
       </div>
     </div>
-    {{end}}
-  </div>
-</section>
+  </section>
+
+  <section class="nm-trust-strip nm-bleed">
+    <div class="nm-shell">
+      <div class="nm-trust-strip__grid">
+        <div class="nm-trust-item">
+          <svg class="nm-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5.5 3.4 10.6 8 12 4.6-1.4 8-6.5 8-12V5l-8-3z"></path><path d="m9 12 2 2 4-4"></path></svg>
+          <div><div class="nm-trust-title">Garantía oficial</div><div class="nm-trust-copy">12 meses por escrito</div></div>
+        </div>
+        <div class="nm-trust-item">
+          <svg class="nm-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h13v11H3z"></path><path d="M16 9h4l2 4v4h-6"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg>
+          <div><div class="nm-trust-title">Envíos a todo el país</div><div class="nm-trust-copy">O retiro en local</div></div>
+        </div>
+        <div class="nm-trust-item">
+          <svg class="nm-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"></rect><path d="M2 11h20"></path></svg>
+          <div><div class="nm-trust-title">Hasta 12 cuotas</div><div class="nm-trust-copy">5% off pagando con transferencia</div></div>
+        </div>
+        <div class="nm-trust-item">
+          <svg class="nm-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-5"></path></svg>
+          <div><div class="nm-trust-title">Originales liberados</div><div class="nm-trust-copy">Todas las compañías</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="nm-home-products nm-bleed">
+    <div class="nm-shell">
+      <div class="section-header-wrapper">
+        <h2 class="nm-section-title">Lo más buscado</h2>
+        <a href="/products" class="btn-view-all-desktop">Ver todos →</a>
+      </div>
+      <a href="/products" class="btn-view-all-mobile">
+        <span>Ver catálogo completo</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <div class="cards cards--home">
+        {{range .Products}}
+        <article class="card">
+          <div class="card-media">
+            {{if .Images}}
+            <img src="{{img (index .Images 0).URL}}"
+                 alt="{{if (index .Images 0).Alt}}{{(index .Images 0).Alt}}{{else}}{{.Name}}{{end}}"
+                 loading="lazy" decoding="async"
+                 srcset="{{img (index .Images 0).URL}} 300w, {{imgw (index .Images 0).URL 480}} 480w, {{imgw (index .Images 0).URL 640}} 640w"
+                 sizes="(max-width:480px) 48vw, (max-width:768px) 44vw, 280px" />
+            {{else}}<div class="placeholder">IMG</div>{{end}}
+          </div>
+          <div class="card-body">
+            <div class="card-meta">{{if .Brand}}{{.Brand}}{{else}}{{.Category}}{{end}}</div>
+            <h3 class="card-title"><a href="/product/{{.Slug}}">{{.Name}}</a></h3>
+            <div class="price-row"><span class="price">{{formatPrice .BasePrice}}</span></div>
+            <div class="actions"><a href="/product/{{.Slug}}" class="btn-primary btn-full">Ver detalles</a></div>
+          </div>
+        </article>
+        {{end}}
+      </div>
+    </div>
+  </section>
+
+  <section class="nm-home-story nm-bleed">
+    <div class="nm-shell">
+      <div class="nm-home-story__grid">
+        <div>
+          <div class="nm-eyebrow">Sobre nosotros</div>
+          <h2 class="nm-section-title">Hace más de 10 años en Rosario, te ayudamos a elegir.</h2>
+          <p>Somos local físico, no depósito anónimo. Venís, probás, preguntás y te llevás el equipo con la tranquilidad de saber quién te atendió. Acá la compra arranca en la web y se cierra con confianza.</p>
+          <div class="nm-stats">
+            <div><div class="nm-stat-number">+10</div><div class="nm-stat-copy">años en el rubro</div></div>
+            <div><div class="nm-stat-number">+5k</div><div class="nm-stat-copy">clientes felices</div></div>
+            <div><div class="nm-stat-number">4.9</div><div class="nm-stat-copy">promedio en Google</div></div>
+          </div>
+        </div>
+        <div class="nm-photo-card">
+          <img src="/public/assets/img/img2.webp?v={{.AssetV}}" alt="Local de NewMobile en Rosario" loading="lazy" decoding="async" />
+          <div class="nm-photo-tag">Zona sur · Rosario, Santa Fe</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="nm-home-reviews nm-bleed">
+    <div class="nm-shell">
+      <div class="section-header-wrapper">
+        <h2 class="nm-section-title">Lo que dicen nuestros clientes</h2>
+        <a href="https://wa.me/5493416620117?text=Hola%20NewMobile,%20quiero%20hacer%20una%20consulta." class="btn-view-all-desktop" target="_blank" rel="noopener">Hablá con nosotros →</a>
+      </div>
+      <div class="nm-review-grid">
+        <article class="nm-review-card">
+          <div class="nm-stars">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+          </div>
+          <p>"Compré mi iPhone ahí y me explicaron todo sin apuro. Se nota que saben y que no te quieren apurar la compra."</p>
+          <div class="nm-review-meta">Lucía M. · Rosario</div>
+        </article>
+        <article class="nm-review-card">
+          <div class="nm-stars">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+          </div>
+          <p>"Precio claro, equipo original y entrega rápida. Me gustó que también me contaron la opción de transferencia con descuento."</p>
+          <div class="nm-review-meta">Martín R. · Funes</div>
+        </article>
+        <article class="nm-review-card">
+          <div class="nm-stars">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7L12 2z"/></svg>
+          </div>
+          <p>"Pasé con dudas por un Samsung y me atendieron como en el barrio, pero con data posta. Así da gusto comprar."</p>
+          <div class="nm-review-meta">Sofía D. · Rosario centro</div>
+        </article>
+      </div>
+    </div>
+  </section>
+</div>
 {{template "layout_end" .}}
 {{end}}

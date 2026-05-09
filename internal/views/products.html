@@ -1,15 +1,15 @@
 {{define "products.html"}}
 {{template "layout_start" .}}
-<div style="margin-bottom:24px">
-  <h1 style="font-size:36px;font-weight:800;margin:0 0 8px;color:var(--color-text);letter-spacing:-1px;line-height:1.2">Celulares y accesorios</h1>
-  <p id="productsCounter" style="font-size:15px;color:var(--color-muted);margin:0;font-weight:500">
+<div class="products-page-head">
+  <h1>Celulares y accesorios</h1>
+  <p id="productsCounter">
     Mostrando <span id="loadedCount">{{len .Products}}</span> de <span id="totalCount">{{.Total}}</span> productos
   </p>
 </div>
 
 <!-- Botones de Filtro y Ordenamiento -->
 <div class="mobile-actions">
-  <button type="button" class="btn-filter {{if or .Query .Category}}has-active{{end}}" aria-expanded="false" aria-label="Abrir filtros">
+  <button type="button" class="btn-filter {{if or .Query .Category}}has-active{{end}}" aria-expanded="false" aria-label="Abrir categorías">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
       <line x1="4" y1="6" x2="20" y2="6"></line>
       <line x1="4" y1="12" x2="20" y2="12"></line>
@@ -18,7 +18,7 @@
       <circle cx="16" cy="12" r="2"></circle>
       <circle cx="12" cy="18" r="2"></circle>
     </svg>
-    <span>Filtrar</span>
+    <span>Categorías</span>
     {{if or .Query .Category}}
     <span class="filter-badge">
       {{if and .Query .Category}}2{{else}}1{{end}}
@@ -72,7 +72,7 @@
 <!-- Sheet de Filtros -->
 <div id="filterSheet" class="sheet" hidden aria-hidden="true">
   <header class="sheet-head">
-    <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--color-text)">Filtrar productos</h2>
+    <h2 style="margin:0;font-size:18px;font-weight:600;color:var(--color-text)">Categorías</h2>
     <button type="button" class="sheet-close" aria-label="Cerrar" style="background:var(--panel-alt);border:1px solid var(--color-border);color:var(--color-text);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center">×</button>
   </header>
   <form id="filtersForm" method="get" action="/products" style="display:flex;flex-direction:column;gap:16px;margin-top:16px">
@@ -91,7 +91,7 @@
     </div>
     <input type="hidden" id="sortInput" name="sort" value="{{.Sort}}">
     <div style="display:flex;gap:12px;margin-top:8px">
-      <button type="submit" class="btn-primary" style="flex:1;padding:14px;font-size:15px;font-weight:600">Aplicar filtros</button>
+      <button type="submit" class="btn-primary" style="flex:1;padding:14px;font-size:15px;font-weight:600">Aplicar categorías</button>
       <a href="/products" class="btn-secondary" style="flex:1;padding:14px;font-size:15px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center">Limpiar</a>
     </div>
   </form>
