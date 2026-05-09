@@ -1,7 +1,5 @@
-const CACHE_NAME = 'newmobile-v3';
+const CACHE_NAME = 'newmobile-v4';
 const urlsToCache = [
-  '/',
-  '/public/assets/styles.css',
   '/public/assets/img/newmobile.png'
 ];
 
@@ -26,8 +24,14 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });

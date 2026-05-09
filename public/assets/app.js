@@ -378,7 +378,11 @@
 })();
 
 if ('serviceWorker' in navigator) {
-  const registerSW = () => navigator.serviceWorker.register('/public/sw.js').catch(()=>{});
+  const appScript = document.querySelector('script[src*="/public/assets/app.js"]');
+  const appScriptURL = appScript ? new URL(appScript.src, window.location.href) : null;
+  const assetV = appScriptURL ? appScriptURL.searchParams.get('v') : '';
+  const swURL = '/public/sw.js' + (assetV ? '?v=' + encodeURIComponent(assetV) : '');
+  const registerSW = () => navigator.serviceWorker.register(swURL).catch(()=>{});
   if (window.requestIdleCallback) requestIdleCallback(registerSW, {timeout: 2000});
   else window.addEventListener('load', registerSW, {once:true});
 }

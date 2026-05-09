@@ -218,41 +218,109 @@
     resultsNode.style.display = 'block';
   }
 
+  function normalizeSearchImage(src) {
+    const value = (src || '/public/assets/img/no imagen.jpg').trim();
+    if (!value) return '/public/assets/img/no imagen.jpg';
+    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
+      return value.replaceAll(' ', '%20');
+    }
+    return '/' + value.replaceAll(' ', '%20');
+  }
+
+  function styleSearchResultsContainer(resultsNode) {
+    if (!resultsNode) return;
+    if (resultsNode.id === 'searchResults') {
+      Object.assign(resultsNode.style, {
+        position: 'absolute',
+        top: 'calc(100% + 8px)',
+        left: '0',
+        right: '0',
+        zIndex: '10020',
+        maxHeight: 'min(70vh, 440px)',
+        overflowY: 'auto',
+        border: '1px solid var(--nm-border-2)',
+        borderRadius: '12px',
+        background: 'var(--nm-bg)',
+        boxShadow: '0 16px 36px rgba(0,0,0,.34)'
+      });
+    }
+  }
+
   function renderSearchResults(resultsNode, products) {
     if (!resultsNode) return;
+    styleSearchResultsContainer(resultsNode);
     if (!products || !products.length) {
       resultsNode.innerHTML = '<div class="search-results-empty">No se encontraron productos</div>';
       resultsNode.style.display = 'block';
       return;
     }
     resultsNode.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'search-results-list';
     products.forEach(product => {
       const item = document.createElement('a');
       item.href = '/product/' + product.slug;
       item.className = 'search-results-item';
+      Object.assign(item.style, {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '10px 12px',
+        borderBottom: '1px solid var(--nm-border)',
+        color: 'var(--nm-text)',
+        textDecoration: 'none',
+        minWidth: '0'
+      });
 
       const img = document.createElement('img');
-      img.src = product.image || '/public/assets/img/no imagen.jpg';
+      img.src = normalizeSearchImage(product.image);
       img.alt = product.name;
       img.onerror = function() { this.src = '/public/assets/img/no imagen.jpg'; };
+      Object.assign(img.style, {
+        width: '56px',
+        height: '56px',
+        borderRadius: '10px',
+        objectFit: 'contain',
+        background: 'var(--nm-bg-2)',
+        border: '1px solid var(--nm-border)',
+        flexShrink: '0'
+      });
 
       const content = document.createElement('div');
       content.className = 'search-results-item-content';
+      Object.assign(content.style, {
+        minWidth: '0',
+        display: 'grid',
+        gap: '4px'
+      });
 
       const name = document.createElement('div');
       name.className = 'search-results-item-name';
       name.textContent = product.name;
+      Object.assign(name.style, {
+        fontSize: '13px',
+        lineHeight: '1.35',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      });
 
       const price = document.createElement('div');
       price.className = 'search-results-item-price';
       price.textContent = '$' + product.price.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      Object.assign(price.style, {
+        fontSize: '13px',
+        fontWeight: '600',
+        color: 'var(--nm-lime)'
+      });
 
       content.appendChild(name);
       content.appendChild(price);
       item.appendChild(img);
       item.appendChild(content);
-      resultsNode.appendChild(item);
+      list.appendChild(item);
     });
+    resultsNode.appendChild(list);
     resultsNode.style.display = 'block';
   }
 
