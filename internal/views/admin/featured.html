@@ -12,18 +12,37 @@
 </nav>
 
 <section class="grid" style="margin-top:1rem;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:2rem;align-items:start">
-  <!-- Panel izquierdo: Productos destacados actuales -->
-  <div class="admin-card" style="padding:18px 20px 24px">
-    <div class="row between center" style="margin-bottom:16px">
-      <h2 style="margin:0;font-size:18px">Productos Destacados <span id="featuredCount">(0/8)</span></h2>
-      <button class="btn-primary" id="btnSave" style="display:none">Guardar cambios</button>
+  <!-- Panel izquierdo: Producto estrella + Productos destacados -->
+  <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+    <!-- Producto Estrella (singleton, banner del hero) -->
+    <div class="admin-card" style="padding:18px 20px 22px">
+      <div class="row between center" style="margin-bottom:14px">
+        <h2 style="margin:0;font-size:18px">⭐ Producto Estrella</h2>
+        <span style="font-size:12px;color:var(--muted)">Aparece en el banner del home</span>
+      </div>
+
+      <div id="starSlot">
+        <p style="color:var(--muted);text-align:center;padding:24px 16px;margin:0">
+          No hay producto estrella seleccionado.<br>
+          <small>Hacé click en "Marcar como estrella" en cualquier producto del panel derecho.</small>
+        </p>
+      </div>
     </div>
-    
-    <div id="featuredList" style="min-height:200px">
-      <p style="color:var(--muted);text-align:center;padding:40px 20px">
-        No hay productos destacados.<br>
-        <small>Agregá productos desde el panel de la derecha.</small>
-      </p>
+
+    <!-- Productos destacados actuales -->
+    <div class="admin-card" style="padding:18px 20px 24px">
+      <div class="row between center" style="margin-bottom:16px">
+        <h2 style="margin:0;font-size:18px">Productos Destacados <span id="featuredCount">(0/8)</span></h2>
+        <button class="btn-primary" id="btnSave" style="display:none">Guardar cambios</button>
+      </div>
+
+      <div id="featuredList" style="min-height:200px">
+        <p style="color:var(--muted);text-align:center;padding:40px 20px">
+          No hay productos destacados.<br>
+          <small>Agregá productos desde el panel de la derecha.</small>
+        </p>
+      </div>
     </div>
   </div>
 
@@ -192,6 +211,71 @@
 #sortPrice:hover {
   border-color: var(--color-brand);
 }
+
+/* Producto estrella */
+.star-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-brand) 8%, var(--panel)), var(--panel));
+  border: 2px solid var(--color-brand);
+  border-radius: 10px;
+}
+.star-card__img {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--panel-alt);
+}
+.star-card__img img { width: 100%; height: 100%; object-fit: cover; }
+.star-card__info { flex: 1; min-width: 0; }
+.star-card__name {
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+.star-card__meta { font-size: 12px; color: var(--muted); }
+.btn-star {
+  padding: 6px 10px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--color-brand);
+  border: 1px solid var(--color-brand);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-star:hover {
+  background: var(--color-brand);
+  color: white;
+}
+.btn-star.is-active {
+  background: var(--color-brand);
+  color: white;
+  cursor: default;
+}
+.btn-clear-star {
+  padding: 6px 10px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-clear-star:hover {
+  background: var(--color-danger);
+  color: white;
+}
+.product-item__actions { display: flex; gap: 6px; align-items: center; }
 </style>
 
 <script>
@@ -206,7 +290,9 @@
   
   let allProducts = [];
   let featuredProducts = [];
+  let starProduct = null;
   let hasChanges = false;
+  const starSlot = document.getElementById('starSlot');
 
   // Cargar datos iniciales
   async function loadData() {
@@ -218,15 +304,55 @@
         featuredProducts = data.products || [];
       }
 
+      // Cargar producto estrella
+      const starRes = await fetch('/api/featured/star');
+      if (starRes.ok) {
+        const data = await starRes.json();
+        starProduct = data.product || null;
+      }
+
       // Cargar todos los productos
       allProducts = {{.Products | json}};
-      
+
+      renderStar();
       renderFeatured();
       renderProducts();
     } catch (err) {
       console.error('Error cargando datos:', err);
       alert('Error cargando datos: ' + err.message);
     }
+  }
+
+  // Renderizar slot de producto estrella
+  function renderStar() {
+    if (!starProduct) {
+      starSlot.innerHTML = `
+        <p style="color:var(--muted);text-align:center;padding:24px 16px;margin:0">
+          No hay producto estrella seleccionado.<br>
+          <small>Hacé click en "Marcar como estrella" en cualquier producto del panel derecho.</small>
+        </p>
+      `;
+      return;
+    }
+
+    const imageUrl = starProduct.Images && starProduct.Images.length > 0
+      ? (starProduct.Images[0].URL.startsWith('http') ? starProduct.Images[0].URL : '/' + starProduct.Images[0].URL.replace(/^\/+/, ''))
+      : '/public/assets/img/no imagen.jpg';
+
+    starSlot.innerHTML = `
+      <div class="star-card">
+        <div class="star-card__img">
+          <img src="${imageUrl}" alt="${starProduct.Name}">
+        </div>
+        <div class="star-card__info">
+          <div class="star-card__name">${starProduct.Name}</div>
+          <div class="star-card__meta">
+            ${starProduct.Brand || ''} ${starProduct.Model || ''} · $${starProduct.BasePrice.toFixed(2)}
+          </div>
+        </div>
+        <button class="btn-clear-star" onclick="clearStar()">Quitar</button>
+      </div>
+    `;
   }
 
   // Renderizar lista de productos destacados
@@ -305,27 +431,85 @@
       return;
     }
 
+    const starID = starProduct ? starProduct.ID : null;
+
     let html = '';
     filtered.forEach(product => {
-      const isDisabled = featuredIDs.has(product.ID);
-      const disabledClass = isDisabled ? 'disabled' : '';
-      const btnText = isDisabled ? 'Ya agregado' : 'Agregar';
-      
+      const isFeatured = featuredIDs.has(product.ID);
+      const isStar = starID === product.ID;
+
+      let addBtnHtml = '';
+      if (isFeatured) {
+        addBtnHtml = '<span style="color:var(--muted);font-size:12px">✓ Destacado</span>';
+      } else {
+        addBtnHtml = `<button class="btn-add" onclick="addFeatured('${product.ID}')">+ Destacar</button>`;
+      }
+
+      const starBtnHtml = isStar
+        ? `<button class="btn-star is-active" disabled>★ Estrella</button>`
+        : `<button class="btn-star" onclick="setStar('${product.ID}')">☆ Estrella</button>`;
+
       html += `
-        <div class="product-item ${disabledClass}">
+        <div class="product-item">
           <div class="product-info">
             <div class="product-name">${product.Name}</div>
             <div class="product-meta">
               ${product.Brand || ''} ${product.Model || ''} · $${product.BasePrice.toFixed(2)}
             </div>
           </div>
-          ${!isDisabled ? `<button class="btn-add" onclick="addFeatured('${product.ID}')">+ ${btnText}</button>` : '<span style="color:var(--muted);font-size:12px">✓ Agregado</span>'}
+          <div class="product-item__actions">
+            ${starBtnHtml}
+            ${addBtnHtml}
+          </div>
         </div>
       `;
     });
 
     productsList.innerHTML = html;
   }
+
+  // Marcar producto como estrella
+  window.setStar = async function(productID) {
+    try {
+      const res = await fetch('/api/featured/star', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ product_id: productID })
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error guardando');
+      }
+      starProduct = allProducts.find(p => p.ID === productID) || null;
+      renderStar();
+      renderProducts(searchInput.value, sortPrice.value);
+    } catch (err) {
+      alert('❌ Error: ' + err.message);
+    }
+  };
+
+  // Quitar producto estrella
+  window.clearStar = async function() {
+    if (!confirm('¿Quitar el producto estrella?')) return;
+    try {
+      const res = await fetch('/api/featured/star', {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error eliminando');
+      }
+      starProduct = null;
+      renderStar();
+      renderProducts(searchInput.value, sortPrice.value);
+    } catch (err) {
+      alert('❌ Error: ' + err.message);
+    }
+  };
 
   // Agregar producto a destacados
   window.addFeatured = function(productID) {

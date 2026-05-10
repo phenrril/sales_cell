@@ -76,6 +76,16 @@ type FeaturedProductRepo interface {
 	GetWithProducts(ctx context.Context) ([]Product, error)
 }
 
+// StarProductRepo gestiona el producto estrella (singleton).
+type StarProductRepo interface {
+	// Get devuelve el producto estrella actual con sus imágenes, o nil si no hay ninguno.
+	Get(ctx context.Context) (*Product, error)
+	// Set establece el producto estrella, reemplazando cualquier valor previo.
+	Set(ctx context.Context, productID uuid.UUID) error
+	// Clear quita el producto estrella.
+	Clear(ctx context.Context) error
+}
+
 type QuoteService interface {
 	EstimateFromModel(ctx context.Context, modelID uuid.UUID, cfg QuoteConfig) (*Quote, error)
 }

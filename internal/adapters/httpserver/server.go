@@ -47,6 +47,7 @@ type Server struct {
 	storage          domain.FileStorage
 	customers        domain.CustomerRepo
 	featuredProducts domain.FeaturedProductRepo
+	starProduct      domain.StarProductRepo
 	oauthCfg         *oauth2.Config
 	scraper          *scraper.SpecsScraper
 	imageScraper     *scraper.ImageScraper
@@ -64,8 +65,8 @@ type Server struct {
 
 var emailRe = regexp.MustCompile(`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`)
 
-func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, featuredProducts domain.FeaturedProductRepo, oauthCfg *oauth2.Config, emailService domain.EmailService) http.Handler {
-	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), emailService: emailService, mux: http.NewServeMux(), assetVersion: fmt.Sprintf("%d", time.Now().Unix()), bannerImages: loadBannerImages()}
+func New(t *template.Template, p *usecase.ProductUC, q *usecase.QuoteUC, o *usecase.OrderUC, pay *usecase.PaymentUC, m domain.UploadedModelRepo, fs domain.FileStorage, customers domain.CustomerRepo, featuredProducts domain.FeaturedProductRepo, starProduct domain.StarProductRepo, oauthCfg *oauth2.Config, emailService domain.EmailService) http.Handler {
+	s := &Server{tmpl: t, products: p, quotes: q, orders: o, payments: pay, models: m, storage: fs, customers: customers, featuredProducts: featuredProducts, starProduct: starProduct, oauthCfg: oauthCfg, scraper: scraper.NewSpecsScraper(), imageScraper: scraper.NewImageScraper(), emailService: emailService, mux: http.NewServeMux(), assetVersion: fmt.Sprintf("%d", time.Now().Unix()), bannerImages: loadBannerImages()}
 
 	allowed := map[string]struct{}{}
 	if raw := os.Getenv("ADMIN_ALLOWED_EMAILS"); raw != "" {
@@ -189,11 +190,16 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	base := s.canonicalBase(r)
+
+	// Producto estrella para el banner del hero (puede ser nil si no hay configurado).
+	star, _ := s.starProduct.Get(r.Context())
+
 	data := map[string]any{
 		"Products":     list,
 		"CanonicalURL": base + "/",
 		"OGImage":      base + "/public/assets/img/newmobile.png",
 		"BannerImages": s.bannerImages,
+		"StarProduct":  star,
 	}
 	if u := readUserSession(w, r); u != nil {
 		data["User"] = u
@@ -4377,11 +4383,15 @@ func (s *Server) handleAdminFeatured(w http.ResponseWriter, r *http.Request) {
 	// Obtener todos los productos para el selector
 	allProducts, total, _ := s.products.List(r.Context(), domain.ProductFilter{Page: 1, PageSize: 10000})
 
+	// Producto estrella actual (si existe)
+	star, _ := s.starProduct.Get(r.Context())
+
 	tok := s.readAdminToken(r)
 	data := map[string]any{
 		"Featured":    featured,
 		"Products":    allProducts,
 		"Total":       total,
+		"StarProduct": star,
 		"AdminToken":  tok,
 	}
 	s.render(w, "admin_featured.html", data)
@@ -4444,8 +4454,19 @@ func (s *Server) apiFeatured(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 }
 
-// apiFeaturedByID maneja DELETE para eliminar un producto destacado
+// apiFeaturedByID maneja sub-rutas de /api/featured/:
+//   - DELETE /api/featured/{uuid}: elimina un producto destacado
+//   - GET    /api/featured/star: devuelve el producto estrella actual (o null)
+//   - POST   /api/featured/star: setea el producto estrella ({"product_id": "..."})
+//   - DELETE /api/featured/star: quita el producto estrella
 func (s *Server) apiFeaturedByID(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/api/featured/")
+
+	if path == "star" {
+		s.apiFeaturedStar(w, r)
+		return
+	}
+
 	if r.Method != http.MethodDelete {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -4455,8 +4476,6 @@ func (s *Server) apiFeaturedByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extraer ID del path /api/featured/{id}
-	path := strings.TrimPrefix(r.URL.Path, "/api/featured/")
 	id, err := uuid.Parse(path)
 	if err != nil {
 		writeJSON(w, 400, map[string]any{"error": "invalid id"})
@@ -4469,4 +4488,54 @@ func (s *Server) apiFeaturedByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, 200, map[string]any{"status": "ok"})
+}
+
+// apiFeaturedStar maneja GET/POST/DELETE para el producto estrella (singleton).
+func (s *Server) apiFeaturedStar(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		p, err := s.starProduct.Get(r.Context())
+		if err != nil {
+			writeJSON(w, 500, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"product": p})
+		return
+
+	case http.MethodPost:
+		if !s.requireAdmin(w, r) {
+			return
+		}
+		var payload struct {
+			ProductID string `json:"product_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			writeJSON(w, 400, map[string]any{"error": "invalid payload"})
+			return
+		}
+		productID, err := uuid.Parse(payload.ProductID)
+		if err != nil {
+			writeJSON(w, 400, map[string]any{"error": "invalid product_id"})
+			return
+		}
+		if err := s.starProduct.Set(r.Context(), productID); err != nil {
+			writeJSON(w, 500, map[string]any{"error": "error guardando producto estrella"})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"status": "ok"})
+		return
+
+	case http.MethodDelete:
+		if !s.requireAdmin(w, r) {
+			return
+		}
+		if err := s.starProduct.Clear(r.Context()); err != nil {
+			writeJSON(w, 500, map[string]any{"error": "error eliminando producto estrella"})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"status": "ok"})
+		return
+	}
+
+	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 }

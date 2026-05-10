@@ -36,6 +36,7 @@ type App struct {
 	Storage          domain.FileStorage
 	Customers        domain.CustomerRepo
 	FeaturedProducts domain.FeaturedProductRepo
+	StarProduct      domain.StarProductRepo
 	OAuthConfig      *oauth2.Config
 	EmailService     domain.EmailService
 }
@@ -47,6 +48,7 @@ func NewApp(db *gorm.DB) (*App, error) {
 	modelRepo := postgres.NewUploadedModelRepo(db)
 	custRepo := postgres.NewCustomerRepo(db)
 	featuredRepo := postgres.NewFeaturedProductRepo(db)
+	starRepo := postgres.NewStarProductRepo(db)
 	storageDir := os.Getenv("STORAGE_DIR")
 	if storageDir == "" {
 		storageDir = "uploads"
@@ -103,6 +105,7 @@ func NewApp(db *gorm.DB) (*App, error) {
 	app.Storage = storage
 	app.Customers = custRepo
 	app.FeaturedProducts = featuredRepo
+	app.StarProduct = starRepo
 	app.OAuthConfig = oauthCfg
 	app.EmailService = emailService
 
@@ -255,12 +258,12 @@ func NewApp(db *gorm.DB) (*App, error) {
 }
 
 func (a *App) HTTPHandler() http.Handler {
-	return httpserver.New(a.Tmpl, a.ProductUC, a.QuoteUC, a.OrderUC, a.PaymentUC, a.ModelRepo, a.Storage, a.Customers, a.FeaturedProducts, a.OAuthConfig, a.EmailService)
+	return httpserver.New(a.Tmpl, a.ProductUC, a.QuoteUC, a.OrderUC, a.PaymentUC, a.ModelRepo, a.Storage, a.Customers, a.FeaturedProducts, a.StarProduct, a.OAuthConfig, a.EmailService)
 }
 
 func (a *App) MigrateAndSeed() error {
 	if err := a.DB.AutoMigrate(
-		&domain.Product{}, &domain.Variant{}, &domain.Image{}, &domain.Order{}, &domain.OrderItem{}, &domain.UploadedModel{}, &domain.Quote{}, &domain.Page{}, &domain.Customer{}, &domain.FeaturedProduct{},
+		&domain.Product{}, &domain.Variant{}, &domain.Image{}, &domain.Order{}, &domain.OrderItem{}, &domain.UploadedModel{}, &domain.Quote{}, &domain.Page{}, &domain.Customer{}, &domain.FeaturedProduct{}, &domain.StarProduct{},
 	); err != nil {
 		return err
 	}
