@@ -62,3 +62,11 @@ type FeaturedProduct struct {
 	DisplayOrder int       `gorm:"not null;uniqueIndex"`
 	CreatedAt    time.Time
 }
+
+// StarProduct es un singleton: hay 0 o 1 producto estrella.
+// Se muestra arriba en el banner de la home como producto destacado principal.
+type StarProduct struct {
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
+	ProductID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex"`
+	UpdatedAt time.Time
+}

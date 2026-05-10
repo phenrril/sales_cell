@@ -13,6 +13,37 @@
             <a href="https://wa.me/5493416620117?text=Hola%20NewMobile,%20quiero%20ver%20equipos." class="btn-secondary" target="_blank" rel="noopener">Hablar por WhatsApp</a>
           </div>
         </div>
+        {{if .StarProduct}}
+        {{with .StarProduct}}
+        <a href="/product/{{.Slug}}" class="nm-hero-card nm-hero-card--product" aria-label="Ver oferta destacada: {{.Name}}">
+          <div class="nm-hero-card__badge">★ Oferta destacada</div>
+          <div class="nm-hero-card__media">
+            {{if .Images}}
+            <img src="{{img (index .Images 0).URL}}"
+                 alt="{{if (index .Images 0).Alt}}{{(index .Images 0).Alt}}{{else}}{{.Name}}{{end}}"
+                 fetchpriority="high" decoding="async"
+                 srcset="{{img (index .Images 0).URL}} 320w, {{imgw (index .Images 0).URL 480}} 480w, {{imgw (index .Images 0).URL 640}} 640w"
+                 sizes="(max-width:768px) 80vw, 360px" />
+            {{else}}
+            <div class="nm-hero-card__placeholder">Sin imagen</div>
+            {{end}}
+          </div>
+          <div class="nm-hero-card__body">
+            {{if .Brand}}<div class="nm-hero-card__brand">{{.Brand}}</div>{{end}}
+            <div class="nm-hero-card__name">{{.Name}}</div>
+            <div class="nm-hero-card__prices">
+              <span class="nm-hero-card__price-old">{{ars .BasePrice}}</span>
+              <span class="nm-hero-card__price-new">{{ars (mul .BasePrice 0.95)}}</span>
+              <span class="nm-hero-card__price-tag">Transferencia · -5%</span>
+            </div>
+            <div class="nm-hero-card__installment">Hasta 3 cuotas sin interés</div>
+            <div class="nm-hero-card__cta">
+              <span class="nm-hero-card__cta-btn">Ver oferta →</span>
+            </div>
+          </div>
+        </a>
+        {{end}}
+        {{else}}
         <div class="nm-hero-card">
           {{if .BannerImages}}
           <img src="{{index .BannerImages 0}}?v={{.AssetV}}" alt="Equipo destacado NewMobile" fetchpriority="high" decoding="async" />
@@ -21,6 +52,7 @@
           {{end}}
           <div class="nm-hero-note">Garantía oficial · 12 meses · Productos originales liberados</div>
         </div>
+        {{end}}
       </div>
     </div>
   </section>
@@ -38,7 +70,7 @@
         </div>
         <div class="nm-trust-item">
           <svg class="nm-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"></rect><path d="M2 11h20"></path></svg>
-          <div><div class="nm-trust-title">Hasta 12 cuotas</div><div class="nm-trust-copy">5% off pagando con transferencia</div></div>
+          <div><div class="nm-trust-title">Hasta 3 cuotas</div><div class="nm-trust-copy">5% off pagando con transferencia</div></div>
         </div>
         <div class="nm-trust-item">
           <svg class="nm-trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-5"></path></svg>
